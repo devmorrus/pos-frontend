@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { getVisibleNavigation } from "../../app/router";
+import { getVisibleNavigation, appNavigation } from "../../app/router";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import MorrusLogo from "./MorrusLogo";
 
@@ -14,6 +15,53 @@ export default function DashboardSidebar({
   const { session } = useAuth();
   const navigation = getVisibleNavigation(session);
 
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let activeGroupLabel = "";
+    appNavigation.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSub = item.subItems.some((sub) => {
+          return (
+            location.pathname === sub.path ||
+            (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||
+            (sub.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
+            (sub.path === "/stock-transfers/outgoing" &&
+              location.pathname.startsWith("/stock-transfers"))
+          );
+        });
+        if (hasActiveSub) {
+          activeGroupLabel = item.label;
+        }
+      }
+    });
+
+    if (activeGroupLabel) {
+      setExpandedGroups({ [activeGroupLabel]: true });
+    } else {
+      setExpandedGroups({});
+    }
+  }, [location.pathname]);
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((prev) => ({
+      [label]: !prev[label],
+    }));
+  };
+
+  const isGroupActive = (item: any) => {
+    if (!item.subItems) return false;
+    return item.subItems.some((sub: any) => {
+      return (
+        location.pathname === sub.path ||
+        (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||
+        (sub.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
+        (sub.path === "/stock-transfers/outgoing" &&
+          location.pathname.startsWith("/stock-transfers"))
+      );
+    });
+  };
+
   return (
     <>
       <aside
@@ -24,17 +72,82 @@ export default function DashboardSidebar({
         <MorrusLogo />
         <div className="mt-8 flex-1 overflow-y-auto pr-1 space-y-2">
           {navigation.map((item) => {
+            if (item.subItems) {
+              const isExpanded = !!expandedGroups[item.label];
+              const groupActive = isGroupActive(item);
+
+              return (
+                <div key={item.label} className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(item.label)}
+                    className={`menu-item w-full flex items-center justify-between ${
+                      groupActive ? "menu-item-active" : "menu-item-inactive"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`menu-item-icon-size ${
+                          groupActive ? "menu-item-icon-active" : "menu-item-icon-inactive"
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      <span className="menu-item-text">{item.label}</span>
+                    </div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="pl-9 space-y-1">
+                      {item.subItems.map((sub) => {
+                        const isSubActive =
+                          location.pathname === sub.path ||
+                          (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||
+                          (sub.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
+                          (sub.path === "/stock-transfers/outgoing" &&
+                            location.pathname.startsWith("/stock-transfers"));
+
+                        return (
+                          <Link
+                            key={sub.path}
+                            to={sub.path}
+                            onClick={onNavigate}
+                            className={`menu-dropdown-item ${
+                              isSubActive
+                                ? "menu-dropdown-item-active"
+                                : "menu-dropdown-item-inactive"
+                            }`}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             const isActive =
               location.pathname === item.path ||
-              (item.path !== "/dashboard" && location.pathname.startsWith(item.path)) ||
-              (item.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
-              (item.path === "/stock-transfers/outgoing" &&
-                location.pathname.startsWith("/stock-transfers"));
+              (item.path !== "/dashboard" && location.pathname.startsWith(item.path!));
 
             return (
               <Link
                 key={item.path}
-                to={item.path}
+                to={item.path!}
                 onClick={onNavigate}
                 className={`menu-item ${
                   isActive ? "menu-item-active" : "menu-item-inactive"

@@ -4,9 +4,7 @@ import {
   DocsIcon,
   GridIcon,
   GroupIcon,
-  ListIcon,
   PlugInIcon,
-  TableIcon,
   TaskIcon,
 } from "../../icons";
 import type { AuthSession } from "../../features/auth/types/auth";
@@ -33,13 +31,21 @@ export type PermissionCode =
 
 export type MenuStatus = "active" | "placeholder";
 
-export type NavItem = {
+export type NavSubItem = {
   label: string;
   path: string;
+  requiredPermissions?: PermissionCode[];
+  fallbackRoles?: AppRole[];
+};
+
+export type NavItem = {
+  label: string;
+  path?: string;
   icon: ReactNode;
   requiredPermissions?: PermissionCode[];
   fallbackRoles?: AppRole[];
   status: MenuStatus;
+  subItems?: NavSubItem[];
 };
 
 const ownerAdminRoles: AppRole[] = ["Owner", "Admin"];
@@ -61,126 +67,136 @@ export const appNavigation: NavItem[] = [
     status: "active",
   },
   {
-    label: "Sesi Kasir",
-    path: "/cashier/session",
-    icon: <TaskIcon />,
-    requiredPermissions: ["transaction.create"],
-    fallbackRoles: transactionCreateRoles,
-    status: "active",
-  },
-  {
-    label: "POS Kasir",
-    path: "/pos",
+    label: "Penjualan",
     icon: <PlugInIcon />,
-    requiredPermissions: ["transaction.create"],
-    fallbackRoles: transactionCreateRoles,
     status: "active",
+    subItems: [
+      {
+        label: "Sesi Kasir",
+        path: "/cashier/session",
+        requiredPermissions: ["transaction.create"],
+        fallbackRoles: transactionCreateRoles,
+      },
+      {
+        label: "POS Kasir",
+        path: "/pos",
+        requiredPermissions: ["transaction.create"],
+        fallbackRoles: transactionCreateRoles,
+      },
+      {
+        label: "Transaksi",
+        path: "/transactions",
+        fallbackRoles: transactionReadRoles,
+      },
+    ],
   },
   {
-    label: "Transaksi",
-    path: "/transactions",
-    icon: <DocsIcon />,
-    fallbackRoles: transactionReadRoles,
-    status: "active",
-  },
-  {
-    label: "Produk",
-    path: "/products",
+    label: "Produk & Stok",
     icon: <BoxCubeIcon />,
-    requiredPermissions: ["product.manage"],
-    fallbackRoles: productRoles,
     status: "active",
+    subItems: [
+      {
+        label: "Produk",
+        path: "/products",
+        requiredPermissions: ["product.manage"],
+        fallbackRoles: productRoles,
+      },
+      {
+        label: "Kategori",
+        path: "/categories",
+        requiredPermissions: ["product.manage"],
+        fallbackRoles: productRoles,
+      },
+      {
+        label: "Stok",
+        path: "/inventory",
+        requiredPermissions: ["stock.manage"],
+        fallbackRoles: stockRoles,
+      },
+      {
+        label: "Transfer Stok",
+        path: "/stock-transfers/outgoing",
+        requiredPermissions: ["stock.manage"],
+        fallbackRoles: stockRoles,
+      },
+    ],
   },
   {
-    label: "Kategori",
-    path: "/categories",
-    icon: <ListIcon />,
-    requiredPermissions: ["product.manage"],
-    fallbackRoles: productRoles,
-    status: "active",
-  },
-  {
-    label: "Stok",
-    path: "/inventory",
-    icon: <TableIcon />,
-    requiredPermissions: ["stock.manage"],
-    fallbackRoles: stockRoles,
-    status: "active",
-  },
-  {
-    label: "Transfer Stok",
-    path: "/stock-transfers/outgoing",
-    icon: <DocsIcon />,
-    requiredPermissions: ["stock.manage"],
-    fallbackRoles: stockRoles,
-    status: "active",
-  },
-  {
-    label: "Supplier",
-    path: "/suppliers",
-    icon: <GroupIcon />,
-    requiredPermissions: ["supplier.manage"],
-    fallbackRoles: supplierRoles,
-    status: "active",
-  },
-  {
-    label: "Purchase Order",
-    path: "/purchase-orders",
+    label: "Pembelian & Supplier",
     icon: <TaskIcon />,
-    requiredPermissions: ["supplier.manage"],
-    fallbackRoles: supplierRoles,
     status: "active",
-  },
-  {
-    label: "Utang Supplier",
-    path: "/supplier-debts",
-    icon: <DocsIcon />,
-    requiredPermissions: ["supplier.manage"],
-    fallbackRoles: supplierRoles,
-    status: "active",
+    subItems: [
+      {
+        label: "Supplier",
+        path: "/suppliers",
+        requiredPermissions: ["supplier.manage"],
+        fallbackRoles: supplierRoles,
+      },
+      {
+        label: "Purchase Order",
+        path: "/purchase-orders",
+        requiredPermissions: ["supplier.manage"],
+        fallbackRoles: supplierRoles,
+      },
+      {
+        label: "Utang Supplier",
+        path: "/supplier-debts",
+        requiredPermissions: ["supplier.manage"],
+        fallbackRoles: supplierRoles,
+      },
+    ],
   },
   {
     label: "Konsinyasi",
-    path: "/consignments",
     icon: <BoxCubeIcon />,
-    requiredPermissions: ["consignment.manage"],
-    fallbackRoles: consignmentRoles,
     status: "active",
+    subItems: [
+      {
+        label: "Daftar Konsinyasi",
+        path: "/consignments",
+        requiredPermissions: ["consignment.manage"],
+        fallbackRoles: consignmentRoles,
+      },
+    ],
   },
   {
-    label: "Pengguna",
-    path: "/users",
+    label: "Laporan",
+    icon: <DocsIcon />,
+    status: "active",
+    subItems: [
+      {
+        label: "Laba Rugi",
+        path: "/reports/profit-loss",
+        fallbackRoles: reportRoles,
+      },
+      {
+        label: "Rekap Pembelian",
+        path: "/reports/purchases",
+        fallbackRoles: reportRoles,
+      },
+      {
+        label: "Rekap Penjualan",
+        path: "/reports/sales",
+        fallbackRoles: reportRoles,
+      },
+    ],
+  },
+  {
+    label: "Pengaturan",
     icon: <GroupIcon />,
-    fallbackRoles: ownerAdminRoles,
     status: "active",
-  },
-  {
-    label: "Cabang",
-    path: "/outlets",
-    icon: <DocsIcon />,
-    fallbackRoles: ownerAdminRoles,
-    status: "active",
-  },
-  {
-    label: "Laba Rugi",
-    path: "/reports/profit-loss",
-    icon: <DocsIcon />,
-    fallbackRoles: reportRoles,
-    status: "active",
-  },
-  {
-    label: "Rekap Pembelian",
-    path: "/reports/purchases",
-    icon: <DocsIcon />,
-    fallbackRoles: reportRoles,
-    status: "active",
-  },
-  {
-    label: "Rekap Penjualan",
-    path: "/reports/sales",
-    icon: <DocsIcon />,
-    fallbackRoles: reportRoles,
-    status: "active",
+    subItems: [
+      {
+        label: "Kelola Pengguna",
+        path: "/users",
+        fallbackRoles: ownerAdminRoles,
+      },
+      {
+        label: "Kelola Cabang",
+        path: "/outlets",
+        fallbackRoles: ownerAdminRoles,
+      },
+    ],
   },
 ];
 
@@ -191,14 +207,46 @@ export function getVisibleNavigation(
     return [];
   }
 
-  return appNavigation.filter((item) => {
-    return canAccessByPolicy(session, {
-      requiredPermissions: item.requiredPermissions,
-      fallbackRoles: item.fallbackRoles,
+  return appNavigation
+    .map((item) => {
+      if (item.subItems) {
+        const visibleSubItems = item.subItems.filter((sub) =>
+          canAccessByPolicy(session, {
+            requiredPermissions: sub.requiredPermissions,
+            fallbackRoles: sub.fallbackRoles,
+          })
+        );
+        return { ...item, subItems: visibleSubItems };
+      }
+      return item;
+    })
+    .filter((item) => {
+      if (item.subItems) {
+        return item.subItems.length > 0;
+      }
+      return canAccessByPolicy(session, {
+        requiredPermissions: item.requiredPermissions,
+        fallbackRoles: item.fallbackRoles,
+      });
     });
-  });
 }
 
 export function getNavigationItem(path: string) {
-  return appNavigation.find((item) => item.path === path) ?? null;
+  for (const item of appNavigation) {
+    if (item.path === path) {
+      return item;
+    }
+    if (item.subItems) {
+      const foundSub = item.subItems.find((sub) => sub.path === path);
+      if (foundSub) {
+        return {
+          label: foundSub.label,
+          path: foundSub.path,
+          icon: item.icon,
+          status: "active" as MenuStatus,
+        };
+      }
+    }
+  }
+  return null;
 }
