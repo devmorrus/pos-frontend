@@ -53,7 +53,7 @@ export default function OpnameItemsEditor({
             >
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Produk
+                  Produk <span className="text-error-500">*</span>
                 </span>
                 <select
                   value={item.productId}
@@ -80,7 +80,7 @@ export default function OpnameItemsEditor({
 
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Physical qty
+                  Physical qty <span className="text-error-500">*</span>
                 </span>
                 <input
                   type="number"
@@ -90,6 +90,7 @@ export default function OpnameItemsEditor({
                   onChange={(event) => onChange(index, "physicalQty", event.target.value)}
                   className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 />
+                <p className="mt-1 text-xs text-gray-400">Harus berupa angka 0 atau lebih.</p>
               </label>
 
               <div className="flex items-end">

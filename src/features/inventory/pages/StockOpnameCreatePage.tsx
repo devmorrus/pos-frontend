@@ -83,12 +83,24 @@ export default function StockOpnameCreatePage() {
       return;
     }
 
-    const normalizedItems = items
-      .map((item) => ({
-        productId: item.productId,
-        physicalQty: Number(item.physicalQty),
-      }))
-      .filter((item) => item.productId && Number.isFinite(item.physicalQty) && item.physicalQty >= 0);
+    const hasEmptyProduct = items.some((item) => !item.productId);
+    if (hasEmptyProduct) {
+      setError("Setiap baris item wajib memiliki produk yang dipilih.");
+      return;
+    }
+
+    const hasInvalidQty = items.some(
+      (item) => item.physicalQty === "" || !Number.isFinite(Number(item.physicalQty)) || Number(item.physicalQty) < 0
+    );
+    if (hasInvalidQty) {
+      setError("Physical Qty harus berupa angka 0 atau lebih untuk semua item.");
+      return;
+    }
+
+    const normalizedItems = items.map((item) => ({
+      productId: item.productId,
+      physicalQty: Number(item.physicalQty),
+    }));
 
     if (normalizedItems.length === 0) {
       setError("Isi minimal satu item opname yang valid.");

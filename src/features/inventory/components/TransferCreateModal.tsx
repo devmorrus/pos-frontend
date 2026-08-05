@@ -78,12 +78,34 @@ export default function TransferCreateModal({
       return;
     }
 
-    const normalizedItems = items
-      .map((item) => ({
-        productId: item.productId,
-        qty: Number(item.qty),
-      }))
-      .filter((item) => item.productId && Number.isFinite(item.qty) && item.qty > 0);
+    const hasEmptyProduct = items.some((item) => !item.productId);
+    if (hasEmptyProduct) {
+      setValidationError("Setiap baris item wajib memiliki produk yang dipilih.");
+      return;
+    }
+
+    const hasInvalidQty = items.some(
+      (item) => !item.qty || !Number.isFinite(Number(item.qty)) || Number(item.qty) <= 0
+    );
+    if (hasInvalidQty) {
+      setValidationError("Qty transfer harus berupa angka lebih besar dari 0 untuk semua item.");
+      return;
+    }
+
+    for (const item of items) {
+      const inv = inventoryItems.find((entry) => entry.productId === item.productId);
+      if (inv && Number(item.qty) > inv.qtyOnHand) {
+        setValidationError(
+          `Qty transfer untuk ${inv.productName} (${Number(item.qty)}) melebihi stok tersedia (${inv.qtyOnHand}).`
+        );
+        return;
+      }
+    }
+
+    const normalizedItems = items.map((item) => ({
+      productId: item.productId,
+      qty: Number(item.qty),
+    }));
 
     if (normalizedItems.length === 0) {
       setValidationError("Isi minimal satu item transfer yang valid.");
@@ -127,7 +149,7 @@ export default function TransferCreateModal({
 
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Outlet tujuan
+                  Outlet tujuan <span className="text-error-500">*</span>
                 </span>
                 <select
                   value={toOutletId}
@@ -171,7 +193,7 @@ export default function TransferCreateModal({
                   >
                     <label className="block">
                       <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Produk
+                        Produk <span className="text-error-500">*</span>
                       </span>
                       <select
                         value={item.productId}
@@ -198,7 +220,7 @@ export default function TransferCreateModal({
 
                     <label className="block">
                       <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Qty
+                        Qty <span className="text-error-500">*</span>
                       </span>
                       <input
                         type="number"
@@ -208,6 +230,10 @@ export default function TransferCreateModal({
                         onChange={(event) => updateItem(index, "qty", event.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
+                      {selectedInventory && Number(item.qty) > selectedInventory.qtyOnHand && (
+                        <p className="mt-1 text-xs text-error-600">Melebihi stok tersedia ({formatQuantity(selectedInventory.qtyOnHand)}).</p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-400">Harus lebih besar dari 0.</p>
                     </label>
 
                     <div className="flex items-end">
