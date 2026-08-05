@@ -52,7 +52,7 @@ export type PurchaseOrderFormRow = {
 
 export type PurchaseOrderFormValues = {
   supplierId: string;
-  paymentType: "cash" | "tempo";
+  paymentType: "cash" | "tempo" | "consignment";
   dueDate: string;
   items: PurchaseOrderFormRow[];
 };

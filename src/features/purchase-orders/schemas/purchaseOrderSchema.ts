@@ -21,6 +21,10 @@ export function validatePurchaseOrderForm(values: PurchaseOrderFormValues) {
     }
   }
 
+  if (values.paymentType === "consignment" && values.dueDate) {
+    errors.dueDate = "Tanggal jatuh tempo tidak boleh diisi untuk PO konsinyasi.";
+  }
+
   if (values.items.length === 0) {
     errors.items = "Minimal satu item wajib diisi.";
     return errors;

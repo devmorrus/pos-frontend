@@ -202,11 +202,19 @@ export default function PurchaseOrderCreatePage() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Tipe pembayaran</span>
                 <select
                   value={values.paymentType}
-                  onChange={(event) => updateValue("paymentType", event.target.value as "cash" | "tempo")}
+                  onChange={(event) => {
+                    const nextVal = event.target.value as "cash" | "tempo" | "consignment";
+                    setValues((current) => ({
+                      ...current,
+                      paymentType: nextVal,
+                      dueDate: nextVal === "tempo" ? current.dueDate : "",
+                    }));
+                  }}
                   className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="cash">Cash</option>
                   <option value="tempo">Tempo</option>
+                  <option value="consignment">Konsinyasi</option>
                 </select>
               </label>
             </div>
