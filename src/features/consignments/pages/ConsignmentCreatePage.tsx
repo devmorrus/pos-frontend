@@ -49,14 +49,39 @@ function validate(values: ConsignmentFormValues) {
 
     if (!item.qty || Number(item.qty) <= 0) {
       errors[`items.${index}.qty`] = "Qty harus lebih dari 0.";
+    } else if (Number(item.qty) > 99999999.99) {
+      errors[`items.${index}.qty`] = "Qty tidak boleh melebihi 99.999.999,99.";
+    } else if (item.qty.includes(".")) {
+      const decimals = item.qty.split(".")[1];
+      if (decimals && decimals.length > 2) {
+        errors[`items.${index}.qty`] = "Qty maksimal 2 digit desimal.";
+      }
     }
 
     if (!item.unitCost || Number(item.unitCost) <= 0) {
       errors[`items.${index}.unitCost`] = "Unit cost harus lebih dari 0.";
+    } else if (Number(item.unitCost) > 99999999999.99) {
+      errors[`items.${index}.unitCost`] = "Unit cost tidak boleh melebihi 99.999.999.999,99.";
+    } else if (item.unitCost.includes(".")) {
+      const decimals = item.unitCost.split(".")[1];
+      if (decimals && decimals.length > 2) {
+        errors[`items.${index}.unitCost`] = "Unit cost maksimal 2 digit desimal.";
+      }
     }
 
     if (!item.unitPrice || Number(item.unitPrice) <= 0) {
       errors[`items.${index}.unitPrice`] = "Unit price harus lebih dari 0.";
+    } else if (Number(item.unitPrice) > 99999999999.99) {
+      errors[`items.${index}.unitPrice`] = "Unit price tidak boleh melebihi 99.999.999.999,99.";
+    } else if (item.unitPrice.includes(".")) {
+      const decimals = item.unitPrice.split(".")[1];
+      if (decimals && decimals.length > 2) {
+        errors[`items.${index}.unitPrice`] = "Unit price maksimal 2 digit desimal.";
+      }
+    }
+
+    if (item.unitCost && item.unitPrice && Number(item.unitPrice) < Number(item.unitCost)) {
+      errors[`items.${index}.unitPrice`] = "Harga jual tidak boleh kurang dari bagi hasil.";
     }
   });
 
