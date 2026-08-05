@@ -26,6 +26,9 @@ import ConsignmentCreatePage from "../../features/consignments/pages/Consignment
 import ConsignmentDetailPage from "../../features/consignments/pages/ConsignmentDetailPage";
 import ConsignmentSettlementsPage from "../../features/consignments/pages/ConsignmentSettlementsPage";
 import ConsignmentSettlementDetailPage from "../../features/consignments/pages/ConsignmentSettlementDetailPage";
+import ConsignmentReturnsPage from "../../features/consignments/pages/ConsignmentReturnsPage";
+import ConsignmentReturnCreatePage from "../../features/consignments/pages/ConsignmentReturnCreatePage";
+import ConsignmentReturnDetailPage from "../../features/consignments/pages/ConsignmentReturnDetailPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportPage";
 import SupplierDebtsPage from "../../features/debts/pages/SupplierDebtsPage";
@@ -352,6 +355,39 @@ export default function AppRouter() {
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
               >
                 <ConsignmentDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="consignments/returns"
+            element={
+              <PermissionGuard
+                requiredPermissions={consignmentsPolicy?.requiredPermissions}
+                fallbackRoles={consignmentsPolicy?.fallbackRoles}
+              >
+                <ConsignmentReturnsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="consignments/returns/create"
+            element={
+              <PermissionGuard
+                requiredPermissions={consignmentsPolicy?.requiredPermissions}
+                fallbackRoles={consignmentsPolicy?.fallbackRoles}
+              >
+                <ConsignmentReturnCreatePage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="consignments/returns/:id"
+            element={
+              <PermissionGuard
+                requiredPermissions={consignmentsPolicy?.requiredPermissions}
+                fallbackRoles={consignmentsPolicy?.fallbackRoles}
+              >
+                <ConsignmentReturnDetailPage />
               </PermissionGuard>
             }
           />

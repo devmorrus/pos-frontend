@@ -6,32 +6,39 @@ import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui"
 import { getErrorMessage } from "../../../utils/errors";
 import ProcurementOutletSelector from "../../procurement/components/ProcurementOutletSelector";
 import { useProcurementOutletScope } from "../../procurement/hooks/useProcurementOutletScope";
-import { getConsignments } from "../api/consignmentsApi";
-import type { ConsignmentDto } from "../types/consignment";
-import {
-  formatDateTime,
-  getConsignmentStatusClasses,
-} from "../utils/formatters";
+import { getConsignmentReturns } from "../api/consignmentsApi";
+import type { ConsignmentReturnDto } from "../types/consignment";
+import { formatDateTime } from "../utils/formatters";
 
-type ConsignmentsLocationState = {
+type ConsignmentReturnsLocationState = {
   successMessage?: string;
 };
 
-export default function ConsignmentsPage() {
+export function getConsignmentReturnStatusClasses(status: string) {
+  if (status === "completed") {
+    return "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300";
+  }
+  if (status === "cancelled") {
+    return "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300";
+  }
+  return "bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-300";
+}
+
+export default function ConsignmentReturnsPage() {
   const location = useLocation();
   const { ownerMode, activeOutlets, effectiveOutletId, selectedOutletId, setSelectedOutletId } =
     useProcurementOutletScope();
-  const [consignments, setConsignments] = useState<ConsignmentDto[]>([]);
+  const [returns, setReturns] = useState<ConsignmentReturnDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage] = useState<string | null>(
-    (location.state as ConsignmentsLocationState | null)?.successMessage ?? null,
+    (location.state as ConsignmentReturnsLocationState | null)?.successMessage ?? null,
   );
 
   useEffect(() => {
-    async function loadConsignments() {
+    async function loadReturns() {
       if (!effectiveOutletId) {
-        setConsignments([]);
+        setReturns([]);
         setError(null);
         setIsLoading(false);
         return;
@@ -41,30 +48,30 @@ export default function ConsignmentsPage() {
       setError(null);
 
       try {
-        setConsignments(await getConsignments(effectiveOutletId));
+        setReturns(await getConsignmentReturns(effectiveOutletId));
       } catch (requestError) {
-        setError(getErrorMessage(requestError, "Gagal memuat daftar konsinyasi."));
+        setError(getErrorMessage(requestError, "Gagal memuat daftar retur konsinyasi."));
       } finally {
         setIsLoading(false);
       }
     }
 
-    void loadConsignments();
+    void loadReturns();
   }, [effectiveOutletId]);
 
   const shouldShowOutletPrompt = ownerMode && !effectiveOutletId;
 
   return (
     <ProtectedPageShell
-      title="Konsinyasi"
-      description="Kelola tanda terima barang titipan supplier dan settlement hak supplier per outlet aktif."
+      title="Retur Konsinyasi"
+      description="Kelola pengembalian barang titipan konsinyasi yang tidak laku atau ditarik kembali oleh supplier."
     >
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={error} />
 
       <AppTableShell
-        title="Daftar tanda terima konsinyasi"
-        description={`Total tanda terima: ${consignments.length}`}
+        title="Daftar retur konsinyasi"
+        description={`Total dokumen retur: ${returns.length}`}
         actions={
           <>
             <ProcurementOutletSelector
@@ -74,41 +81,35 @@ export default function ConsignmentsPage() {
               outlets={activeOutlets}
             />
             <Link
-              to="/consignment-settlements"
+              to="/consignments"
               className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
             >
-              Settlement
+              Tanda Terima
             </Link>
             <Link
-              to="/consignments/returns"
-              className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
-            >
-              Retur
-            </Link>
-            <Link
-              to="/consignments/create"
+              to="/consignments/returns/create"
               className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
             >
-              Buat tanda terima
+              Buat retur
             </Link>
           </>
         }
       >
         {isLoading ? (
-          <AppLoader label="Memuat daftar konsinyasi..." />
+          <AppLoader label="Memuat daftar retur konsinyasi..." />
         ) : shouldShowOutletPrompt ? (
           <div className="p-6">
             <PagePlaceholder
-              title="Pilih outlet konsinyasi terlebih dahulu"
-              description="Owner perlu memilih outlet aktif agar daftar tanda terima konsinyasi memakai konteks yang benar."
+              title="Pilih outlet terlebih dahulu"
+              description="Owner perlu memilih outlet aktif agar daftar retur konsinyasi memakai konteks yang benar."
               status="Outlet required"
             />
           </div>
-        ) : consignments.length === 0 ? (
+        ) : returns.length === 0 ? (
           <div className="p-6">
             <PagePlaceholder
-              title="Belum ada tanda terima konsinyasi"
-              description="Buat tanda terima pertama agar barang titipan supplier bisa diproses menjadi stok konsinyasi."
+              title="Belum ada retur konsinyasi"
+              description="Buat retur konsinyasi pertama jika ada barang titipan supplier yang ingin ditarik kembali."
               status="Empty"
             />
           </div>
@@ -116,7 +117,7 @@ export default function ConsignmentsPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-950">
               <tr>
-                {["No. Konsinyasi", "Supplier", "Outlet", "Tanggal", "Status", "Jumlah item", "Aksi"].map((column) => (
+                {["No. Retur", "Supplier", "Outlet", "Tanggal", "Status", "Jumlah item", "Aksi"].map((column) => (
                   <th
                     key={column}
                     className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -127,35 +128,35 @@ export default function ConsignmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {consignments.map((consignment) => (
-                <tr key={consignment.id}>
+              {returns.map((ret) => (
+                <tr key={ret.id}>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    {consignment.consignmentNumber}
+                    {ret.returnNumber}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
-                    {consignment.supplierName}
+                    {ret.supplierName}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {consignment.outletName}
+                    {ret.outletName}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {formatDateTime(consignment.receiveDate)}
+                    {formatDateTime(ret.returnDate)}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${getConsignmentStatusClasses(
-                        consignment.status,
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${getConsignmentReturnStatusClasses(
+                        ret.status,
                       )}`}
                     >
-                      {consignment.status}
+                      {ret.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {consignment.items.length}
+                    {ret.items.length}
                   </td>
                   <td className="px-6 py-4">
                     <Link
-                      to={`/consignments/${consignment.id}`}
+                      to={`/consignments/returns/${ret.id}`}
                       className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
                     >
                       Detail

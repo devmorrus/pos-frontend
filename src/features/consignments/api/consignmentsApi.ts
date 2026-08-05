@@ -7,6 +7,9 @@ import type {
   CreateConsignmentSettlementRequest,
   UpdateConsignmentSettlementStatusRequest,
   UpdateConsignmentStatusRequest,
+  ConsignmentReturnDto,
+  CreateConsignmentReturnRequest,
+  UpdateConsignmentReturnStatusRequest,
 } from "../types/consignment";
 
 export function getConsignments(outletId: string) {
@@ -54,4 +57,21 @@ export function updateConsignmentSettlementStatus(
     `/api/consignmentsettlements/${id}/status`,
     payload,
   );
+}
+
+export function getConsignmentReturns(outletId: string) {
+  const params = new URLSearchParams({ outletId });
+  return apiClient.get<ConsignmentReturnDto[]>(`/api/consignments/returns?${params.toString()}`);
+}
+
+export function getConsignmentReturnById(id: string) {
+  return apiClient.get<ConsignmentReturnDto>(`/api/consignments/returns/${id}`);
+}
+
+export function createConsignmentReturn(payload: CreateConsignmentReturnRequest) {
+  return apiClient.post<ConsignmentReturnDto>("/api/consignments/returns", payload);
+}
+
+export function updateConsignmentReturnStatus(id: string, payload: UpdateConsignmentReturnStatusRequest) {
+  return apiClient.put<ConsignmentReturnDto>(`/api/consignments/returns/${id}/status`, payload);
 }

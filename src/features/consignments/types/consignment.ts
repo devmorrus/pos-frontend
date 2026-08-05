@@ -83,3 +83,48 @@ export type ConsignmentFormValues = {
   supplierId: string;
   items: ConsignmentFormRow[];
 };
+
+export type ConsignmentReturnItemDto = {
+  productId: string;
+  productName: string;
+  sku: string;
+  qty: number;
+};
+
+export type ConsignmentReturnDto = {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  outletId: string;
+  outletName: string;
+  returnNumber: string;
+  returnDate: string;
+  status: "draft" | "completed" | "cancelled" | string;
+  items: ConsignmentReturnItemDto[];
+};
+
+export type CreateConsignmentReturnItemRequest = {
+  productId: string;
+  qty: number;
+};
+
+export type CreateConsignmentReturnRequest = {
+  supplierId: string;
+  outletId: string;
+  items: CreateConsignmentReturnItemRequest[];
+};
+
+export type UpdateConsignmentReturnStatusRequest = {
+  status: "completed" | "cancelled" | string;
+};
+
+export type ConsignmentReturnFormRow = {
+  productId: string;
+  qty: string;
+};
+
+export type ConsignmentReturnFormValues = {
+  supplierId: string;
+  items: ConsignmentReturnFormRow[];
+};
+

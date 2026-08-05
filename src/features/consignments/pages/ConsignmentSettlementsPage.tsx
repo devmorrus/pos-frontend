@@ -249,12 +249,20 @@ export default function ConsignmentSettlementsPage() {
         title="Riwayat settlement konsinyasi"
         description={`Total settlement: ${settlements.length}`}
         actions={
-          <Link
-            to="/consignments"
-            className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
-          >
-            Kembali ke tanda terima
-          </Link>
+          <>
+            <Link
+              to="/consignments"
+              className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+            >
+              Tanda Terima
+            </Link>
+            <Link
+              to="/consignments/returns"
+              className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+            >
+              Retur
+            </Link>
+          </>
         }
       >
         {isLoading ? (
