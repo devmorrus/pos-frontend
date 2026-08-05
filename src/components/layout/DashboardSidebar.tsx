@@ -17,12 +17,12 @@ export default function DashboardSidebar({
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-9999 w-72 border-r border-gray-200 bg-white px-5 py-6 shadow-theme-lg transition-transform duration-300 dark:border-gray-800 dark:bg-gray-900 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-9999 w-72 flex flex-col border-r border-gray-200 bg-white px-5 py-6 shadow-theme-lg transition-transform duration-300 dark:border-gray-800 dark:bg-gray-900 lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <MorrusLogo />
-        <div className="mt-8 space-y-2">
+        <div className="mt-8 flex-1 overflow-y-auto pr-1 space-y-2">
           {navigation.map((item) => {
             const isActive =
               location.pathname === item.path ||
