@@ -31,6 +31,8 @@ import ConsignmentReturnCreatePage from "../../features/consignments/pages/Consi
 import ConsignmentReturnDetailPage from "../../features/consignments/pages/ConsignmentReturnDetailPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportPage";
+import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapReportPage";
+import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
 import SupplierDebtsPage from "../../features/debts/pages/SupplierDebtsPage";
 import SupplierDebtPaymentsPage from "../../features/debts/pages/SupplierDebtPaymentsPage";
 import InventoryPage from "../../features/inventory/pages/InventoryPage";
@@ -73,6 +75,8 @@ const usersPolicy = getNavigationItem("/users");
 const outletsPolicy = getNavigationItem("/outlets");
 const dashboardPolicy = getNavigationItem("/dashboard");
 const reportPolicy = getNavigationItem("/reports/profit-loss");
+const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
+const salesRecapPolicy = getNavigationItem("/reports/sales");
 
 export default function AppRouter() {
   return (
@@ -118,6 +122,28 @@ export default function AppRouter() {
                 fallbackRoles={reportPolicy?.fallbackRoles}
               >
                 <ProfitLossReportPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/purchases"
+            element={
+              <PermissionGuard
+                requiredPermissions={purchaseRecapPolicy?.requiredPermissions}
+                fallbackRoles={purchaseRecapPolicy?.fallbackRoles}
+              >
+                <PurchaseRecapReportPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/sales"
+            element={
+              <PermissionGuard
+                requiredPermissions={salesRecapPolicy?.requiredPermissions}
+                fallbackRoles={salesRecapPolicy?.fallbackRoles}
+              >
+                <SalesRecapReportPage />
               </PermissionGuard>
             }
           />

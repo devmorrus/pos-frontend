@@ -168,6 +168,20 @@ export const appNavigation: NavItem[] = [
     fallbackRoles: reportRoles,
     status: "active",
   },
+  {
+    label: "Rekap Pembelian",
+    path: "/reports/purchases",
+    icon: <DocsIcon />,
+    fallbackRoles: reportRoles,
+    status: "active",
+  },
+  {
+    label: "Rekap Penjualan",
+    path: "/reports/sales",
+    icon: <DocsIcon />,
+    fallbackRoles: reportRoles,
+    status: "active",
+  },
 ];
 
 export function getVisibleNavigation(
