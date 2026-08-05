@@ -57,10 +57,27 @@ export default function PaySupplierDebtModal({
       nextErrors.amount = "Nominal pembayaran harus lebih dari 0.";
     } else if (debt && Number(values.amount) > debt.remainingAmount) {
       nextErrors.amount = "Nominal pembayaran tidak boleh melebihi sisa utang.";
+    } else if (Number(values.amount) > 99999999999.99) {
+      nextErrors.amount = "Nominal pembayaran tidak boleh melebihi 99.999.999.999,99.";
+    } else if (values.amount.includes(".")) {
+      const decimals = values.amount.split(".")[1];
+      if (decimals && decimals.length > 2) {
+        nextErrors.amount = "Nominal pembayaran maksimal 2 digit desimal.";
+      }
     }
 
     if (!values.paymentMethod.trim()) {
       nextErrors.paymentMethod = "Metode pembayaran wajib diisi.";
+    } else if (values.paymentMethod.trim().length > 30) {
+      nextErrors.paymentMethod = "Metode pembayaran maksimal 30 karakter.";
+    }
+
+    if (values.referenceNumber.trim()) {
+      if (values.referenceNumber.trim().length > 100) {
+        nextErrors.referenceNumber = "Reference number maksimal 100 karakter.";
+      } else if (!/^[a-zA-Z0-9\-\.\/]+$/.test(values.referenceNumber.trim())) {
+        nextErrors.referenceNumber = "Reference number hanya boleh mengandung huruf, angka, strip, titik, dan garis miring.";
+      }
     }
 
     return nextErrors;
@@ -140,6 +157,7 @@ export default function PaySupplierDebtModal({
                   onChange={(event) => handleChange("referenceNumber", event.target.value)}
                   className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 />
+                <FieldErrorText message={errors.referenceNumber} />
               </label>
 
               <div className="flex items-center justify-end gap-3">

@@ -70,13 +70,36 @@ export default function SupplierFormModal({
 
     if (!values.name.trim()) {
       nextErrors.name = "Nama supplier wajib diisi.";
+    } else if (values.name.trim().length < 2) {
+      nextErrors.name = "Nama supplier minimal 2 karakter.";
+    } else if (values.name.trim().length > 100) {
+      nextErrors.name = "Nama supplier maksimal 100 karakter.";
+    } else if (!/^[a-zA-Z0-9\s.,\-&()'/]+$/.test(values.name.trim())) {
+      nextErrors.name = "Nama hanya boleh mengandung huruf, angka, spasi, titik, koma, strip, ampersand, tanda kurung, petik satu, dan garis miring.";
+    }
+
+    if (values.contactPerson.trim() && values.contactPerson.trim().length > 100) {
+      nextErrors.contactPerson = "Nama kontak maksimal 100 karakter.";
+    }
+
+    if (values.phone.trim()) {
+      const phoneRegex = /^\+?[0-9\s\-]{8,20}$/;
+      if (!phoneRegex.test(values.phone.trim())) {
+        nextErrors.phone = "Format telepon tidak valid. Gunakan 8–20 digit, boleh mengandung spasi, strip, atau diawali +.";
+      }
     }
 
     if (values.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(values.email.trim())) {
         nextErrors.email = "Format email tidak valid.";
+      } else if (values.email.trim().length > 100) {
+        nextErrors.email = "Email maksimal 100 karakter.";
       }
+    }
+
+    if (values.address.trim() && values.address.trim().length > 500) {
+      nextErrors.address = "Alamat maksimal 500 karakter.";
     }
 
     return nextErrors;
@@ -110,12 +133,13 @@ export default function SupplierFormModal({
         <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>
           <div className="grid gap-5 md:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Nama</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Nama <span className="text-error-500">*</span></span>
               <input
                 value={values.name}
                 onChange={(event) => handleChange("name", event.target.value)}
                 className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
               />
+              <p className="mt-1 text-xs text-gray-400">2–100 karakter. Hanya huruf, angka, spasi, dan simbol dasar.</p>
               <FieldErrorText message={errors.name} />
             </label>
             <label className="block">
@@ -125,6 +149,8 @@ export default function SupplierFormModal({
                 onChange={(event) => handleChange("contactPerson", event.target.value)}
                 className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
               />
+              <p className="mt-1 text-xs text-gray-400">Opsional. Maks 100 karakter.</p>
+              <FieldErrorText message={errors.contactPerson} />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Telepon</span>
@@ -133,6 +159,8 @@ export default function SupplierFormModal({
                 onChange={(event) => handleChange("phone", event.target.value)}
                 className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
               />
+              <p className="mt-1 text-xs text-gray-400">Opsional. Format: 8–15 digit, boleh diawali +.</p>
+              <FieldErrorText message={errors.phone} />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Email</span>
@@ -141,6 +169,7 @@ export default function SupplierFormModal({
                 onChange={(event) => handleChange("email", event.target.value)}
                 className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
               />
+              <p className="mt-1 text-xs text-gray-400">Opsional. Format email standard (contoh: supplier@email.com).</p>
               <FieldErrorText message={errors.email} />
             </label>
           </div>
@@ -153,6 +182,8 @@ export default function SupplierFormModal({
               rows={4}
               className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
             />
+            <p className="mt-1 text-xs text-gray-400">Opsional. Maks 500 karakter.</p>
+            <FieldErrorText message={errors.address} />
           </label>
 
           {mode === "edit" ? (
