@@ -24,6 +24,7 @@ import {
   getConsignmentTone,
   getStockBadgeClasses,
 } from "../utils/presentation";
+import { API_BASE_URL } from "../../../api/client/config";
 
 type ProductsLocationState = {
   successMessage?: string;
@@ -197,6 +198,7 @@ export default function ProductsPage() {
             <thead className="bg-gray-50 dark:bg-gray-950">
               <tr>
                 {[
+                  "Foto",
                   "SKU",
                   "Nama",
                   "Kategori",
@@ -219,6 +221,21 @@ export default function ProductsPage() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {products.map((product) => (
                 <tr key={product.id} className="align-top">
+                  <td className="px-6 py-4">
+                    {product.imageUrl ? (
+                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+                        <img
+                          src={`${API_BASE_URL}${product.imageUrl}`}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-xs font-semibold text-gray-500">
+                        {product.name.substring(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                     {product.sku}
                   </td>

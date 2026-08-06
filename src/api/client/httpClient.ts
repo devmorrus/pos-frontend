@@ -69,7 +69,9 @@ async function executeRequest<T>(
   const { auth = true, body, headers, ...rest } = options;
   const mergedHeaders = new Headers(headers ?? {});
 
-  if (body !== undefined && !mergedHeaders.has("Content-Type")) {
+  const isFormData = body instanceof FormData;
+
+  if (body !== undefined && !mergedHeaders.has("Content-Type") && !isFormData) {
     Object.entries(jsonHeaders).forEach(([key, value]) => mergedHeaders.set(key, value));
   }
 
@@ -84,7 +86,9 @@ async function executeRequest<T>(
     ...rest,
     method,
     headers: mergedHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body !== undefined
+      ? (isFormData ? (body as any) : JSON.stringify(body))
+      : undefined,
   });
 
   if (response.status === 401 && auth && !hasRetried && sessionBridge.getRefreshToken()) {

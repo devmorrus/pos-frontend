@@ -20,6 +20,7 @@ const initialValues: ProductFormValues = {
   unit: "",
   isConsignment: false,
   isActive: true,
+  imageUrl: "",
 };
 
 export default function ProductCreatePage() {
@@ -78,6 +79,7 @@ export default function ProductCreatePage() {
         costPrice: Number(values.costPrice),
         unit: values.unit.trim(),
         isConsignment: values.isConsignment,
+        imageUrl: values.imageUrl.trim() || null,
       });
 
       navigate("/products", {

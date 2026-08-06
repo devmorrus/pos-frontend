@@ -8,6 +8,7 @@ import { useRealtime } from "../../../lib/realtime/hooks";
 import { getErrorMessage } from "../../../utils/errors";
 import { getProducts } from "../../products/api/productsApi";
 import type { ProductDto } from "../../products/types/product";
+import { API_BASE_URL } from "../../../api/client/config";
 import { useCashierSession } from "../hooks/useCashierSession";
 import { checkoutTransaction } from "../../transactions/api/transactionsApi";
 import type {
@@ -440,27 +441,47 @@ export default function PosPage() {
                     type="button"
                     disabled={outOfStock}
                     onClick={() => addToCart(product)}
-                    className="rounded-2xl border border-gray-200 p-4 text-left transition hover:border-brand-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-800 dark:hover:border-brand-500/40"
+                    className="flex gap-4 items-center rounded-2xl border border-gray-200 p-3 text-left transition hover:border-brand-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-800 dark:hover:border-brand-500/40 bg-white dark:bg-gray-900"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">{product.name}</h3>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{product.sku}</p>
+                    {/* Product Image Thumbnail */}
+                    {product.imageUrl ? (
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-855 bg-gray-50 dark:bg-gray-950 flex-shrink-0">
+                        <img
+                          src={`${API_BASE_URL}${product.imageUrl}`}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          outOfStock
-                            ? "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300"
-                            : "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"
-                        }`}
-                      >
-                        Stok {product.qtyOnHand}
-                      </span>
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 flex items-center justify-center text-lg font-bold text-gray-400 dark:text-gray-600 flex-shrink-0">
+                        {product.name.substring(0, 1).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between h-16">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm sm:text-base leading-snug">{product.name}</h3>
+                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">{product.sku}</p>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold flex-shrink-0 ${
+                            outOfStock
+                              ? "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300"
+                              : "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"
+                          }`}
+                        >
+                          Stok {product.qtyOnHand}
+                        </span>
+                      </div>
+
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-sm font-bold text-brand-600 dark:text-brand-400">
+                          {formatCurrency(product.basePrice)}
+                        </span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 uppercase">{product.unit}</span>
+                      </div>
                     </div>
-                    <p className="mt-4 text-sm font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(product.basePrice)}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{product.unit}</p>
                   </button>
                 );
               })}

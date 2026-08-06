@@ -8,6 +8,7 @@ export type ProductDto = {
   unit: string;
   isConsignment: boolean;
   qtyOnHand: number;
+  imageUrl?: string | null;
 };
 
 export type CreateProductRequest = {
@@ -19,6 +20,7 @@ export type CreateProductRequest = {
   costPrice: number;
   unit: string;
   isConsignment: boolean;
+  imageUrl?: string | null;
 };
 
 export type UpdateProductRequest = CreateProductRequest & {
@@ -39,4 +41,5 @@ export type ProductFormValues = {
   unit: string;
   isConsignment: boolean;
   isActive: boolean;
+  imageUrl: string;
 };

@@ -32,3 +32,9 @@ export function updateProduct(id: string, payload: UpdateProductRequest) {
 export function deleteProduct(id: string) {
   return apiClient.delete<void>(`/api/products/${id}`);
 }
+
+export function uploadProductImage(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiClient.post<{ url: string }>("/api/products/upload-image", formData);
+}

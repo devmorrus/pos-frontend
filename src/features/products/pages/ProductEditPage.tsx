@@ -20,6 +20,7 @@ const initialValues: ProductFormValues = {
   unit: "",
   isConsignment: false,
   isActive: true,
+  imageUrl: "",
 };
 
 export default function ProductEditPage() {
@@ -61,6 +62,7 @@ export default function ProductEditPage() {
           unit: productResult.unit,
           isConsignment: productResult.isConsignment,
           isActive: true,
+          imageUrl: productResult.imageUrl ?? "",
         });
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat detail produk."));
@@ -107,6 +109,7 @@ export default function ProductEditPage() {
         unit: values.unit.trim(),
         isConsignment: values.isConsignment,
         isActive: values.isActive,
+        imageUrl: values.imageUrl.trim() || null,
       });
 
       navigate("/products", {

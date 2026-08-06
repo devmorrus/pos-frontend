@@ -1,4 +1,5 @@
-import type { FormEvent } from "react";
+import { useState } from "react";
+import type { FormEvent, ChangeEvent } from "react";
 import { Link } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import { FieldErrorText, FormCard } from "../../../components/forms";
@@ -6,6 +7,9 @@ import InlineAlert from "../../../components/ui/InlineAlert";
 import type { CategoryDto } from "../../categories/types/category";
 import type { ProductFieldErrors } from "../schemas/productSchema";
 import type { ProductFormValues } from "../types/product";
+import { uploadProductImage } from "../api/productsApi";
+import { API_BASE_URL } from "../../../api/client/config";
+import { getErrorMessage } from "../../../utils/errors";
 
 type ProductFormProps = {
   mode: "create" | "edit";
@@ -29,6 +33,30 @@ export default function ProductForm({
   onSubmit,
 }: ProductFormProps) {
   const isEditMode = mode === "edit";
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const res = await uploadProductImage(file);
+      onChange("imageUrl", res.url);
+    } catch (err) {
+      setUploadError(getErrorMessage(err, "Gagal mengunggah foto."));
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  function handleRemoveImage() {
+    onChange("imageUrl", "");
+  }
 
   return (
     <div className="space-y-6">
@@ -177,6 +205,58 @@ export default function ProductForm({
                 </span>
               </label>
             ) : null}
+
+            <div className="block md:col-span-2">
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Foto Produk
+              </span>
+              <InlineAlert tone="error" message={uploadError} />
+              
+              <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+                {values.imageUrl ? (
+                  <div className="relative group overflow-hidden w-24 h-24 rounded-2xl border border-gray-200 dark:border-gray-800">
+                    <img
+                      src={`${API_BASE_URL}${values.imageUrl}`}
+                      alt="Pratonton"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute inset-0 bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white font-semibold text-xs rounded-2xl"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="product-image-file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                  <label
+                    htmlFor="product-image-file"
+                    className="inline-flex items-center cursor-pointer rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                  >
+                    {isUploading ? "Mengunggah..." : values.imageUrl ? "Ganti Foto" : "Unggah Foto"}
+                  </label>
+                  <p className="mt-2 text-xs text-gray-400">
+                    Format PNG, JPG, JPEG, atau WEBP. Maksimal 2MB.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-3">
