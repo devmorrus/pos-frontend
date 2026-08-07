@@ -55,7 +55,7 @@ const productRoles: AppRole[] = ["Owner", "Admin", "Gudang", "KepalaCabang"];
 const stockRoles: AppRole[] = ["Owner", "Admin", "Gudang", "KepalaCabang"];
 const supplierRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const consignmentRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
-const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
+const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Gudang", "Kasir"];
 const reportRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
 
 export const appNavigation: NavItem[] = [
