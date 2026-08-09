@@ -31,6 +31,9 @@ export function getStoredAuthSession(): AuthSession | null {
       role: parsed.role,
       outletId: parsed.outletId ?? null,
       permissions: Array.isArray(parsed.permissions) ? parsed.permissions : [],
+      businessId: parsed.businessId ?? null,
+      subscriptionStatus: parsed.subscriptionStatus ?? null,
+      trialEndDate: parsed.trialEndDate ?? null,
     };
   } catch {
     localStorage.removeItem(STORAGE_KEY);

@@ -17,6 +17,16 @@ import AppErrorState from "../../components/ui/AppErrorState";
 import AuthGuard from "../guards/AuthGuard";
 import GuestGuard from "../guards/GuestGuard";
 import PermissionGuard from "../guards/PermissionGuard";
+import SubscriptionGuard from "../guards/SubscriptionGuard";
+import SubscriptionExpiredPage from "../../features/dashboard/pages/SubscriptionExpiredPage";
+import SaaSLandingPage from "../../pages/LandingPage";
+import OnboardingWizardPage from "../../pages/OnboardingWizardPage";
+import { useAuth } from "../../features/auth/hooks/useAuth";
+
+function HomeRedirect() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <SaaSLandingPage />;
+}
 import AuthLayout from "../../components/layout/AuthLayout";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import SignInPage from "../../features/auth/pages/SignInPage";
@@ -83,6 +93,17 @@ export default function AppRouter() {
     <BrowserRouter>
       <ScrollToTop />
       <Routes>
+        <Route path="/" element={<HomeRedirect />} />
+
+        <Route
+          path="/signup"
+          element={
+            <GuestGuard>
+              <OnboardingWizardPage />
+            </GuestGuard>
+          }
+        />
+
         <Route
           path="/signin"
           element={
@@ -95,14 +116,23 @@ export default function AppRouter() {
         </Route>
 
         <Route
-          path="/"
+          path="/subscription-expired"
           element={
             <AuthGuard>
-              <DashboardLayout />
+              <SubscriptionExpiredPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          element={
+            <AuthGuard>
+              <SubscriptionGuard>
+                <DashboardLayout />
+              </SubscriptionGuard>
             </AuthGuard>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route
             path="dashboard"
             element={

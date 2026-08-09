@@ -6,6 +6,9 @@ export type AuthSession = {
   role: string;
   outletId: string | null;
   permissions: string[];
+  businessId: string | null;
+  subscriptionStatus: string | null;
+  trialEndDate: string | null;
 };
 
 export type LoginRequest = {

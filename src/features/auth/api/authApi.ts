@@ -17,3 +17,7 @@ export function refreshTokenRequest(payload: RefreshTokenRequest) {
 export async function revokeTokenRequest(payload: RevokeTokenRequest) {
   await publicClient.post<void>("/api/auth/revoke", payload);
 }
+
+export function registerOwnerRequest(payload: any) {
+  return publicClient.post<AuthSession>("/api/auth/register-owner", payload);
+}
