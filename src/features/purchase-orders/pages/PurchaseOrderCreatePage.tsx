@@ -59,7 +59,7 @@ export default function PurchaseOrderCreatePage() {
           getProducts({ outletId: effectiveOutletId }),
         ]);
         setSuppliers(suppliersResult);
-        setProducts(productsResult);
+        setProducts(productsResult.filter((product) => !product.isConsignment));
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat lookup purchase order."));
       } finally {
