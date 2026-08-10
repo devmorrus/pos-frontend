@@ -45,6 +45,10 @@ import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapR
 import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
 import SupplierDebtsPage from "../../features/debts/pages/SupplierDebtsPage";
 import SupplierDebtPaymentsPage from "../../features/debts/pages/SupplierDebtPaymentsPage";
+import ChannelAccountsPage from "../../features/channels/pages/ChannelAccountsPage";
+import ChannelSettlementsPage from "../../features/channels/pages/ChannelSettlementsPage";
+import ChannelSettlementDetailPage from "../../features/channels/pages/ChannelSettlementDetailPage";
+import ChannelSettlementFormPage from "../../features/channels/pages/ChannelSettlementFormPage";
 import InventoryPage from "../../features/inventory/pages/InventoryPage";
 import StockOpnameCreatePage from "../../features/inventory/pages/StockOpnameCreatePage";
 import StockOpnameDetailPage from "../../features/inventory/pages/StockOpnameDetailPage";
@@ -61,6 +65,9 @@ import PurchaseOrdersPage from "../../features/purchase-orders/pages/PurchaseOrd
 import PurchaseOrderCreatePage from "../../features/purchase-orders/pages/PurchaseOrderCreatePage";
 import PurchaseOrderDetailPage from "../../features/purchase-orders/pages/PurchaseOrderDetailPage";
 import SuppliersPage from "../../features/suppliers/pages/SuppliersPage";
+import SupplierReturnsPage from "../../features/supplier-returns/pages/SupplierReturnsPage";
+import SupplierReturnDetailPage from "../../features/supplier-returns/pages/SupplierReturnDetailPage";
+import SupplierReturnFormPage from "../../features/supplier-returns/pages/SupplierReturnFormPage";
 import ChangePasswordPage from "../../features/users/pages/ChangePasswordPage";
 import UserCreatePage from "../../features/users/pages/UserCreatePage";
 import UserEditPage from "../../features/users/pages/UserEditPage";
@@ -80,6 +87,9 @@ const stockTransfersPolicy = getNavigationItem("/stock-transfers/outgoing");
 const suppliersPolicy = getNavigationItem("/suppliers");
 const purchaseOrdersPolicy = getNavigationItem("/purchase-orders");
 const supplierDebtsPolicy = getNavigationItem("/supplier-debts");
+const supplierReturnsPolicy = getNavigationItem("/supplier-returns");
+const channelAccountsPolicy = getNavigationItem("/channel-accounts");
+const channelSettlementsPolicy = getNavigationItem("/channel-settlements");
 const consignmentsPolicy = getNavigationItem("/consignments");
 const usersPolicy = getNavigationItem("/users");
 const outletsPolicy = getNavigationItem("/outlets");
@@ -378,6 +388,105 @@ export default function AppRouter() {
                 fallbackRoles={supplierDebtsPolicy?.fallbackRoles}
               >
                 <SupplierDebtPaymentsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="supplier-returns"
+            element={
+              <PermissionGuard
+                requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
+                fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+              >
+                <SupplierReturnsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="supplier-returns/create"
+            element={
+              <PermissionGuard
+                requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
+                fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+              >
+                <SupplierReturnFormPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="supplier-returns/:id/edit"
+            element={
+              <PermissionGuard
+                requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
+                fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+              >
+                <SupplierReturnFormPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="supplier-returns/:id"
+            element={
+              <PermissionGuard
+                requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
+                fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+              >
+                <SupplierReturnDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="channel-accounts"
+            element={
+              <PermissionGuard
+                requiredPermissions={channelAccountsPolicy?.requiredPermissions}
+                fallbackRoles={channelAccountsPolicy?.fallbackRoles}
+              >
+                <ChannelAccountsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="channel-settlements"
+            element={
+              <PermissionGuard
+                requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
+                fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+              >
+                <ChannelSettlementsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="channel-settlements/create"
+            element={
+              <PermissionGuard
+                requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
+                fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+              >
+                <ChannelSettlementFormPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="channel-settlements/:id/edit"
+            element={
+              <PermissionGuard
+                requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
+                fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+              >
+                <ChannelSettlementFormPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="channel-settlements/:id"
+            element={
+              <PermissionGuard
+                requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
+                fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+              >
+                <ChannelSettlementDetailPage />
               </PermissionGuard>
             }
           />

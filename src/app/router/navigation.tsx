@@ -25,7 +25,9 @@ export type PermissionCode =
   | "product.manage"
   | "stock.manage"
   | "supplier.manage"
+  | "supplier_return.manage"
   | "consignment.manage"
+  | "channel_settlement.manage"
   | "report.view"
   | string;
 
@@ -54,7 +56,9 @@ const transactionReadRoles: AppRole[] = ["Owner", "Admin", "Kasir", "Keuangan", 
 const productRoles: AppRole[] = ["Owner", "Admin", "Gudang", "KepalaCabang"];
 const stockRoles: AppRole[] = ["Owner", "Admin", "Gudang", "KepalaCabang"];
 const supplierRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
+const supplierReturnRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const consignmentRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
+const channelRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Gudang", "Kasir"];
 const reportRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
 
@@ -143,6 +147,31 @@ export const appNavigation: NavItem[] = [
         path: "/supplier-debts",
         requiredPermissions: ["supplier.manage"],
         fallbackRoles: supplierRoles,
+      },
+      {
+        label: "Supplier Return",
+        path: "/supplier-returns",
+        requiredPermissions: ["supplier_return.manage"],
+        fallbackRoles: supplierReturnRoles,
+      },
+    ],
+  },
+  {
+    label: "Channel",
+    icon: <PlugInIcon />,
+    status: "active",
+    subItems: [
+      {
+        label: "Channel Accounts",
+        path: "/channel-accounts",
+        requiredPermissions: ["channel_settlement.manage"],
+        fallbackRoles: channelRoles,
+      },
+      {
+        label: "Channel Settlements",
+        path: "/channel-settlements",
+        requiredPermissions: ["channel_settlement.manage"],
+        fallbackRoles: channelRoles,
       },
     ],
   },
