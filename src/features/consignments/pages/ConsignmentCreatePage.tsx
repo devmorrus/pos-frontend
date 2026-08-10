@@ -119,7 +119,7 @@ export default function ConsignmentCreatePage() {
         ]);
 
         setSuppliers(suppliersResult);
-        setProducts(productsResult);
+        setProducts(productsResult.filter((product) => product.isConsignment));
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat lookup konsinyasi."));
       } finally {
