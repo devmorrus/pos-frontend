@@ -21,6 +21,8 @@ const initialValues: ProductFormValues = {
   isConsignment: false,
   isActive: true,
   imageUrl: "",
+  isTaxable: "inherit",
+  isServiceChargeable: "inherit",
 };
 
 export default function ProductCreatePage() {
@@ -80,6 +82,8 @@ export default function ProductCreatePage() {
         unit: values.unit.trim(),
         isConsignment: values.isConsignment,
         imageUrl: values.imageUrl.trim() || null,
+        isTaxable: values.isTaxable === "inherit" ? null : values.isTaxable === "true",
+        isServiceChargeable: values.isServiceChargeable === "inherit" ? null : values.isServiceChargeable === "true",
       });
 
       navigate("/products", {

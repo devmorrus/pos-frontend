@@ -28,6 +28,7 @@ export type PermissionCode =
   | "supplier_return.manage"
   | "consignment.manage"
   | "channel_settlement.manage"
+  | "pricing.manage"
   | "report.view"
   | string;
 
@@ -59,6 +60,7 @@ const supplierRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const supplierReturnRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const consignmentRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const channelRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
+const pricingRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Gudang", "Kasir"];
 const reportRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
 
@@ -172,6 +174,31 @@ export const appNavigation: NavItem[] = [
         path: "/channel-settlements",
         requiredPermissions: ["channel_settlement.manage"],
         fallbackRoles: channelRoles,
+      },
+    ],
+  },
+  {
+    label: "Pricing",
+    icon: <DocsIcon />,
+    status: "active",
+    subItems: [
+      {
+        label: "Tax & Service",
+        path: "/pricing/tax-service",
+        requiredPermissions: ["pricing.manage"],
+        fallbackRoles: pricingRoles,
+      },
+      {
+        label: "Promo Campaigns",
+        path: "/pricing/promo-campaigns",
+        requiredPermissions: ["pricing.manage"],
+        fallbackRoles: pricingRoles,
+      },
+      {
+        label: "Vouchers",
+        path: "/pricing/vouchers",
+        requiredPermissions: ["pricing.manage"],
+        fallbackRoles: pricingRoles,
       },
     ],
   },

@@ -192,6 +192,36 @@ export default function ProductForm({
               </span>
             </label>
 
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Override pajak
+              </span>
+              <select
+                value={values.isTaxable}
+                onChange={(event) => onChange("isTaxable", event.target.value)}
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              >
+                <option value="inherit">Ikut default outlet</option>
+                <option value="true">Kena pajak</option>
+                <option value="false">Bebas pajak</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Override service charge
+              </span>
+              <select
+                value={values.isServiceChargeable}
+                onChange={(event) => onChange("isServiceChargeable", event.target.value)}
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              >
+                <option value="inherit">Ikut default outlet</option>
+                <option value="true">Kena service charge</option>
+                <option value="false">Bebas service charge</option>
+              </select>
+            </label>
+
             {isEditMode ? (
               <label className="inline-flex items-center gap-3">
                 <input

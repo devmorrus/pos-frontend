@@ -101,8 +101,20 @@ export default function ReceiptCard({ transaction }: ReceiptCardProps) {
               <dd className="font-medium text-gray-900 dark:text-white">{formatCurrency(transaction.subtotal)}</dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-gray-500 dark:text-gray-400">Diskon</dt>
-              <dd className="font-medium text-gray-900 dark:text-white">{formatCurrency(transaction.discountTotal)}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Diskon manual</dt>
+              <dd className="font-medium text-gray-900 dark:text-white">{formatCurrency(transaction.manualDiscountTotal)}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500 dark:text-gray-400">Promo</dt>
+              <dd className="font-medium text-gray-900 dark:text-white">{formatCurrency(transaction.promoDiscountTotal)}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500 dark:text-gray-400">Voucher</dt>
+              <dd className="font-medium text-gray-900 dark:text-white">{formatCurrency(transaction.voucherDiscountTotal)}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500 dark:text-gray-400">Service charge</dt>
+              <dd className="font-medium text-gray-900 dark:text-white">{formatCurrency(transaction.serviceChargeTotal)}</dd>
             </div>
             <div className="flex items-center justify-between">
               <dt className="text-gray-500 dark:text-gray-400">Pajak</dt>

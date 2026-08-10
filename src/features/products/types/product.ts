@@ -9,6 +9,8 @@ export type ProductDto = {
   isConsignment: boolean;
   qtyOnHand: number;
   imageUrl?: string | null;
+  isTaxable?: boolean | null;
+  isServiceChargeable?: boolean | null;
 };
 
 export type CreateProductRequest = {
@@ -21,6 +23,8 @@ export type CreateProductRequest = {
   unit: string;
   isConsignment: boolean;
   imageUrl?: string | null;
+  isTaxable?: boolean | null;
+  isServiceChargeable?: boolean | null;
 };
 
 export type UpdateProductRequest = CreateProductRequest & {
@@ -42,4 +46,6 @@ export type ProductFormValues = {
   isConsignment: boolean;
   isActive: boolean;
   imageUrl: string;
+  isTaxable: "inherit" | "true" | "false";
+  isServiceChargeable: "inherit" | "true" | "false";
 };

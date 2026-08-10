@@ -170,9 +170,27 @@ export default function TransactionDetailPage() {
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">Diskon</dt>
+                  <dt className="text-gray-500 dark:text-gray-400">Diskon manual</dt>
                   <dd className="font-medium text-gray-900 dark:text-white">
-                    {formatCurrency(transaction.discountTotal)}
+                    {formatCurrency(transaction.manualDiscountTotal)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-gray-500 dark:text-gray-400">Promo</dt>
+                  <dd className="font-medium text-gray-900 dark:text-white">
+                    {formatCurrency(transaction.promoDiscountTotal)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-gray-500 dark:text-gray-400">Voucher</dt>
+                  <dd className="font-medium text-gray-900 dark:text-white">
+                    {formatCurrency(transaction.voucherDiscountTotal)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-gray-500 dark:text-gray-400">Service charge</dt>
+                  <dd className="font-medium text-gray-900 dark:text-white">
+                    {formatCurrency(transaction.serviceChargeTotal)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
@@ -181,6 +199,18 @@ export default function TransactionDetailPage() {
                     {formatCurrency(transaction.taxTotal)}
                   </dd>
                 </div>
+                {transaction.appliedPromoName ? (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-gray-500 dark:text-gray-400">Promo aktif</dt>
+                    <dd className="font-medium text-gray-900 dark:text-white">{transaction.appliedPromoName}</dd>
+                  </div>
+                ) : null}
+                {transaction.appliedVoucherCode ? (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-gray-500 dark:text-gray-400">Voucher</dt>
+                    <dd className="font-medium text-gray-900 dark:text-white">{transaction.appliedVoucherCode}</dd>
+                  </div>
+                ) : null}
                 <div className="flex items-center justify-between border-t border-gray-200 pt-3 dark:border-gray-800">
                   <dt className="font-semibold text-gray-900 dark:text-white">Grand Total</dt>
                   <dd className="text-lg font-semibold text-gray-900 dark:text-white">

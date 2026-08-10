@@ -10,11 +10,12 @@ import { getProducts } from "../../products/api/productsApi";
 import type { ProductDto } from "../../products/types/product";
 import { API_BASE_URL } from "../../../api/client/config";
 import { useCashierSession } from "../hooks/useCashierSession";
-import { checkoutTransaction } from "../../transactions/api/transactionsApi";
+import { checkoutTransaction, previewTransactionPricing } from "../../transactions/api/transactionsApi";
 import type {
   CheckoutRequest,
   PaymentRequest,
 } from "../../transactions/types/transaction";
+import type { PricingBreakdownDto } from "../../pricing/types/pricing";
 
 type CartItem = {
   productId: string;
@@ -70,9 +71,13 @@ export default function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([createPaymentRow()]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isPricingLoading, setIsPricingLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [pricing, setPricing] = useState<PricingBreakdownDto | null>(null);
 
   const ownerMode = isOwner(session?.role);
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
@@ -151,16 +156,22 @@ export default function PosPage() {
     });
   }, [products, searchTerm]);
 
-  const subtotal = useMemo(
+  const fallbackSubtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.unitPrice * (Number(item.qty) || 0), 0),
     [cart],
   );
-  const discountTotal = useMemo(
+  const fallbackManualDiscountTotal = useMemo(
     () => cart.reduce((sum, item) => sum + (Number(item.discountAmount) || 0), 0),
     [cart],
   );
-  const taxTotal = 0;
-  const grandTotal = subtotal - discountTotal + taxTotal;
+  const subtotal = pricing?.subtotal ?? fallbackSubtotal;
+  const manualDiscountTotal = pricing?.manualDiscountTotal ?? fallbackManualDiscountTotal;
+  const promoDiscountTotal = pricing?.promoDiscountTotal ?? 0;
+  const voucherDiscountTotal = pricing?.voucherDiscountTotal ?? 0;
+  const discountTotal = manualDiscountTotal + promoDiscountTotal + voucherDiscountTotal;
+  const serviceChargeTotal = pricing?.serviceChargeTotal ?? 0;
+  const taxTotal = pricing?.taxTotal ?? 0;
+  const grandTotal = pricing?.grandTotal ?? Math.max(0, fallbackSubtotal - fallbackManualDiscountTotal);
   const totalPayment = useMemo(
     () => payments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0),
     [payments],
@@ -183,6 +194,41 @@ export default function PosPage() {
     }
     return 0;
   }, [totalPayment, grandTotal, hasCashPayment]);
+
+  useEffect(() => {
+    if (!effectiveOutletId || cart.length === 0) {
+      setPricing(null);
+      setPricingError(null);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsPricingLoading(true);
+      setPricingError(null);
+
+      try {
+        const result = await previewTransactionPricing({
+          outletId: effectiveOutletId,
+          channel: "pos",
+          voucherCode: voucherCode.trim() || null,
+          items: cart.map((item) => ({
+            productId: item.productId,
+            qty: Number(item.qty) || 0,
+            unitPrice: item.unitPrice,
+            discountAmount: Number(item.discountAmount) || 0,
+          })),
+        });
+        setPricing(result);
+      } catch (requestError) {
+        setPricing(null);
+        setPricingError(getErrorMessage(requestError, "Gagal menghitung pricing checkout."));
+      } finally {
+        setIsPricingLoading(false);
+      }
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cart, effectiveOutletId, voucherCode]);
 
   function addToCart(product: ProductDto) {
     if (product.qtyOnHand <= 0) {
@@ -350,6 +396,8 @@ export default function PosPage() {
           })
           .filter((p) => p.amount > 0);
       })(),
+      voucherCode: voucherCode.trim() || null,
+      appliedPromoCode: pricing?.appliedPromo?.code ?? null,
     };
 
     setIsSubmitting(true);
@@ -359,6 +407,8 @@ export default function PosPage() {
       const result = await checkoutTransaction(payload);
       setCart([]);
       setPayments([createPaymentRow()]);
+      setVoucherCode("");
+      setPricing(null);
       await loadProducts();
       await refreshCurrentSession();
       navigate(`/transactions/${result.id}`);
@@ -413,6 +463,7 @@ export default function PosPage() {
 
       <InlineAlert tone="error" message={error} />
       <InlineAlert tone="info" message={warning} />
+      <InlineAlert tone="error" message={pricingError} />
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
@@ -565,18 +616,52 @@ export default function PosPage() {
           </div>
 
           <div className="mt-6 space-y-3 border-t border-gray-200 pt-5 dark:border-gray-800">
+            <label className="block">
+              <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Kode voucher</span>
+              <input
+                value={voucherCode}
+                onChange={(event) => setVoucherCode(event.target.value)}
+                placeholder="Masukkan voucher jika ada"
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              />
+            </label>
+            {isPricingLoading ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400">Menghitung pricing terbaru...</p>
+            ) : null}
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
               <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Diskon</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(discountTotal)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Diskon item manual</span>
+              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(manualDiscountTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Promo otomatis</span>
+              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(promoDiscountTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Voucher</span>
+              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(voucherDiscountTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Service charge</span>
+              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(serviceChargeTotal)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Pajak</span>
               <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(taxTotal)}</span>
             </div>
+            {pricing?.appliedPromo ? (
+              <div className="rounded-2xl bg-brand-50 px-4 py-3 text-xs text-brand-700 dark:bg-brand-500/10 dark:text-brand-200">
+                Promo aktif: {pricing.appliedPromo.name}
+              </div>
+            ) : null}
+            {pricing?.appliedVoucher ? (
+              <div className="rounded-2xl bg-success-50 px-4 py-3 text-xs text-success-700 dark:bg-success-500/10 dark:text-success-200">
+                Voucher terpakai: {pricing.appliedVoucher.code}
+              </div>
+            ) : null}
             <div className="flex items-center justify-between text-base font-semibold">
               <span className="text-gray-900 dark:text-white">Grand Total</span>
               <span className="text-gray-900 dark:text-white">{formatCurrency(grandTotal)}</span>
@@ -661,7 +746,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => void handleCheckout()}
-              disabled={isSubmitting || !paymentBalanced || cart.length === 0}
+              disabled={isSubmitting || isPricingLoading || !paymentBalanced || cart.length === 0}
               className="inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-5 py-4 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Memproses checkout..." : "Checkout sekarang"}

@@ -58,12 +58,19 @@ export type TransactionDto = {
   status: string;
   subtotal: number;
   discountTotal: number;
+  manualDiscountTotal: number;
+  promoDiscountTotal: number;
+  voucherDiscountTotal: number;
+  serviceChargeTotal: number;
   taxTotal: number;
   grandTotal: number;
+  appliedVoucherCode: string | null;
+  appliedPromoName: string | null;
   voidedBy: string | null;
   voidedByName: string | null;
   voidedReason: string | null;
   createdAt: string;
+  pricingBreakdown: import("../../pricing/types/pricing").PricingBreakdownDto;
   items: TransactionItemDto[];
   payments: PaymentDto[];
   returns: TransactionReturnDto[];
@@ -93,6 +100,8 @@ export type CheckoutRequest = {
   grandTotal: number;
   items: CheckoutItemRequest[];
   payments: PaymentRequest[];
+  voucherCode?: string | null;
+  appliedPromoCode?: string | null;
 };
 
 export type VoidTransactionRequest = {

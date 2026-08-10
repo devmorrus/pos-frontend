@@ -6,6 +6,7 @@ import type {
   TransactionListItemDto,
   VoidTransactionRequest,
 } from "../types/transaction";
+import type { PricingBreakdownDto, PricingPreviewRequest } from "../../pricing/types/pricing";
 
 export function getRecentTransactions(outletId: string, take = 20) {
   const params = new URLSearchParams({
@@ -22,6 +23,10 @@ export function getTransactionById(id: string) {
 
 export function checkoutTransaction(payload: CheckoutRequest) {
   return apiClient.post<TransactionDto>("/api/transactions/checkout", payload);
+}
+
+export function previewTransactionPricing(payload: PricingPreviewRequest) {
+  return apiClient.post<PricingBreakdownDto>("/api/transactions/pricing-preview", payload);
 }
 
 export function voidTransaction(id: string, payload: VoidTransactionRequest) {

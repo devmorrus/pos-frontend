@@ -58,6 +58,9 @@ import StockTransfersIncomingPage from "../../features/inventory/pages/StockTran
 import StockTransfersOutgoingPage from "../../features/inventory/pages/StockTransfersOutgoingPage";
 import OutletsPage from "../../features/outlets/pages/OutletsPage";
 import PosPage from "../../features/pos/pages/PosPage";
+import PricingRulesPage from "../../features/pricing/pages/PricingRulesPage";
+import PromoCampaignsPage from "../../features/pricing/pages/PromoCampaignsPage";
+import VouchersPage from "../../features/pricing/pages/VouchersPage";
 import ProductCreatePage from "../../features/products/pages/ProductCreatePage";
 import ProductEditPage from "../../features/products/pages/ProductEditPage";
 import ProductsPage from "../../features/products/pages/ProductsPage";
@@ -90,6 +93,9 @@ const supplierDebtsPolicy = getNavigationItem("/supplier-debts");
 const supplierReturnsPolicy = getNavigationItem("/supplier-returns");
 const channelAccountsPolicy = getNavigationItem("/channel-accounts");
 const channelSettlementsPolicy = getNavigationItem("/channel-settlements");
+const pricingRulesPolicy = getNavigationItem("/pricing/tax-service");
+const promoCampaignsPolicy = getNavigationItem("/pricing/promo-campaigns");
+const vouchersPolicy = getNavigationItem("/pricing/vouchers");
 const consignmentsPolicy = getNavigationItem("/consignments");
 const usersPolicy = getNavigationItem("/users");
 const outletsPolicy = getNavigationItem("/outlets");
@@ -487,6 +493,39 @@ export default function AppRouter() {
                 fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
               >
                 <ChannelSettlementDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="pricing/tax-service"
+            element={
+              <PermissionGuard
+                requiredPermissions={pricingRulesPolicy?.requiredPermissions}
+                fallbackRoles={pricingRulesPolicy?.fallbackRoles}
+              >
+                <PricingRulesPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="pricing/promo-campaigns"
+            element={
+              <PermissionGuard
+                requiredPermissions={promoCampaignsPolicy?.requiredPermissions}
+                fallbackRoles={promoCampaignsPolicy?.fallbackRoles}
+              >
+                <PromoCampaignsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="pricing/vouchers"
+            element={
+              <PermissionGuard
+                requiredPermissions={vouchersPolicy?.requiredPermissions}
+                fallbackRoles={vouchersPolicy?.fallbackRoles}
+              >
+                <VouchersPage />
               </PermissionGuard>
             }
           />

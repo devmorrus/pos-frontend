@@ -21,6 +21,8 @@ const initialValues: ProductFormValues = {
   isConsignment: false,
   isActive: true,
   imageUrl: "",
+  isTaxable: "inherit",
+  isServiceChargeable: "inherit",
 };
 
 export default function ProductEditPage() {
@@ -63,6 +65,14 @@ export default function ProductEditPage() {
           isConsignment: productResult.isConsignment,
           isActive: true,
           imageUrl: productResult.imageUrl ?? "",
+          isTaxable:
+            productResult.isTaxable == null ? "inherit" : productResult.isTaxable ? "true" : "false",
+          isServiceChargeable:
+            productResult.isServiceChargeable == null
+              ? "inherit"
+              : productResult.isServiceChargeable
+                ? "true"
+                : "false",
         });
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat detail produk."));
@@ -110,6 +120,8 @@ export default function ProductEditPage() {
         isConsignment: values.isConsignment,
         isActive: values.isActive,
         imageUrl: values.imageUrl.trim() || null,
+        isTaxable: values.isTaxable === "inherit" ? null : values.isTaxable === "true",
+        isServiceChargeable: values.isServiceChargeable === "inherit" ? null : values.isServiceChargeable === "true",
       });
 
       navigate("/products", {
