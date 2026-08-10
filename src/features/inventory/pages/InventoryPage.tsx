@@ -182,7 +182,14 @@ export default function InventoryPage() {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.sku}</td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{item.productName}</div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{item.productName}</span>
+                        {item.costPrice > item.basePrice && (
+                          <span className="inline-flex items-center gap-0.5 rounded bg-error-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-error-700 dark:bg-error-500/10 dark:text-error-300">
+                            ⚠️ Margin Negatif
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{item.barcode ?? "Tanpa barcode"}</div>
                     </div>
                   </td>
@@ -196,18 +203,11 @@ export default function InventoryPage() {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{formatQuantity(item.qtyOnHand)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatQuantity(item.minStockAlert)}</td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1.5 items-start">
-                      <StockStatusBadge
-                        qtyOnHand={item.qtyOnHand}
-                        minStockAlert={item.minStockAlert}
-                        isLowStock={item.isLowStock}
-                      />
-                      {item.costPrice > item.basePrice && (
-                        <span className="inline-flex rounded-full bg-error-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-error-700 dark:bg-error-500/10 dark:text-error-300">
-                          Margin Negatif
-                        </span>
-                      )}
-                    </div>
+                    <StockStatusBadge
+                      qtyOnHand={item.qtyOnHand}
+                      minStockAlert={item.minStockAlert}
+                      isLowStock={item.isLowStock}
+                    />
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatDateTime(item.updatedAt)}</td>
                   <td className="px-6 py-4">

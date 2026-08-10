@@ -161,6 +161,15 @@ export default function SupplierReturnFormPage() {
       return;
     }
 
+    // Validate eligible quantity
+    for (const item of selectedItems) {
+      const eligibleItem = eligibleItems.find((e) => e.productId === item.productId);
+      if (eligibleItem && item.qty > eligibleItem.eligibleQty) {
+        setError(`Jumlah retur untuk produk ${eligibleItem.productName} melebihi batas maksimal yang diperbolehkan (${eligibleItem.eligibleQty}).`);
+        return;
+      }
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -302,6 +311,11 @@ export default function SupplierReturnFormPage() {
                               onChange={(event) => updateQty(item.productId, event.target.value)}
                               className="h-11 w-32 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                             />
+                            {Number(qty) > item.eligibleQty && (
+                              <p className="mt-1 text-[10px] font-semibold text-error-600 dark:text-error-400">
+                                Maksimal {item.eligibleQty}
+                              </p>
+                            )}
                           </td>
                           <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white">
                             {formatCurrency((Number(qty || 0) || 0) * item.unitCost)}
