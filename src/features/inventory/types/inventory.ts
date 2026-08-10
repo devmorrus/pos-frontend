@@ -10,6 +10,8 @@ export type InventoryListItem = {
   qtyOnHand: number;
   minStockAlert: number;
   isLowStock: boolean;
+  costPrice: number;
+  basePrice: number;
   updatedAt: string;
 };
 

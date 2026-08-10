@@ -248,8 +248,17 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {product.barcode ?? "-"}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
-                    {formatRupiah(product.basePrice)}
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1.5 items-start">
+                      <span className="text-sm text-gray-700 dark:text-gray-200">
+                        {formatRupiah(product.basePrice)}
+                      </span>
+                      {product.costPrice > product.basePrice && (
+                        <span className="inline-flex rounded-full bg-error-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-error-700 dark:bg-error-500/10 dark:text-error-300">
+                          Margin Negatif
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {product.unit}

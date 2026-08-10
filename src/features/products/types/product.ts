@@ -5,6 +5,7 @@ export type ProductDto = {
   name: string;
   barcode: string | null;
   basePrice: number;
+  costPrice: number;
   unit: string;
   isConsignment: boolean;
   qtyOnHand: number;

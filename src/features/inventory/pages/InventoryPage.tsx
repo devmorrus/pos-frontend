@@ -196,11 +196,18 @@ export default function InventoryPage() {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{formatQuantity(item.qtyOnHand)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatQuantity(item.minStockAlert)}</td>
                   <td className="px-6 py-4">
-                    <StockStatusBadge
-                      qtyOnHand={item.qtyOnHand}
-                      minStockAlert={item.minStockAlert}
-                      isLowStock={item.isLowStock}
-                    />
+                    <div className="flex flex-col gap-1.5 items-start">
+                      <StockStatusBadge
+                        qtyOnHand={item.qtyOnHand}
+                        minStockAlert={item.minStockAlert}
+                        isLowStock={item.isLowStock}
+                      />
+                      {item.costPrice > item.basePrice && (
+                        <span className="inline-flex rounded-full bg-error-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-error-700 dark:bg-error-500/10 dark:text-error-300">
+                          Margin Negatif
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatDateTime(item.updatedAt)}</td>
                   <td className="px-6 py-4">

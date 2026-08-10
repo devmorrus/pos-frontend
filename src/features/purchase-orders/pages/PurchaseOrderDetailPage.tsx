@@ -63,6 +63,43 @@ export default function PurchaseOrderDetailPage() {
     [order],
   );
 
+  const negativeMarginItems = useMemo(() => {
+    if (!order || pendingStatus !== "completed") return [];
+    return order.items.filter((item) => item.unitCost > item.sellingPrice);
+  }, [order, pendingStatus]);
+
+  const confirmDescription = useMemo(() => {
+    if (!pendingStatus) return "";
+    return (
+      <div className="space-y-3 text-left">
+        <p>
+          Anda yakin ingin mengubah status purchase order ini menjadi{" "}
+          <span className="font-semibold">{pendingStatus}</span>?
+        </p>
+        {pendingStatus === "completed" && negativeMarginItems.length > 0 && (
+          <div className="rounded-2xl bg-error-50 p-4 text-error-700 dark:bg-error-500/10 dark:text-error-300 space-y-2">
+            <p className="font-semibold flex items-center gap-1.5 text-xs uppercase tracking-wider">
+              <span>⚠️</span> Peringatan Margin Negatif
+            </p>
+            <p className="text-xs">
+              Unit Cost (harga beli) melebihi Harga Jual saat ini untuk item berikut:
+            </p>
+            <ul className="list-disc pl-4 text-xs space-y-1">
+              {negativeMarginItems.map((item) => (
+                <li key={item.productId}>
+                  {item.productName}: {formatCurrency(item.unitCost)} vs Jual {formatCurrency(item.sellingPrice)}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs font-semibold pt-1">
+              Apakah Anda tetap ingin menyelesaikan PO ini dan memperbarui harga modal produk?
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }, [pendingStatus, negativeMarginItems]);
+
   async function handleStatusConfirm() {
     if (!id || !pendingStatus) {
       return;
@@ -160,7 +197,7 @@ export default function PurchaseOrderDetailPage() {
                   <tr>
                     {["SKU", "Produk", "Qty", "Unit Cost", "Total"].map((column) => (
                       <th
-                        key={column}
+                         key={column}
                         className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
                       >
                         {column}
@@ -198,7 +235,7 @@ export default function PurchaseOrderDetailPage() {
       <ConfirmDialog
         open={Boolean(pendingStatus)}
         title="Ubah status purchase order"
-        description={`Anda yakin ingin mengubah status purchase order ini menjadi ${pendingStatus ?? ""}?`}
+        description={confirmDescription}
         confirmLabel="Proses status"
         isBusy={isSubmitting}
         onCancel={() => setPendingStatus(null)}

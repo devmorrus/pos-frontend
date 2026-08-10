@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { FieldErrorText, FormCard } from "../../../components/forms";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
-import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui";
+import { AppLoader, ConfirmDialog, InlineAlert, PagePlaceholder } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
 import { getProducts } from "../../products/api/productsApi";
 import type { ProductDto } from "../../products/types/product";
@@ -39,6 +39,7 @@ export default function PurchaseOrderCreatePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
 
   useEffect(() => {
     async function loadLookups() {
@@ -76,6 +77,63 @@ export default function PurchaseOrderCreatePage() {
     [products],
   );
 
+  const confirmSubmitDescription = useMemo(() => {
+    const warningItems = values.items
+      .map((item) => {
+        const prod = products.find((p) => p.id === item.productId);
+        if (!prod) return null;
+        const cost = Number(item.unitCost || 0);
+        const exceedsSelling = cost > prod.basePrice;
+        const exceedsCost = cost > prod.costPrice;
+
+        if (exceedsSelling || exceedsCost) {
+          return {
+            name: prod.name,
+            cost,
+            sellingPrice: prod.basePrice,
+            prevCostPrice: prod.costPrice,
+            exceedsSelling,
+            exceedsCost,
+          };
+        }
+        return null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    return (
+      <div className="space-y-3 text-left">
+        <p className="text-sm">
+          Terdapat item pembelian dengan harga beli melebihi harga jual atau harga modal sebelumnya:
+        </p>
+        <div className="rounded-2xl bg-warning-50 p-4 text-warning-700 dark:bg-warning-500/10 dark:text-warning-300 space-y-2">
+          <ul className="list-disc pl-4 text-xs space-y-2">
+            {warningItems.map((item, idx) => (
+              <li key={idx}>
+                <span className="font-semibold">{item.name}</span>
+                <ul className="list-circle pl-4 mt-0.5 space-y-0.5">
+                  <li>Unit Cost Baru: {formatCurrency(item.cost)}</li>
+                  {item.exceedsSelling && (
+                    <li className="text-error-600 dark:text-error-400 font-semibold">
+                      ⚠️ Melebihi Harga Jual Saat Ini ({formatCurrency(item.sellingPrice)})
+                    </li>
+                  )}
+                  {item.exceedsCost && (
+                    <li>
+                      ⚠️ Melebihi Modal Sebelumnya ({formatCurrency(item.prevCostPrice)})
+                    </li>
+                  )}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-sm font-semibold">
+          Apakah Anda yakin ingin tetap menyimpan dokumen Purchase Order ini?
+        </p>
+      </div>
+    );
+  }, [values.items, products]);
+
   function updateValue<Key extends keyof PurchaseOrderFormValues>(key: Key, value: PurchaseOrderFormValues[Key]) {
     setValues((current) => ({ ...current, [key]: value }));
   }
@@ -106,23 +164,15 @@ export default function PurchaseOrderCreatePage() {
     [values.items],
   );
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const nextErrors = validatePurchaseOrderForm(values);
-    setErrors(nextErrors);
-    setSubmitError(null);
-
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
-
+  async function handleActualSubmit() {
     if (!effectiveOutletId) {
       setSubmitError("Pilih outlet procurement terlebih dahulu.");
       return;
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
+    setShowConfirmSubmit(false);
 
     try {
       const result = await createPurchaseOrder({
@@ -145,6 +195,36 @@ export default function PurchaseOrderCreatePage() {
       setSubmitError(getErrorMessage(requestError, "Gagal membuat purchase order."));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextErrors = validatePurchaseOrderForm(values);
+    setErrors(nextErrors);
+    setSubmitError(null);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    if (!effectiveOutletId) {
+      setSubmitError("Pilih outlet procurement terlebih dahulu.");
+      return;
+    }
+
+    const hasWarnings = values.items.some((item) => {
+      const prod = products.find((p) => p.id === item.productId);
+      if (!prod) return false;
+      const cost = Number(item.unitCost || 0);
+      return cost > prod.basePrice || cost > prod.costPrice;
+    });
+
+    if (hasWarnings) {
+      setShowConfirmSubmit(true);
+    } else {
+      await handleActualSubmit();
     }
   }
 
@@ -297,6 +377,11 @@ export default function PurchaseOrderCreatePage() {
                             className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                           />
                           <FieldErrorText message={errors[`items.${index}.unitCost`]} />
+                          {selectedProduct && item.unitCost && Number(item.unitCost) > selectedProduct.basePrice && (
+                            <p className="mt-1.5 text-[11px] font-semibold text-error-600 dark:text-error-400 flex items-center gap-1">
+                              <span>⚠️</span> Melebihi harga jual ({formatCurrency(selectedProduct.basePrice)})
+                            </p>
+                          )}
                         </label>
                         <div className="flex items-end">
                           <button
@@ -343,6 +428,16 @@ export default function PurchaseOrderCreatePage() {
           </form>
         </FormCard>
       )}
+
+      <ConfirmDialog
+        open={showConfirmSubmit}
+        title="Peringatan Harga Item"
+        description={confirmSubmitDescription}
+        confirmLabel="Ya, simpan PO"
+        isBusy={isSubmitting}
+        onCancel={() => setShowConfirmSubmit(false)}
+        onConfirm={() => void handleActualSubmit()}
+      />
     </ProtectedPageShell>
   );
 }

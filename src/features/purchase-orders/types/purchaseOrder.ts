@@ -5,6 +5,7 @@ export type PurchaseOrderItemDto = {
   qty: number;
   unitCost: number;
   totalCost: number;
+  sellingPrice: number;
 };
 
 export type PurchaseOrderDto = {

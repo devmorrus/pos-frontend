@@ -172,12 +172,6 @@ export default function ProductForm({
               />
               <p className="mt-1 text-xs text-gray-400">Harga modal harus lebih rendah dari harga jual.</p>
               <FieldErrorText message={errors.costPrice} />
-              {isEditMode ? (
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Backend fase ini belum mengirim harga modal saat detail produk dibuka, jadi isi
-                  kembali nilainya saat memperbarui produk.
-                </p>
-              ) : null}
             </label>
 
             <label className="inline-flex items-center gap-3">

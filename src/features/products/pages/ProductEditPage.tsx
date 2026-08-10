@@ -60,7 +60,7 @@ export default function ProductEditPage() {
           name: productResult.name,
           barcode: productResult.barcode ?? "",
           basePrice: String(productResult.basePrice),
-          costPrice: "",
+          costPrice: String(productResult.costPrice),
           unit: productResult.unit,
           isConsignment: productResult.isConsignment,
           isActive: true,
