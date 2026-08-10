@@ -29,6 +29,8 @@ export type PermissionCode =
   | "consignment.manage"
   | "channel_settlement.manage"
   | "pricing.manage"
+  | "customer.manage"
+  | "customer.view"
   | "report.view"
   | string;
 
@@ -61,6 +63,7 @@ const supplierReturnRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const consignmentRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const channelRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const pricingRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
+const customerViewRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Kasir"];
 const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Gudang", "Kasir"];
 const reportRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
 
@@ -93,6 +96,12 @@ export const appNavigation: NavItem[] = [
         label: "Transaksi",
         path: "/transactions",
         fallbackRoles: transactionReadRoles,
+      },
+      {
+        label: "Customers",
+        path: "/customers",
+        requiredPermissions: ["customer.view"],
+        fallbackRoles: customerViewRoles,
       },
     ],
   },

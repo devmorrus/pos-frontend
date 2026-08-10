@@ -84,6 +84,28 @@ export default function TransactionDetailPage() {
             </div>
           </section>
 
+          <section className="app-no-print rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Customer</h4>
+            <dl className="mt-4 grid gap-3 md:grid-cols-2 text-sm">
+              <div className="rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800">
+                <dt className="text-gray-500 dark:text-gray-400">Tipe</dt>
+                <dd className="mt-1 font-medium text-gray-900 dark:text-white">{transaction.customerType}</dd>
+              </div>
+              <div className="rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800">
+                <dt className="text-gray-500 dark:text-gray-400">Nama</dt>
+                <dd className="mt-1 font-medium text-gray-900 dark:text-white">{transaction.customerName ?? transaction.externalCustomerName ?? "Guest"}</dd>
+              </div>
+              <div className="rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800">
+                <dt className="text-gray-500 dark:text-gray-400">Phone</dt>
+                <dd className="mt-1 font-medium text-gray-900 dark:text-white">{transaction.customerPhone ?? transaction.externalCustomerPhone ?? "-"}</dd>
+              </div>
+              <div className="rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800">
+                <dt className="text-gray-500 dark:text-gray-400">External Ref</dt>
+                <dd className="mt-1 font-medium text-gray-900 dark:text-white">{transaction.externalCustomerReference ?? "-"}</dd>
+              </div>
+            </dl>
+          </section>
+
           <ReceiptCard transaction={transaction} />
 
           <TransactionActionPanel

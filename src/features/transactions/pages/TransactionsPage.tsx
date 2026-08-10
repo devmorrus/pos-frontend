@@ -116,7 +116,7 @@ export default function TransactionsPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-950">
               <tr>
-                {["Nomor", "Waktu", "Kasir", "Metode", "Channel", "Total", "Status", "Aksi"].map(
+                {["Nomor", "Waktu", "Kasir", "Customer", "Metode", "Channel", "Total", "Status", "Aksi"].map(
                   (column) => (
                     <th
                       key={column}
@@ -139,6 +139,9 @@ export default function TransactionsPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {transaction.userName}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    {transaction.customerName ?? (transaction.customerType === "guest" ? "Guest" : transaction.externalCustomerReference ?? "-")}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {transaction.paymentSummary}

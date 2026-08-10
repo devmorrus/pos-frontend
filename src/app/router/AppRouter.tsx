@@ -76,6 +76,10 @@ import UserCreatePage from "../../features/users/pages/UserCreatePage";
 import UserEditPage from "../../features/users/pages/UserEditPage";
 import UsersPage from "../../features/users/pages/UsersPage";
 import CashierSessionPage from "../../features/pos/pages/CashierSessionPage";
+import CustomerCreatePage from "../../features/customers/pages/CustomerCreatePage";
+import CustomerDetailPage from "../../features/customers/pages/CustomerDetailPage";
+import CustomerEditPage from "../../features/customers/pages/CustomerEditPage";
+import CustomersPage from "../../features/customers/pages/CustomersPage";
 import TransactionDetailPage from "../../features/transactions/pages/TransactionDetailPage";
 import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
 import { getNavigationItem } from "./navigation";
@@ -83,6 +87,7 @@ import { getNavigationItem } from "./navigation";
 const cashierSessionPolicy = getNavigationItem("/cashier/session");
 const posPolicy = getNavigationItem("/pos");
 const transactionsPolicy = getNavigationItem("/transactions");
+const customersPolicy = getNavigationItem("/customers");
 const productsPolicy = getNavigationItem("/products");
 const categoriesPolicy = getNavigationItem("/categories");
 const inventoryPolicy = getNavigationItem("/inventory");
@@ -681,6 +686,50 @@ export default function AppRouter() {
                 fallbackRoles={transactionsPolicy?.fallbackRoles}
               >
                 <TransactionDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="customers"
+            element={
+              <PermissionGuard
+                requiredPermissions={customersPolicy?.requiredPermissions}
+                fallbackRoles={customersPolicy?.fallbackRoles}
+              >
+                <CustomersPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="customers/create"
+            element={
+              <PermissionGuard
+                requiredPermissions={["customer.manage"]}
+                fallbackRoles={["Owner", "Admin", "Keuangan", "KepalaCabang"]}
+              >
+                <CustomerCreatePage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="customers/:id"
+            element={
+              <PermissionGuard
+                requiredPermissions={customersPolicy?.requiredPermissions}
+                fallbackRoles={customersPolicy?.fallbackRoles}
+              >
+                <CustomerDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="customers/:id/edit"
+            element={
+              <PermissionGuard
+                requiredPermissions={["customer.manage"]}
+                fallbackRoles={["Owner", "Admin", "Keuangan", "KepalaCabang"]}
+              >
+                <CustomerEditPage />
               </PermissionGuard>
             }
           />

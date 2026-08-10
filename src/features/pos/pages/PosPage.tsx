@@ -8,6 +8,8 @@ import { useRealtime } from "../../../lib/realtime/hooks";
 import { getErrorMessage } from "../../../utils/errors";
 import { getProducts } from "../../products/api/productsApi";
 import type { ProductDto } from "../../products/types/product";
+import { lookupCustomers } from "../../customers/api/customersApi";
+import type { CustomerListItemDto } from "../../customers/types/customer";
 import { API_BASE_URL } from "../../../api/client/config";
 import { useCashierSession } from "../hooks/useCashierSession";
 import { checkoutTransaction, previewTransactionPricing } from "../../transactions/api/transactionsApi";
@@ -78,6 +80,10 @@ export default function PosPage() {
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [voucherCode, setVoucherCode] = useState("");
   const [pricing, setPricing] = useState<PricingBreakdownDto | null>(null);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerResults, setCustomerResults] = useState<CustomerListItemDto[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerListItemDto | null>(null);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
 
   const ownerMode = isOwner(session?.role);
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
@@ -229,6 +235,28 @@ export default function PosPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [cart, effectiveOutletId, voucherCode]);
+
+  useEffect(() => {
+    if (!customerQuery.trim() || selectedCustomer?.phone === customerQuery.trim()) {
+      setCustomerResults([]);
+      setIsLoadingCustomers(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsLoadingCustomers(true);
+
+      try {
+        setCustomerResults(await lookupCustomers(customerQuery.trim(), 8));
+      } catch {
+        setCustomerResults([]);
+      } finally {
+        setIsLoadingCustomers(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [customerQuery, selectedCustomer?.phone]);
 
   function addToCart(product: ProductDto) {
     if (product.qtyOnHand <= 0) {
@@ -398,6 +426,8 @@ export default function PosPage() {
       })(),
       voucherCode: voucherCode.trim() || null,
       appliedPromoCode: pricing?.appliedPromo?.code ?? null,
+      customerId: selectedCustomer?.id ?? null,
+      customerPhone: selectedCustomer?.phone ?? null,
     };
 
     setIsSubmitting(true);
@@ -409,6 +439,9 @@ export default function PosPage() {
       setPayments([createPaymentRow()]);
       setVoucherCode("");
       setPricing(null);
+      setCustomerQuery("");
+      setSelectedCustomer(null);
+      setCustomerResults([]);
       await loadProducts();
       await refreshCurrentSession();
       navigate(`/transactions/${result.id}`);
@@ -544,6 +577,72 @@ export default function PosPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Keranjang</h2>
 
           <div className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">Customer checkout</h3>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Pilih guest atau cari customer berdasarkan nomor HP / nama.
+                  </p>
+                </div>
+                {selectedCustomer ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCustomer(null);
+                      setCustomerQuery("");
+                      setCustomerResults([]);
+                    }}
+                    className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                  >
+                    Kembali ke guest
+                  </button>
+                ) : null}
+              </div>
+
+              {selectedCustomer ? (
+                <div className="mt-4 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
+                  <p className="font-semibold">{selectedCustomer.name}</p>
+                  <p className="mt-1">{selectedCustomer.phone} · {selectedCustomer.customerCode}</p>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <input
+                    value={customerQuery}
+                    onChange={(event) => setCustomerQuery(event.target.value)}
+                    placeholder="Cari customer by HP atau nama"
+                    className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                  {isLoadingCustomers ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Mencari customer...</p>
+                  ) : customerResults.length > 0 ? (
+                    <div className="space-y-2">
+                      {customerResults.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setCustomerQuery(customer.phone);
+                            setCustomerResults([]);
+                          }}
+                          className="flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-left transition hover:border-brand-300 dark:border-gray-800 dark:hover:border-brand-500/40"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{customer.name}</p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{customer.phone} · {customer.customerCode}</p>
+                          </div>
+                          <span className="text-xs font-semibold text-brand-600 dark:text-brand-300">Pilih</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Mode default saat ini: guest.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {cart.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
                 Belum ada item di keranjang.

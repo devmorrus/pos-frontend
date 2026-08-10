@@ -8,6 +8,11 @@ export type TransactionListItemDto = {
   grandTotal: number;
   status: string;
   channel: string;
+  customerId: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerType: string;
+  externalCustomerReference: string | null;
   createdAt: string;
   paymentSummary: string;
 };
@@ -56,6 +61,13 @@ export type TransactionDto = {
   cashierSessionId: string | null;
   channel: string;
   status: string;
+  customerId: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerType: string;
+  externalCustomerReference: string | null;
+  externalCustomerName: string | null;
+  externalCustomerPhone: string | null;
   subtotal: number;
   discountTotal: number;
   manualDiscountTotal: number;
@@ -102,6 +114,8 @@ export type CheckoutRequest = {
   payments: PaymentRequest[];
   voucherCode?: string | null;
   appliedPromoCode?: string | null;
+  customerId?: string | null;
+  customerPhone?: string | null;
 };
 
 export type VoidTransactionRequest = {
