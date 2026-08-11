@@ -234,7 +234,7 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Standard Plan</h3>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">Tepat untuk owner dengan bisnis mandiri atau dua cabang.</p>
               <div className="text-4xl font-extrabold mb-8 text-gray-900 dark:text-white">
-                Rp 149.000<span className="text-xs text-gray-500 dark:text-gray-400 font-normal"> / bln</span>
+                Rp 199.000<span className="text-xs text-gray-500 dark:text-gray-400 font-normal"> / bln</span>
               </div>
               <ul className="text-xs space-y-3 text-gray-700 dark:text-gray-300 mb-8">
                 <li className="flex items-center gap-2">

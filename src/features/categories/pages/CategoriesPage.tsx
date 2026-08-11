@@ -158,7 +158,7 @@ export default function CategoriesPage() {
 
       <AppTableShell
         title="Daftar kategori"
-        description="Kategori parent dan child ditampilkan flat agar cepat dikelola pada fase 2."
+        description="Kelola kategori parent dan child untuk master produk."
         actions={
           <button
             type="button"

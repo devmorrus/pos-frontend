@@ -145,7 +145,7 @@ export default function ProductsPage() {
 
       <AppTableShell
         title="Daftar produk"
-        description="Listing produk fase 2 mengambil stok langsung dari backend berdasarkan outlet yang aktif."
+        description="Kelola master produk beserta stok per outlet aktif."
         actions={
           <>
             {(ownerMode || session?.role === "Admin") && selectableOutlets.length > 0 ? (

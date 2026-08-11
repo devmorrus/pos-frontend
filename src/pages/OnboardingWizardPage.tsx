@@ -256,7 +256,7 @@ export default function OnboardingWizardPage() {
                 {
                   id: "Standard Plan",
                   title: "Standard Plan",
-                  price: "Rp 149.000 / bln",
+                  price: "Rp 199.000 / bln",
                   desc: "Ideal untuk bisnis mandiri, mengelola hingga 3 cabang outlet."
                 },
                 {
