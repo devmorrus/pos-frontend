@@ -22,13 +22,11 @@ test.describe("Sign in flow", () => {
 
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(
-      page.getByRole("heading", { name: "Dashboard", exact: true }),
+      page.getByRole("heading", { name: "Dashboard Shell", exact: true }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Morrus Owner", exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText("Current role")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Owner", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard Bisnis", exact: true })).toBeVisible();
+    await expect(page.getByText("Morrus Owner", { exact: true })).toBeVisible();
+    await expect(page.getByText("Owner · Semua outlet", { exact: true })).toBeVisible();
 
     const storedSession = await page.evaluate(() =>
       window.localStorage.getItem("morruspos.auth"),

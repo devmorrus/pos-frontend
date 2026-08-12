@@ -52,13 +52,17 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 sm:p-8">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Login operator
+    <div className="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-[0_30px_90px_-42px_rgba(16,24,40,0.28)] sm:p-8 dark:border-gray-800 dark:bg-gray-900">
+      <div className="space-y-3">
+        <span className="inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+          Login aman
+        </span>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em] text-gray-900 dark:text-white sm:text-[2rem]">
+          Masuk ke akun Anda
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          Gunakan akun backend MorrusPOS Anda untuk masuk ke shell frontend fase 0.
+        <p className="max-w-sm text-sm leading-6 text-gray-600 dark:text-gray-300">
+          Login dengan akun operasional MorrusPOS untuk mengelola penjualan, stok,
+          dan aktivitas outlet dari satu dashboard.
         </p>
       </div>
 
@@ -78,7 +82,7 @@ export default function SignInPage() {
                 setValues((prev) => ({ ...prev, email: event.target.value }))
               }
               placeholder="owner@morruspos.com"
-              className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              className="h-14 w-full rounded-2xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
             />
           </div>
           {errors.email ? (
@@ -101,12 +105,12 @@ export default function SignInPage() {
                 setValues((prev) => ({ ...prev, password: event.target.value }))
               }
               placeholder="Masukkan password"
-              className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-12 pr-12 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              className="h-14 w-full rounded-2xl border border-gray-200 bg-white pl-12 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
             />
             <button
               type="button"
               onClick={() => setIsPasswordVisible((prev) => !prev)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-200"
               aria-label="Toggle password visibility"
             >
               {isPasswordVisible ? <EyeCloseIcon /> : <EyeIcon />}
@@ -126,7 +130,7 @@ export default function SignInPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-theme-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 via-brand-600 to-blue-light-600 px-5 text-sm font-semibold text-white shadow-[0_18px_40px_-20px_rgba(54,65,245,0.9)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSubmitting ? "Memproses login..." : "Masuk ke MorrusPOS"}
         </button>
