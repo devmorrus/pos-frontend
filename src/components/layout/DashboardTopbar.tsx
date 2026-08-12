@@ -87,7 +87,7 @@ export default function DashboardTopbar({
               MorrusPOS
             </p>
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Dashboard Shell
+              Dashboard Operasional
             </h1>
           </div>
         </div>
