@@ -38,8 +38,9 @@ export default function PaySupplierDebtModal({
       return;
     }
 
+    const maxPayable = debt.maxPayableAmount !== undefined ? debt.maxPayableAmount : debt.remainingAmount;
     setValues({
-      amount: debt.remainingAmount > 0 ? String(debt.remainingAmount) : "",
+      amount: maxPayable > 0 ? String(maxPayable) : "",
       paymentMethod: "Transfer Bank",
       referenceNumber: "",
     });
@@ -55,8 +56,11 @@ export default function PaySupplierDebtModal({
 
     if (!values.amount || Number(values.amount) <= 0) {
       nextErrors.amount = "Nominal pembayaran harus lebih dari 0.";
-    } else if (debt && Number(values.amount) > debt.remainingAmount) {
-      nextErrors.amount = "Nominal pembayaran tidak boleh melebihi sisa utang.";
+    } else if (debt) {
+      const maxPayable = debt.maxPayableAmount !== undefined ? debt.maxPayableAmount : debt.remainingAmount;
+      if (Number(values.amount) > maxPayable) {
+        nextErrors.amount = `Nominal pembayaran tidak boleh melebihi batas pembayaran barang laku (${formatCurrency(maxPayable)}).`;
+      }
     } else if (Number(values.amount) > 99999999999.99) {
       nextErrors.amount = "Nominal pembayaran tidak boleh melebihi 99.999.999.999,99.";
     } else if (values.amount.includes(".")) {
@@ -126,6 +130,18 @@ export default function PaySupplierDebtModal({
                 <p className="text-gray-500">Sisa utang</p>
                 <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatCurrency(debt.remainingAmount)}</p>
               </div>
+              {debt.soldAmount !== undefined && (
+                <div>
+                  <p className="text-gray-500">Total barang laku</p>
+                  <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatCurrency(debt.soldAmount)}</p>
+                </div>
+              )}
+              {debt.maxPayableAmount !== undefined && (
+                <div>
+                  <p className="text-gray-500">Maksimum pembayaran saat ini</p>
+                  <p className="mt-1 font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(debt.maxPayableAmount)}</p>
+                </div>
+              )}
             </div>
 
             <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>

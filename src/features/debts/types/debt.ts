@@ -9,6 +9,8 @@ export type SupplierDebtDto = {
   paidAmount: number;
   remainingAmount: number;
   status: string;
+  soldAmount?: number;
+  maxPayableAmount?: number;
 };
 
 export type SupplierPaymentDto = {

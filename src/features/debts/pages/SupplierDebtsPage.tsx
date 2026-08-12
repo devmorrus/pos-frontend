@@ -249,6 +249,18 @@ export default function SupplierDebtsPage() {
                 <p className="text-gray-500">Terbayar</p>
                 <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatCurrency(detailDebt.paidAmount)}</p>
               </div>
+              {detailDebt.soldAmount !== undefined && (
+                <div>
+                  <p className="text-gray-500">Total barang laku</p>
+                  <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatCurrency(detailDebt.soldAmount)}</p>
+                </div>
+              )}
+              {detailDebt.maxPayableAmount !== undefined && (
+                <div>
+                  <p className="text-gray-500">Maksimum pembayaran saat ini</p>
+                  <p className="mt-1 font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(detailDebt.maxPayableAmount)}</p>
+                </div>
+              )}
               <div className="md:col-span-2">
                 <p className="text-gray-500">Sisa utang</p>
                 <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(detailDebt.remainingAmount)}</p>
