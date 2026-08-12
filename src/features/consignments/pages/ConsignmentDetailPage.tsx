@@ -181,7 +181,7 @@ export default function ConsignmentDetailPage() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                 <thead className="bg-gray-50 dark:bg-gray-950">
                   <tr>
-                    {["SKU", "Produk", "Qty", "Unit Cost", "Unit Price", "Total Cost"].map((column) => (
+                    {["SKU", "Produk", "Diterima", "Terjual", "Retur", "Sisa Stok", "Unit Cost", "Unit Price", "Total Cost"].map((column) => (
                       <th
                         key={column}
                         className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -201,6 +201,11 @@ export default function ConsignmentDetailPage() {
                         {item.productName}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.qty}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.soldQty ?? 0}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.returnedQty ?? 0}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                        {item.qty - (item.soldQty ?? 0) - (item.returnedQty ?? 0)}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                         {formatCurrency(item.unitCost)}
                       </td>

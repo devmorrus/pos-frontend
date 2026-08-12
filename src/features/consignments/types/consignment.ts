@@ -5,6 +5,8 @@ export type ConsignmentItemDto = {
   qty: number;
   unitCost: number;
   unitPrice: number;
+  soldQty?: number;
+  returnedQty?: number;
 };
 
 export type ConsignmentDto = {
