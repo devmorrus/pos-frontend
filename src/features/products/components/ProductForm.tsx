@@ -6,8 +6,8 @@ import { FieldErrorText, FormCard } from "../../../components/forms";
 import InlineAlert from "../../../components/ui/InlineAlert";
 import type { CategoryDto } from "../../categories/types/category";
 import type { ProductFieldErrors } from "../schemas/productSchema";
-import type { ProductFormValues } from "../types/product";
-import { uploadProductImage } from "../api/productsApi";
+import type { ProductFormValues, ProductRecipeRequest, ProductDto } from "../types/product";
+import { uploadProductImage, getProducts } from "../api/productsApi";
 import { API_BASE_URL } from "../../../api/client/config";
 import { getErrorMessage } from "../../../utils/errors";
 
@@ -44,6 +44,10 @@ export default function ProductForm({
   const [attributes, setAttributes] = useState<{ name: string; values: string }[]>([]);
   const [generatedVariants, setGeneratedVariants] = useState<any[]>([]);
 
+  // Recipe / BOM state
+  const [rawMaterials, setRawMaterials] = useState<ProductDto[]>([]);
+  const [localRecipes, setLocalRecipes] = useState<ProductRecipeRequest[]>(values.recipes ?? []);
+
   useEffect(() => {
     if (values.variants && values.variants.length > 0) {
       if (generatedVariants.length === 0) {
@@ -73,6 +77,47 @@ export default function ProductForm({
       setAttributes([{ name: "Ukuran", values: "Kecil, Besar" }]);
     }
   }, [values.variants]);
+
+  // Load raw materials for recipe builder
+  useEffect(() => {
+    async function loadRawMaterials() {
+      try {
+        const result = await getProducts({ isRawMaterial: true } as any);
+        const list: ProductDto[] = Array.isArray(result) ? result : (result as any).items ?? [];
+        setRawMaterials(list);
+      } catch {
+        // silently ignore
+      }
+    }
+    void loadRawMaterials();
+  }, []);
+
+  // Sync external recipes value into local state (for edit mode pre-fill)
+  useEffect(() => {
+    if (values.recipes && values.recipes.length > 0 && localRecipes.length === 0) {
+      setLocalRecipes(values.recipes);
+    }
+  }, [values.recipes]);
+
+  function addRecipeRow() {
+    const updated = [...localRecipes, { rawMaterialProductId: "", quantityRequired: 1, productVariantSku: null }];
+    setLocalRecipes(updated);
+    onChange("recipes", updated);
+  }
+
+  function removeRecipeRow(index: number) {
+    const updated = localRecipes.filter((_, i) => i !== index);
+    setLocalRecipes(updated);
+    onChange("recipes", updated);
+  }
+
+  function updateRecipeRow(index: number, field: keyof ProductRecipeRequest, val: any) {
+    const updated = localRecipes.map((row, i) =>
+      i === index ? { ...row, [field]: val } : row
+    );
+    setLocalRecipes(updated);
+    onChange("recipes", updated);
+  }
 
   const addAttribute = () => setAttributes([...attributes, { name: "", values: "" }]);
   const removeAttribute = (index: number) => setAttributes(attributes.filter((_, i) => i !== index));
@@ -585,6 +630,108 @@ export default function ProductForm({
               </div>
             </div>
           </div>
+
+          {/* ─────────── RESEP / BOM BUILDER ─────────── */}
+          {!values.isRawMaterial && (
+            <div className="mt-2 rounded-3xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900 dark:text-amber-300">
+                    🧪 Resep / Bill of Materials (BOM)
+                  </h4>
+                  <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-500">
+                    Daftarkan bahan baku yang dibutuhkan untuk membuat 1 unit produk ini. Stok bahan baku akan otomatis dikurangi saat transaksi.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addRecipeRow}
+                  className="shrink-0 ml-4 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-2 text-xs font-bold text-white transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Tambah Bahan
+                </button>
+              </div>
+
+              {localRecipes.length === 0 ? (
+                <p className="text-center py-4 text-xs text-amber-600 dark:text-amber-500 italic">
+                  Belum ada bahan baku. Klik "Tambah Bahan" untuk mulai mengonfigurasi resep.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {localRecipes.map((row, idx) => {
+                    return (
+                      <div
+                        key={idx}
+                        className="grid gap-3 sm:grid-cols-[1fr_120px_180px_auto] items-end bg-white dark:bg-gray-900/60 rounded-2xl border border-amber-100 dark:border-amber-900/40 p-3"
+                      >
+                        {/* Pilih bahan baku */}
+                        <label className="block">
+                          <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Bahan Baku</span>
+                          <select
+                            value={row.rawMaterialProductId}
+                            onChange={(e) => updateRecipeRow(idx, "rawMaterialProductId", e.target.value)}
+                            className="h-10 w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 text-xs text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                          >
+                            <option value="">— Pilih bahan —</option>
+                            {rawMaterials.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name} ({m.sku})
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        {/* Jumlah */}
+                        <label className="block">
+                          <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Jumlah</span>
+                          <input
+                            type="number"
+                            min="0.001"
+                            step="0.001"
+                            value={row.quantityRequired}
+                            onChange={(e) => updateRecipeRow(idx, "quantityRequired", Number(e.target.value))}
+                            className="h-10 w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 text-xs text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                          />
+                        </label>
+
+                        {/* Varian spesifik (opsional, hanya jika produk punya variant) */}
+                        {values.hasVariants && (
+                          <label className="block">
+                            <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Berlaku untuk varian (opsional)</span>
+                            <select
+                              value={row.productVariantSku ?? ""}
+                              onChange={(e) => updateRecipeRow(idx, "productVariantSku", e.target.value || null)}
+                              className="h-10 w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 text-xs text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                            >
+                              <option value="">Semua varian</option>
+                              {(values.variants ?? []).map((v: any) => (
+                                <option key={v.sku} value={v.sku}>
+                                  {v.attributeValues?.map((av: any) => av.value).join(" - ") ?? v.sku}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
+
+                        {/* Hapus baris */}
+                        <div className="flex items-end">
+                          <button
+                            type="button"
+                            onClick={() => removeRecipeRow(idx)}
+                            className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-error-200 dark:border-error-900/50 text-error-500 hover:bg-error-50 dark:hover:bg-error-950/30 transition-colors"
+                            title="Hapus baris"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center justify-end gap-3">
             <Link

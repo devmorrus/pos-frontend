@@ -13,6 +13,10 @@ export function getProducts(filters: ProductFilters = {}) {
     params.set("outletId", filters.outletId);
   }
 
+  if (filters.isRawMaterial !== undefined) {
+    params.set("isRawMaterial", String(filters.isRawMaterial));
+  }
+
   const query = params.toString();
   return apiClient.get<ProductDto[]>(`/api/products${query ? `?${query}` : ""}`);
 }

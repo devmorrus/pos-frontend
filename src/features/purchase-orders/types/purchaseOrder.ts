@@ -1,8 +1,10 @@
 export type PurchaseOrderItemDto = {
   productId: string;
+  productVariantId?: string | null;
   productName: string;
   sku: string;
   qty: number;
+  qtyReceived: number;
   unitCost: number;
   totalCost: number;
   sellingPrice: number;
@@ -25,6 +27,7 @@ export type PurchaseOrderDto = {
 
 export type PurchaseOrderItemRequest = {
   productId: string;
+  productVariantId?: string | null;
   qty: number;
   unitCost: number;
 };

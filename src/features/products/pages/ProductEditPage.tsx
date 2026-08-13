@@ -79,6 +79,11 @@ export default function ProductEditPage() {
           hasVariants: productResult.hasVariants ?? false,
           isRawMaterial: productResult.isRawMaterial ?? false,
           variants: productResult.variants ?? [],
+          recipes: (productResult.recipes ?? []).map((r: any) => ({
+            rawMaterialProductId: r.rawMaterialProductId,
+            quantityRequired: r.quantityRequired,
+            productVariantSku: null,
+          })),
         });
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat detail produk."));
@@ -131,6 +136,7 @@ export default function ProductEditPage() {
         hasVariants: values.hasVariants,
         isRawMaterial: values.isRawMaterial,
         variants: values.hasVariants ? values.variants : [],
+        recipes: values.isRawMaterial ? [] : (values.recipes ?? []),
       });
 
       navigate("/products", {

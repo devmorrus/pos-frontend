@@ -28,3 +28,21 @@ export function createPurchaseOrder(payload: CreatePurchaseOrderRequest) {
 export function updatePurchaseOrderStatus(id: string, payload: UpdatePoStatusRequest) {
   return apiClient.put<PurchaseOrderDto>(`/api/purchaseorders/${id}/status`, payload);
 }
+
+export interface ReceivingItemRequest {
+  productId: string;
+  productVariantId?: string | null;
+  qtyReceived: number;
+  batchNumber?: string | null;
+  expiryDate?: string | null;
+}
+
+export interface ReceiveGoodsRequest {
+  outletId: string;
+  notes?: string | null;
+  items: ReceivingItemRequest[];
+}
+
+export function receivePurchaseOrderGoods(id: string, payload: ReceiveGoodsRequest) {
+  return apiClient.post<PurchaseOrderDto>(`/api/purchaseorders/${id}/receive`, payload);
+}

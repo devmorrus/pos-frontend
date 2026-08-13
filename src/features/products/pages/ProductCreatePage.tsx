@@ -98,6 +98,7 @@ export default function ProductCreatePage() {
         hasVariants: values.hasVariants,
         isRawMaterial: values.isRawMaterial,
         variants: values.hasVariants ? values.variants : [],
+        recipes: values.isRawMaterial ? [] : (values.recipes ?? []),
       });
 
       navigate("/products", {

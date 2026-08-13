@@ -16,6 +16,7 @@ export type ProductDto = {
   isRawMaterial?: boolean;
   variants?: ProductVariantDto[];
   modifierGroups?: ModifierGroupDto[];
+  recipes?: ProductRecipeDto[];
 };
 
 export type ProductAttributeValueDto = {
@@ -75,6 +76,12 @@ export type ProductBatchDto = {
   qtyRemaining: number;
 };
 
+export type ProductRecipeRequest = {
+  rawMaterialProductId: string;
+  quantityRequired: number;
+  productVariantSku?: string | null;
+};
+
 export type CreateProductRequest = {
   categoryId: string;
   sku: string;
@@ -91,6 +98,7 @@ export type CreateProductRequest = {
   isRawMaterial: boolean;
   variants?: Omit<ProductVariantDto, "id" | "productId">[];
   modifierGroups?: Omit<ModifierGroupDto, "id">[];
+  recipes?: ProductRecipeRequest[];
 };
 
 export type UpdateProductRequest = CreateProductRequest & {
@@ -99,6 +107,7 @@ export type UpdateProductRequest = CreateProductRequest & {
 
 export type ProductFilters = {
   outletId?: string;
+  isRawMaterial?: boolean;
 };
 
 export type ProductFormValues = {
@@ -117,5 +126,6 @@ export type ProductFormValues = {
   hasVariants: boolean;
   isRawMaterial: boolean;
   variants?: any[];
+  recipes?: ProductRecipeRequest[];
 };
 
