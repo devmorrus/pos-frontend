@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 import { Link } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
@@ -18,7 +18,7 @@ type ProductFormProps = {
   categories: CategoryDto[];
   isSubmitting: boolean;
   submitError?: string | null;
-  onChange: (key: keyof ProductFormValues, value: string | boolean) => void;
+  onChange: (key: keyof ProductFormValues, value: any) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -35,6 +35,120 @@ export default function ProductForm({
   const isEditMode = mode === "edit";
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Variant Image Uploader Refs & States
+  const variantFileRef = useRef<HTMLInputElement | null>(null);
+  const [activeVariantUploadIdx, setActiveVariantUploadIdx] = useState<number | null>(null);
+
+  // Varian & Atribut local state
+  const [attributes, setAttributes] = useState<{ name: string; values: string }[]>([]);
+  const [generatedVariants, setGeneratedVariants] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (values.variants && values.variants.length > 0) {
+      if (generatedVariants.length === 0) {
+        setGeneratedVariants(values.variants);
+      }
+
+      // Reconstruct attributes state from existing variants
+      const tempAttrs: Record<string, Set<string>> = {};
+      values.variants.forEach((v: any) => {
+        v.attributeValues?.forEach((av: any) => {
+          if (!tempAttrs[av.attributeName]) {
+            tempAttrs[av.attributeName] = new Set<string>();
+          }
+          tempAttrs[av.attributeName].add(av.value);
+        });
+      });
+
+      const extracted = Object.keys(tempAttrs).map((name) => ({
+        name,
+        values: Array.from(tempAttrs[name]).join(", "),
+      }));
+
+      if (extracted.length > 0 && attributes.length === 0) {
+        setAttributes(extracted);
+      }
+    } else if (attributes.length === 0) {
+      setAttributes([{ name: "Ukuran", values: "Kecil, Besar" }]);
+    }
+  }, [values.variants]);
+
+  const addAttribute = () => setAttributes([...attributes, { name: "", values: "" }]);
+  const removeAttribute = (index: number) => setAttributes(attributes.filter((_, i) => i !== index));
+  const updateAttribute = (index: number, key: "name" | "values", val: string) => {
+    const updated = [...attributes];
+    updated[index][key] = val;
+    setAttributes(updated);
+  };
+
+  const handleGenerateVariants = () => {
+    const activeAttrs = attributes.filter((a) => a.name.trim() && a.values.trim());
+    if (activeAttrs.length === 0) return;
+
+    const combos = activeAttrs.reduce<any[][]>((acc, attr) => {
+      const valuesList = attr.values.split(",").map((v) => v.trim()).filter(Boolean);
+      if (acc.length === 0) {
+        return valuesList.map((v) => [{ attributeName: attr.name, value: v }]);
+      }
+      return acc.flatMap((combo) =>
+        valuesList.map((v) => [...combo, { attributeName: attr.name, value: v }]),
+      );
+    }, []);
+
+    const parentSku = values.sku ? values.sku.trim() : "SKU";
+    const parentPrice = values.basePrice ? Number(values.basePrice) : 0;
+    const parentCost = values.costPrice ? Number(values.costPrice) : 0;
+
+    const newVariants = combos.map((combo: any) => {
+      const suffix = combo.map((c: any) => c.value.replace(/\s+/g, "").toUpperCase()).join("-");
+      return {
+        sku: `${parentSku}-${suffix}`,
+        barcode: "",
+        basePrice: parentPrice,
+        costPrice: parentCost,
+        imageUrl: "",
+        attributeValues: combo.map((c: any) => ({
+          attributeName: c.attributeName,
+          value: c.value,
+        })),
+        isActive: true,
+      };
+    });
+
+    setGeneratedVariants(newVariants);
+    onChange("variants", newVariants);
+  };
+
+  const handleVariantChange = (idx: number, field: string, val: any) => {
+    const updated = [...generatedVariants];
+    updated[idx] = {
+      ...updated[idx],
+      [field]: val,
+    };
+    setGeneratedVariants(updated);
+    onChange("variants", updated);
+  };
+
+  const handleVariantImageClick = (idx: number) => {
+    setActiveVariantUploadIdx(idx);
+    variantFileRef.current?.click();
+  };
+
+  const handleVariantFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || activeVariantUploadIdx === null) return;
+    const file = files[0];
+    try {
+      const res = await uploadProductImage(file);
+      handleVariantChange(activeVariantUploadIdx, "imageUrl", res.url);
+    } catch (err) {
+      alert("Gagal mengunggah foto varian.");
+    } finally {
+      event.target.value = "";
+      setActiveVariantUploadIdx(null);
+    }
+  };
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -154,49 +268,226 @@ export default function ProductForm({
               <FieldErrorText message={errors.unit} />
             </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Harga jual <span className="text-error-500">*</span>
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={values.basePrice}
-                onChange={(event) => onChange("basePrice", event.target.value)}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
-              <p className="mt-1 text-xs text-gray-400">Harus lebih besar dari Harga Modal.</p>
-              <FieldErrorText message={errors.basePrice} />
-            </label>
+            {!values.hasVariants && (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Harga jual <span className="text-error-500">*</span>
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={values.basePrice}
+                    onChange={(event) => onChange("basePrice", event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Harus lebih besar dari Harga Modal.</p>
+                  <FieldErrorText message={errors.basePrice} />
+                </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Harga modal <span className="text-error-500">*</span>
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={values.costPrice}
-                onChange={(event) => onChange("costPrice", event.target.value)}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
-              <p className="mt-1 text-xs text-gray-400">Harga modal harus lebih rendah dari harga jual.</p>
-              <FieldErrorText message={errors.costPrice} />
-            </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Harga modal <span className="text-error-500">*</span>
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={values.costPrice}
+                    onChange={(event) => onChange("costPrice", event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Harga modal harus lebih rendah dari harga jual.</p>
+                  <FieldErrorText message={errors.costPrice} />
+                </label>
+              </>
+            )}
 
-            <label className="inline-flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={values.isConsignment}
-                onChange={(event) => onChange("isConsignment", event.target.checked)}
-                className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-              />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                Produk konsinyasi
-              </span>
-            </label>
+            <div className="flex flex-col gap-3 md:col-span-2">
+              <label className="inline-flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={values.isConsignment}
+                  onChange={(event) => onChange("isConsignment", event.target.checked)}
+                  className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Produk konsinyasi
+                </span>
+              </label>
+
+              <label className="inline-flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={values.hasVariants}
+                  onChange={(event) => onChange("hasVariants", event.target.checked)}
+                  className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 font-semibold">
+                  Produk memiliki variasi (Rasa, Ukuran, dll.)
+                </span>
+              </label>
+
+              <label className="inline-flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={values.isRawMaterial}
+                  onChange={(event) => onChange("isRawMaterial", event.target.checked)}
+                  className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Merupakan Bahan Baku / Raw Material (BOM)
+                </span>
+              </label>
+            </div>
+
+            {values.hasVariants && (
+              <div className="md:col-span-2 border border-gray-200 dark:border-gray-800 rounded-3xl p-5 bg-gray-50 dark:bg-gray-900/50 space-y-5">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                  🛠️ Pengaturan Varian Produk
+                </h4>
+                <p className="text-xs text-gray-400">
+                  Definisikan opsi variasi Anda seperti "Ukuran" (Kecil, Besar) atau "Rasa" (Cokelat, Keju). Pisahkan nilai dengan koma.
+                </p>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-gray-500">Atribut Produk</span>
+                    <button
+                      type="button"
+                      onClick={addAttribute}
+                      className="text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                    >
+                      + Tambah Atribut
+                    </button>
+                  </div>
+
+                  {attributes.map((attr, idx) => (
+                    <div key={idx} className="bg-white dark:bg-gray-955 p-4 rounded-2xl border border-gray-100 dark:border-gray-900 space-y-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block">
+                          <span className="mb-1 block text-xs font-medium text-gray-400">Nama Atribut</span>
+                          <input
+                            placeholder="Contoh: Ukuran, Warna, Rasa"
+                            value={attr.name}
+                            onChange={(e) => updateAttribute(idx, "name", e.target.value)}
+                            className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-900 outline-none focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="mb-1 block text-xs font-medium text-gray-400">Pilihan Nilai (Pisahkan dengan koma)</span>
+                          <input
+                            placeholder="Contoh: Kecil, Sedang, Besar"
+                            value={attr.values}
+                            onChange={(e) => updateAttribute(idx, "values", e.target.value)}
+                            className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-900 outline-none focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                          />
+                        </label>
+                      </div>
+                      {attributes.length > 1 && (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => removeAttribute(idx)}
+                            className="text-xs font-semibold text-error-600 hover:text-error-700"
+                          >
+                            Hapus Atribut
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleGenerateVariants}
+                    className="w-full bg-brand-500 hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700 text-white text-xs font-bold py-2.5 rounded-xl transition-all"
+                  >
+                    Generate Varian dari Atribut
+                  </button>
+                </div>
+
+                {generatedVariants.length > 0 && (
+                  <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 border-b border-gray-200 dark:border-gray-800 font-semibold">
+                          <th className="p-3 w-16">Foto</th>
+                          <th className="p-3">Nama Varian</th>
+                          <th className="p-3">SKU</th>
+                          <th className="p-3">Harga Jual</th>
+                          <th className="p-3">Harga Modal</th>
+                          <th className="p-3">Barcode</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generatedVariants.map((variant, idx) => {
+                          const variantName = variant.attributeValues.map((av: any) => av.value).join(" - ");
+                          return (
+                            <tr key={idx} className="border-b border-gray-100 dark:border-gray-900 text-gray-700 dark:text-gray-300">
+                              <td className="p-2">
+                                <div
+                                  onClick={() => handleVariantImageClick(idx)}
+                                  className="relative w-10 h-10 rounded-xl border border-dashed border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-center cursor-pointer hover:border-brand-500 hover:text-brand-500 transition-colors overflow-hidden"
+                                >
+                                  {variant.imageUrl ? (
+                                    <img src={`${API_BASE_URL}${variant.imageUrl}`} className="w-full h-full object-cover rounded-xl" />
+                                  ) : (
+                                    <span className="text-sm">📸</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3 font-semibold text-gray-900 dark:text-white">{variantName}</td>
+                              <td className="p-2">
+                                <input
+                                  className="h-9 w-full rounded-lg border border-gray-200 dark:border-gray-800 dark:bg-gray-900 px-2 text-xs"
+                                  value={variant.sku}
+                                  onChange={(e) => handleVariantChange(idx, "sku", e.target.value)}
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  className="h-9 w-24 rounded-lg border border-gray-200 dark:border-gray-800 dark:bg-gray-900 px-2 text-xs"
+                                  value={variant.basePrice}
+                                  onChange={(e) => handleVariantChange(idx, "basePrice", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  className="h-9 w-24 rounded-lg border border-gray-200 dark:border-gray-800 dark:bg-gray-900 px-2 text-xs"
+                                  value={variant.costPrice}
+                                  onChange={(e) => handleVariantChange(idx, "costPrice", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  className="h-9 w-full rounded-lg border border-gray-200 dark:border-gray-800 dark:bg-gray-900 px-2 text-xs"
+                                  value={variant.barcode || ""}
+                                  onChange={(e) => handleVariantChange(idx, "barcode", e.target.value)}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={variantFileRef}
+                  onChange={handleVariantFileChange}
+                  className="hidden"
+                />
+              </div>
+            )}
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">

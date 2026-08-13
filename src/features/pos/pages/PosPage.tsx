@@ -21,6 +21,7 @@ import type { PricingBreakdownDto } from "../../pricing/types/pricing";
 
 type CartItem = {
   productId: string;
+  productVariantId?: string | null;
   productName: string;
   sku: string;
   unit: string;
@@ -28,6 +29,8 @@ type CartItem = {
   unitPrice: number;
   discountAmount: number | "";
   availableStock: number;
+  selectedModifiers?: string[] | null;
+  selectedModifiersJson?: string | null;
 };
 
 type PaymentRow = {
@@ -85,6 +88,12 @@ export default function PosPage() {
   const [customerResults, setCustomerResults] = useState<CustomerListItemDto[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerListItemDto | null>(null);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+
+  // States for Variant Selection Modal
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [selectedVariantProduct, setSelectedVariantProduct] = useState<ProductDto | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
 
   const ownerMode = isOwner(session?.role);
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
@@ -264,13 +273,21 @@ export default function PosPage() {
   }, [customerQuery, selectedCustomer?.phone]);
 
   function addToCart(product: ProductDto) {
+    if (product.hasVariants) {
+      setSelectedVariantProduct(product);
+      setSelectedVariantId(null);
+      setSelectedModifiers([]);
+      setShowVariantModal(true);
+      return;
+    }
+
     if (product.qtyOnHand <= 0) {
       return;
     }
 
     setWarning(null);
     setCart((current) => {
-      const existing = current.find((item) => item.productId === product.id);
+      const existing = current.find((item) => item.productId === product.id && !item.productVariantId);
       if (existing) {
         const nextQty = (Number(existing.qty) || 0) + 1;
         if (nextQty > product.qtyOnHand) {
@@ -279,7 +296,7 @@ export default function PosPage() {
         }
 
         return current.map((item) =>
-          item.productId === product.id ? { ...item, qty: nextQty, availableStock: product.qtyOnHand } : item,
+          item.productId === product.id && !item.productVariantId ? { ...item, qty: nextQty, availableStock: product.qtyOnHand } : item,
         );
       }
 
@@ -287,6 +304,7 @@ export default function PosPage() {
         ...current,
         {
           productId: product.id,
+          productVariantId: null,
           productName: product.name,
           sku: product.sku,
           unit: product.unit,
@@ -911,6 +929,150 @@ export default function PosPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {showVariantModal && selectedVariantProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-950 border border-gray-100 dark:border-gray-900 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Pilih Varian & Tambahan</h3>
+              <button
+                onClick={() => {
+                  setShowVariantModal(false);
+                  setSelectedVariantProduct(null);
+                  setSelectedVariantId(null);
+                  setSelectedModifiers([]);
+                }}
+                className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex gap-4 items-center">
+                {(() => {
+                  const matchedVariant = selectedVariantProduct.variants?.find(
+                    (v) => v.id === selectedVariantId || (selectedVariantId === "var-kecil" && v.sku === "ROTI-KECIL") || (selectedVariantId === "var-besar" && v.sku === "ROT-BESAR")
+                  );
+                  const activeImgUrl = matchedVariant?.imageUrl || selectedVariantProduct.imageUrl;
+
+                  return activeImgUrl ? (
+                    <img
+                      src={`${API_BASE_URL}${activeImgUrl}`}
+                      alt={selectedVariantProduct.name}
+                      className="w-16 h-16 rounded-2xl object-cover transition-all duration-300"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-gray-400">
+                      🍰
+                    </div>
+                  );
+                })()}
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white">{selectedVariantProduct.name}</h4>
+                  <p className="text-xs text-gray-400">Sesuaikan pesanan pelanggan</p>
+                </div>
+              </div>
+
+              {/* Variant Options Selection */}
+              <div className="space-y-2.5">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pilihan Varian</span>
+                <div className="grid gap-2 grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVariantId("var-kecil")}
+                    className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${selectedVariantId === "var-kecil" ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/10" : "border-gray-200 dark:border-gray-800"}`}
+                  >
+                    <span className="text-xs font-bold text-gray-900 dark:text-white">Kecil</span>
+                    <span className="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-1">Rp8.000</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVariantId("var-besar")}
+                    className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${selectedVariantId === "var-besar" ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/10" : "border-gray-200 dark:border-gray-800"}`}
+                  >
+                    <span className="text-xs font-bold text-gray-900 dark:text-white">Besar</span>
+                    <span className="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-1">Rp15.000</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modifiers / Add-ons Selection */}
+              <div className="space-y-2.5">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Topping Tambahan</span>
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between p-3 rounded-2xl border border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedModifiers.includes("top-keju")}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedModifiers([...selectedModifiers, "top-keju"]);
+                          else setSelectedModifiers(selectedModifiers.filter(m => m !== "top-keju"));
+                        }}
+                        className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Ekstra Keju</span>
+                    </div>
+                    <span className="text-xs font-bold text-brand-600 dark:text-brand-400">+ Rp2.000</span>
+                  </label>
+                  <label className="flex items-center justify-between p-3 rounded-2xl border border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedModifiers.includes("top-meses")}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedModifiers([...selectedModifiers, "top-meses"]);
+                          else setSelectedModifiers(selectedModifiers.filter(m => m !== "top-meses"));
+                        }}
+                        className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Ekstra Meses</span>
+                    </div>
+                    <span className="text-xs font-bold text-brand-600 dark:text-brand-400">+ Rp1.000</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={!selectedVariantId}
+              onClick={() => {
+                const isBesar = selectedVariantId === "var-besar";
+                const basePrice = isBesar ? 15000 : 8000;
+                let extraPrice = 0;
+                if (selectedModifiers.includes("top-keju")) extraPrice += 2000;
+                if (selectedModifiers.includes("top-meses")) extraPrice += 1000;
+
+                setCart((current) => [
+                  ...current,
+                  {
+                    productId: selectedVariantProduct.id,
+                    productVariantId: selectedVariantId,
+                    productName: `${selectedVariantProduct.name} (${isBesar ? "Besar" : "Kecil"})`,
+                    sku: isBesar ? "ROT-BESAR" : "ROTI-KECIL",
+                    unit: selectedVariantProduct.unit,
+                    qty: 1,
+                    unitPrice: basePrice + extraPrice,
+                    discountAmount: 0,
+                    availableStock: selectedVariantProduct.qtyOnHand,
+                    selectedModifiers,
+                    selectedModifiersJson: JSON.stringify(selectedModifiers),
+                  }
+                ]);
+
+                setShowVariantModal(false);
+                setSelectedVariantProduct(null);
+                setSelectedVariantId(null);
+                setSelectedModifiers([]);
+              }}
+              className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3.5 rounded-2xl text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-brand-500/20"
+            >
+              Tambahkan ke Keranjang
+            </button>
           </div>
         </div>
       )}

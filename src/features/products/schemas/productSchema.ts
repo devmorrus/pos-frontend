@@ -40,32 +40,34 @@ export function validateProductForm(values: ProductFormValues) {
     }
   }
 
-  const basePriceValid = isValidNumber(values.basePrice);
-  const costPriceValid = isValidNumber(values.costPrice);
+  if (!values.hasVariants) {
+    const basePriceValid = isValidNumber(values.basePrice);
+    const costPriceValid = isValidNumber(values.costPrice);
 
-  if (!basePriceValid) {
-    errors.basePrice = "Harga jual wajib diisi dengan angka.";
-  } else {
-    const baseVal = Number(values.basePrice);
-    if (baseVal <= 0) {
-      errors.basePrice = "Harga jual harus lebih besar dari 0.";
+    if (!basePriceValid) {
+      errors.basePrice = "Harga jual wajib diisi dengan angka.";
+    } else {
+      const baseVal = Number(values.basePrice);
+      if (baseVal <= 0) {
+        errors.basePrice = "Harga jual harus lebih besar dari 0.";
+      }
     }
-  }
 
-  if (!costPriceValid) {
-    errors.costPrice = "Harga modal wajib diisi dengan angka.";
-  } else {
-    const costVal = Number(values.costPrice);
-    if (costVal < 0) {
-      errors.costPrice = "Harga modal harus lebih besar atau sama dengan 0.";
+    if (!costPriceValid) {
+      errors.costPrice = "Harga modal wajib diisi dengan angka.";
+    } else {
+      const costVal = Number(values.costPrice);
+      if (costVal < 0) {
+        errors.costPrice = "Harga modal harus lebih besar atau sama dengan 0.";
+      }
     }
-  }
 
-  if (basePriceValid && costPriceValid) {
-    const baseVal = Number(values.basePrice);
-    const costVal = Number(values.costPrice);
-    if (costVal >= baseVal) {
-      errors.costPrice = "Harga modal harus lebih rendah dari harga jual.";
+    if (basePriceValid && costPriceValid) {
+      const baseVal = Number(values.basePrice);
+      const costVal = Number(values.costPrice);
+      if (costVal >= baseVal) {
+        errors.costPrice = "Harga modal harus lebih rendah dari harga jual.";
+      }
     }
   }
 

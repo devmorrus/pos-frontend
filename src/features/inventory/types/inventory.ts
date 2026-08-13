@@ -1,5 +1,6 @@
 export type InventoryListItem = {
   productId: string;
+  productVariantId?: string | null;
   sku: string;
   productName: string;
   categoryId: string;
@@ -24,6 +25,7 @@ export type InventoryFilters = {
 
 export type StockOpnameItemDto = {
   productId: string;
+  productVariantId?: string | null;
   productName: string;
   sku: string;
   systemQty: number;
@@ -44,6 +46,7 @@ export type StockOpnameDto = {
 
 export type StockOpnameItemRequest = {
   productId: string;
+  productVariantId?: string | null;
   physicalQty: number;
 };
 
@@ -54,6 +57,7 @@ export type CreateStockOpnameRequest = {
 
 export type StockTransferItemDto = {
   productId: string;
+  productVariantId?: string | null;
   productName: string;
   sku: string;
   qty: number;
@@ -77,6 +81,7 @@ export type StockTransferDto = {
 
 export type StockTransferItemRequest = {
   productId: string;
+  productVariantId?: string | null;
   qty: number;
 };
 
