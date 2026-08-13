@@ -45,6 +45,7 @@ import CashFlowDetailPage from "../../features/cash-flows/pages/CashFlowDetailPa
 import IncomeBusinessesPage from "../../features/cash-flows/pages/IncomeBusinessesPage";
 import OutcomeBusinessesPage from "../../features/cash-flows/pages/OutcomeBusinessesPage";
 import CashFlowFormPage from "../../features/cash-flows/components/CashFlowFormPage";
+import CashFlowReportPage from "../../features/reports/pages/CashFlowReportPage";
 import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportPage";
 import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapReportPage";
 import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
@@ -113,6 +114,7 @@ const dashboardPolicy = getNavigationItem("/dashboard");
 const chartOfAccountsPolicy = getNavigationItem("/chart-of-accounts");
 const incomeBusinessesPolicy = getNavigationItem("/income-businesses");
 const outcomeBusinessesPolicy = getNavigationItem("/outcome-businesses");
+const cashFlowReportPolicy = getNavigationItem("/reports/cash-flow");
 const reportPolicy = getNavigationItem("/reports/profit-loss");
 const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
 const salesRecapPolicy = getNavigationItem("/reports/sales");
@@ -247,6 +249,17 @@ export default function AppRouter() {
                 fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
               >
                 <CashFlowDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/cash-flow"
+            element={
+              <PermissionGuard
+                requiredPermissions={cashFlowReportPolicy?.requiredPermissions}
+                fallbackRoles={cashFlowReportPolicy?.fallbackRoles}
+              >
+                <CashFlowReportPage />
               </PermissionGuard>
             }
           />

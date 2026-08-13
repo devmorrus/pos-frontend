@@ -261,6 +261,12 @@ export const appNavigation: NavItem[] = [
     status: "active",
     subItems: [
       {
+        label: "Arus Kas",
+        path: "/reports/cash-flow",
+        requiredPermissions: ["report.view"],
+        fallbackRoles: reportRoles,
+      },
+      {
         label: "Laba Rugi",
         path: "/reports/profit-loss",
         fallbackRoles: reportRoles,

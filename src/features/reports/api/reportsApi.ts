@@ -1,47 +1,32 @@
 import { apiClient } from "../../../api/client";
-import type { ProfitLossReportDto, PurchaseRecapReportDto, SalesRecapReportDto } from "../types/reports";
+import type {
+  AccountingCashFlowReportDto,
+  AccountingCashFlowReportFilters,
+  AccountingProfitLossReportDto,
+  AccountingProfitLossReportFilters,
+  PurchaseRecapReportDto,
+  SalesRecapReportDto,
+} from "../types/reports";
 
-export function getProfitLossReport(params: {
-  outletId?: string;
-  startDate: string;
-  endDate: string;
-}) {
+export function getCashFlowReport(params: AccountingCashFlowReportFilters) {
   const query = new URLSearchParams();
-  if (params.outletId) {
-    query.append("outletId", params.outletId);
-  }
-  query.append("startDate", params.startDate);
-  query.append("endDate", params.endDate);
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.chartOfAccountId) query.append("chartOfAccountId", params.chartOfAccountId);
+  if (params.keyword) query.append("keyword", params.keyword);
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
 
-  return apiClient.get<ProfitLossReportDto>(`/api/reports/profit-loss?${query.toString()}`);
+  return apiClient.get<AccountingCashFlowReportDto>(`/api/reports/cash-flow?${query.toString()}`);
 }
 
-export async function exportProfitLossExcel(params: {
-  outletId?: string;
-  startDate: string;
-  endDate: string;
-}) {
+export function getProfitLossReport(params: AccountingProfitLossReportFilters) {
   const query = new URLSearchParams();
-  if (params.outletId) {
-    query.append("outletId", params.outletId);
-  }
-  query.append("startDate", params.startDate);
-  query.append("endDate", params.endDate);
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.keyword) query.append("keyword", params.keyword);
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
 
-  const csvText = await apiClient.get<string>(`/api/reports/profit-loss/export-excel?${query.toString()}`);
-  
-  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  
-  const formattedStart = params.startDate.replace(/-/g, "");
-  const formattedEnd = params.endDate.replace(/-/g, "");
-  link.setAttribute("download", `Laporan_Laba_Rugi_${formattedStart}_${formattedEnd}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+  return apiClient.get<AccountingProfitLossReportDto>(`/api/reports/profit-loss?${query.toString()}`);
 }
 
 export function getPurchaseRecapReport(params: {
