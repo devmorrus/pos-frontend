@@ -10,6 +10,11 @@ import ProductForm from "../components/ProductForm";
 import { validateProductForm } from "../schemas/productSchema";
 import type { ProductFormValues } from "../types/product";
 
+function generateBarcode(): string {
+  const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+  return "899" + randomDigits;
+}
+
 const initialValues: ProductFormValues = {
   categoryId: "",
   sku: "",
@@ -27,7 +32,10 @@ const initialValues: ProductFormValues = {
 
 export default function ProductCreatePage() {
   const navigate = useNavigate();
-  const [values, setValues] = useState<ProductFormValues>(initialValues);
+  const [values, setValues] = useState<ProductFormValues>(() => ({
+    ...initialValues,
+    barcode: generateBarcode(),
+  }));
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);

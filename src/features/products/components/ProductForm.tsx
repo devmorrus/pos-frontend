@@ -115,19 +115,31 @@ export default function ProductForm({
               <FieldErrorText message={errors.name} />
             </label>
 
-            <label className="block">
+            <div className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
                 Barcode
               </span>
-              <input
-                value={values.barcode}
-                onChange={(event) => onChange("barcode", event.target.value)}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
+              <div className="relative flex items-center">
+                <input
+                  value={values.barcode}
+                  onChange={(event) => onChange("barcode", event.target.value)}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-4 pr-24 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+                    onChange("barcode", "899" + randomDigits);
+                  }}
+                  className="absolute right-2 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  Generate
+                </button>
+              </div>
               <p className="mt-1 text-xs text-gray-400">
                 Opsional. Masukkan nomor barcode (8-18 angka).
               </p>
-            </label>
+            </div>
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
