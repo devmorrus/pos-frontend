@@ -38,7 +38,19 @@ function normalizeError(status: number, payload: unknown): AppApiError {
   };
 }
 
-async function parseResponse(response: Response) {
+async function parseResponseByType(response: Response, responseType?: RequestOptions["responseType"]) {
+  if (responseType === "blob") {
+    return response.blob();
+  }
+
+  if (responseType === "text") {
+    return response.text();
+  }
+
+  if (responseType === "json") {
+    return response.json();
+  }
+
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
@@ -47,6 +59,10 @@ async function parseResponse(response: Response) {
 
   if (contentType.includes("text/")) {
     return response.text();
+  }
+
+  if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+    return response.blob();
   }
 
   return null;
@@ -66,7 +82,7 @@ async function executeRequest<T>(
   options: RequestOptions = {},
   hasRetried = false
 ): Promise<T> {
-  const { auth = true, body, headers, ...rest } = options;
+  const { auth = true, body, headers, responseType, ...rest } = options;
   const mergedHeaders = new Headers(headers ?? {});
 
   const isFormData = body instanceof FormData;
@@ -104,7 +120,7 @@ async function executeRequest<T>(
     sessionBridge.handleUnauthorized();
   }
 
-  const payload = await parseResponse(response);
+  const payload = await parseResponseByType(response, responseType);
 
   if (!response.ok) {
     throw normalizeError(response.status, payload);

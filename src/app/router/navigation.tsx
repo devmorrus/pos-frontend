@@ -36,6 +36,8 @@ export type PermissionCode =
   | "cashflow.view"
   | "cashflow.create"
   | "report.view"
+  | "report.cashflow.view"
+  | "report.profitloss_accounting.view"
   | string;
 
 export type MenuStatus = "active" | "placeholder";
@@ -263,8 +265,7 @@ export const appNavigation: NavItem[] = [
       {
         label: "Arus Kas",
         path: "/reports/cash-flow",
-        requiredPermissions: ["report.view"],
-        fallbackRoles: reportRoles,
+        requiredPermissions: ["report.cashflow.view"],
       },
       {
         label: "Laba Rugi",

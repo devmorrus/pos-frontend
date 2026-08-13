@@ -19,6 +19,19 @@ export function getCashFlowReport(params: AccountingCashFlowReportFilters) {
   return apiClient.get<AccountingCashFlowReportDto>(`/api/reports/cash-flow?${query.toString()}`);
 }
 
+export async function exportCashFlowExcel(params: AccountingCashFlowReportFilters) {
+  const query = new URLSearchParams();
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.chartOfAccountId) query.append("chartOfAccountId", params.chartOfAccountId);
+  if (params.keyword) query.append("keyword", params.keyword);
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+
+  return apiClient.get<Blob>(`/api/reports/cash-flow/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
+}
+
 export function getProfitLossReport(params: AccountingProfitLossReportFilters) {
   const query = new URLSearchParams();
   if (params.outletId) query.append("outletId", params.outletId);

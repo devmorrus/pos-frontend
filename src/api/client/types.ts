@@ -8,6 +8,7 @@ export type RequestOptions = Omit<RequestInit, "body" | "method"> & {
   auth?: boolean;
   body?: unknown;
   headers?: HeadersInit;
+  responseType?: "json" | "text" | "blob";
 };
 
 export type SessionBridge = {
