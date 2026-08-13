@@ -7,7 +7,7 @@ import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { useRealtime } from "../../../lib/realtime/hooks";
 import { getErrorMessage } from "../../../utils/errors";
 import { getProducts } from "../../products/api/productsApi";
-import type { ProductDto } from "../../products/types/product";
+import type { ProductDto, ProductRecipeDto } from "../../products/types/product";
 import { lookupCustomers } from "../../customers/api/customersApi";
 import type { CustomerListItemDto } from "../../customers/types/customer";
 import { API_BASE_URL } from "../../../api/client/config";
@@ -29,6 +29,7 @@ type CartItem = {
   unitPrice: number;
   discountAmount: number | "";
   availableStock: number;
+  recipes?: ProductRecipeDto[] | null;
   selectedModifiers?: string[] | null;
   selectedModifiersJson?: string | null;
 };
@@ -62,6 +63,54 @@ function createPaymentRow(): PaymentRow {
     amount: "",
     referenceNumber: "",
   };
+}
+
+function calculateMaxRecipeQty(
+  product: ProductDto,
+  currentCart: CartItem[],
+  productsList: ProductDto[],
+  excludeProductId?: string
+): { maxQty: number; limitingMaterialName: string } {
+  if (!product.recipes || product.recipes.length === 0) {
+    return { maxQty: Infinity, limitingMaterialName: "" };
+  }
+
+  let minAllowed = Infinity;
+  let limitingMaterialName = "";
+
+  for (const ingredient of product.recipes) {
+    // Cari produk bahan baku di master data untuk tahu stoknya (qtyOnHand)
+    const rawMaterial = productsList.find((p) => p.id === ingredient.rawMaterialProductId);
+    if (!rawMaterial) {
+      minAllowed = 0;
+      limitingMaterialName = "Bahan Baku";
+      break;
+    }
+
+    // Hitung berapa banyak bahan baku ini yang sudah dipakai oleh ITEM LAIN di cart
+    const alreadyUsedInCart = currentCart
+      .filter((item) => item.productId !== excludeProductId)
+      .reduce((sum, item) => {
+        const itemProduct = productsList.find((p) => p.id === item.productId);
+        const itemIngredient = itemProduct?.recipes?.find(
+          (r) => r.rawMaterialProductId === rawMaterial.id
+        );
+        if (itemIngredient) {
+          return sum + itemIngredient.quantityRequired * (Number(item.qty) || 0);
+        }
+        return sum;
+      }, 0);
+
+    const availableStock = Math.max(0, rawMaterial.qtyOnHand - alreadyUsedInCart);
+    const maxForThisIngredient = Math.floor(availableStock / ingredient.quantityRequired);
+
+    if (maxForThisIngredient < minAllowed) {
+      minAllowed = maxForThisIngredient;
+      limitingMaterialName = rawMaterial.name;
+    }
+  }
+
+  return { maxQty: minAllowed, limitingMaterialName };
 }
 
 export default function PosPage() {
@@ -160,7 +209,10 @@ export default function PosPage() {
     const normalized = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
-      if (product.qtyOnHand <= 0) {
+      // Produk dengan resep (BOM) selalu tampil di POS meskipun stok 0,
+      // karena yang dikurangi adalah bahan baku, bukan stok produk jadi.
+      const hasRecipe = product.recipes && product.recipes.length > 0;
+      if (product.qtyOnHand <= 0 && !hasRecipe) {
         return false;
       }
 
@@ -281,22 +333,38 @@ export default function PosPage() {
       return;
     }
 
-    if (product.qtyOnHand <= 0) {
+    const hasRecipe = product.recipes && product.recipes.length > 0;
+    if (product.qtyOnHand <= 0 && !hasRecipe) {
       return;
     }
 
     setWarning(null);
     setCart((current) => {
       const existing = current.find((item) => item.productId === product.id && !item.productVariantId);
+      
+      if (hasRecipe) {
+        const { maxQty, limitingMaterialName } = calculateMaxRecipeQty(product, current, products);
+        const nextQty = existing ? (Number(existing.qty) || 0) + 1 : 1;
+        
+        if (nextQty > maxQty) {
+          setWarning(
+            `Stok bahan baku ${limitingMaterialName} tidak cukup untuk membuat lebih dari ${maxQty} ${product.name}.`
+          );
+          return current;
+        }
+      }
+
       if (existing) {
         const nextQty = (Number(existing.qty) || 0) + 1;
-        if (nextQty > product.qtyOnHand) {
+        if (!hasRecipe && nextQty > product.qtyOnHand) {
           setWarning(`Stok ${product.name} tidak cukup untuk menambah qty lagi.`);
           return current;
         }
 
         return current.map((item) =>
-          item.productId === product.id && !item.productVariantId ? { ...item, qty: nextQty, availableStock: product.qtyOnHand } : item,
+          item.productId === product.id && !item.productVariantId
+            ? { ...item, qty: nextQty, availableStock: product.qtyOnHand }
+            : item
         );
       }
 
@@ -312,6 +380,7 @@ export default function PosPage() {
           unitPrice: product.basePrice,
           discountAmount: 0,
           availableStock: product.qtyOnHand,
+          recipes: product.recipes || null,
         },
       ];
     });
@@ -338,9 +407,29 @@ export default function PosPage() {
           if (numericValue < 0) {
             return item;
           }
-          if (numericValue > item.availableStock) {
-            setWarning(`Qty ${item.productName} melebihi stok tersedia.`);
-            return item;
+
+          const hasRecipe = item.recipes && item.recipes.length > 0;
+          if (hasRecipe) {
+            const masterProduct = products.find((p) => p.id === item.productId);
+            if (masterProduct) {
+              const { maxQty, limitingMaterialName } = calculateMaxRecipeQty(
+                masterProduct,
+                current,
+                products,
+                item.productId
+              );
+              if (numericValue > maxQty) {
+                setWarning(
+                  `Stok bahan baku ${limitingMaterialName} tidak cukup untuk membuat lebih dari ${maxQty} ${item.productName}.`
+                );
+                return item;
+              }
+            }
+          } else {
+            if (numericValue > item.availableStock) {
+              setWarning(`Qty ${item.productName} melebihi stok tersedia.`);
+              return item;
+            }
           }
 
           return { ...item, qty: numericValue };
@@ -542,7 +631,8 @@ export default function PosPage() {
           ) : (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filteredProducts.map((product) => {
-                const outOfStock = product.qtyOnHand <= 0;
+                const hasRecipe = product.recipes && product.recipes.length > 0;
+                const outOfStock = product.qtyOnHand <= 0 && !hasRecipe;
                 return (
                   <button
                     key={product.id}
