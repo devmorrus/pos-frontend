@@ -220,6 +220,7 @@ export default function OutletsPage() {
         open={modalState.open}
         mode={modalState.mode}
         outlet={modalState.outlet}
+        existingCodes={outlets.map((o) => o.code)}
         isSubmitting={isSubmitting}
         submitError={submitError}
         onClose={closeModal}

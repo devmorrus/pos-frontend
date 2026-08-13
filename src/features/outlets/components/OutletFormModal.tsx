@@ -5,10 +5,30 @@ import { Modal } from "../../../components/ui/modal";
 import { validateOutletForm, type OutletFieldErrors } from "../schemas/outletSchema";
 import type { OutletDto, OutletFormValues } from "../types/outlet";
 
+function generateNextOutletCode(existingCodes: string[]): string {
+  const prefix = "OUT";
+  const regex = /^OUT(\d+)$/i;
+  let maxNum = 0;
+
+  for (const code of existingCodes) {
+    const match = code.match(regex);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) {
+        maxNum = num;
+      }
+    }
+  }
+
+  const nextNum = maxNum + 1;
+  return `${prefix}${nextNum.toString().padStart(3, "0")}`;
+}
+
 type OutletFormModalProps = {
   open: boolean;
   mode: "create" | "edit";
   outlet?: OutletDto | null;
+  existingCodes: string[];
   isSubmitting: boolean;
   submitError?: string | null;
   onClose: () => void;
@@ -27,6 +47,7 @@ export default function OutletFormModal({
   open,
   mode,
   outlet,
+  existingCodes,
   isSubmitting,
   submitError,
   onClose,
@@ -49,15 +70,18 @@ export default function OutletFormModal({
             phone: outlet.phone ?? "",
             isActive: outlet.isActive,
           }
-        : initialValues,
+        : {
+            ...initialValues,
+            code: generateNextOutletCode(existingCodes),
+          },
     );
     setErrors({});
-  }, [open, outlet]);
+  }, [open, outlet, existingCodes]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextErrors = validateOutletForm(values);
+    const nextErrors = validateOutletForm(values, existingCodes, outlet?.code);
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
@@ -92,19 +116,33 @@ export default function OutletFormModal({
           <InlineAlert tone="error" message={submitError} />
 
           <div className="grid gap-5 md:grid-cols-2">
-            <label className="block">
+            <div className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
                 Kode cabang
               </span>
-              <input
-                value={values.code}
-                onChange={(event) =>
-                  setValues((current) => ({ ...current, code: event.target.value.toUpperCase() }))
-                }
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
+              <div className="relative flex items-center">
+                <input
+                  value={values.code}
+                  onChange={(event) =>
+                    setValues((current) => ({ ...current, code: event.target.value.toUpperCase() }))
+                  }
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-4 pr-24 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValues((current) => ({
+                      ...current,
+                      code: generateNextOutletCode(existingCodes),
+                    }));
+                  }}
+                  className="absolute right-2 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  Generate
+                </button>
+              </div>
               <FieldErrorText message={errors.code} />
-            </label>
+            </div>
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
