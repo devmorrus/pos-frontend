@@ -113,16 +113,16 @@ export default function StockTransferDetailPage() {
                   <button
                     type="button"
                     onClick={() => setAction("approve")}
-                    className="rounded-xl border border-success-200 px-4 py-2 text-sm font-semibold text-success-700 dark:border-success-500/20 dark:text-success-300"
+                    className="rounded-xl border border-success-200 px-4 py-2 text-sm font-semibold text-success-700 dark:border-success-500/20 dark:text-success-300 hover:bg-success-50 dark:hover:bg-success-950/20"
                   >
-                    Approve
+                    Terima Barang
                   </button>
                   <button
                     type="button"
                     onClick={() => setAction("reject")}
-                    className="rounded-xl border border-error-200 px-4 py-2 text-sm font-semibold text-error-700 dark:border-error-500/20 dark:text-error-300"
+                    className="rounded-xl border border-error-200 px-4 py-2 text-sm font-semibold text-error-700 dark:border-error-500/20 dark:text-error-300 hover:bg-error-50 dark:hover:bg-error-950/20"
                   >
-                    Reject
+                    Tolak
                   </button>
                 </div>
               ) : null}
@@ -162,13 +162,13 @@ export default function StockTransferDetailPage() {
 
       <ConfirmDialog
         open={Boolean(action)}
-        title={action === "approve" ? "Approve transfer stok" : "Reject transfer stok"}
+        title={action === "approve" ? "Persetujuan Penerimaan Barang" : "Tolak Transfer Stok"}
         description={
           action === "approve"
-            ? "Stok akan benar-benar dipindahkan ketika transfer di-approve."
-            : "Transfer akan ditutup tanpa perubahan stok ketika direject."
+            ? "Stok akan dikonfirmasi telah diterima dan ditambahkan ke cabang tujuan."
+            : "Transfer akan ditolak dan stok akan dikembalikan ke cabang asal."
         }
-        confirmLabel={action === "approve" ? "Approve transfer" : "Reject transfer"}
+        confirmLabel={action === "approve" ? "Terima Barang" : "Tolak Transfer"}
         isBusy={isSubmitting}
         onCancel={() => setAction(null)}
         onConfirm={() => void handleAction()}
