@@ -14,6 +14,7 @@ import {
   formatDateTime,
   getChannelSettlementStatusClasses,
 } from "../utils/formatters";
+import AccountingPostingBadge from "../../accounting-integrations/components/AccountingPostingBadge";
 
 type LocationState = {
   successMessage?: string;
@@ -115,6 +116,12 @@ export default function ChannelSettlementDetailPage() {
                 <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getChannelSettlementStatusClasses(detail.status)}`}>
                   {detail.status}
                 </span>
+                <div className="mt-3">
+                  <AccountingPostingBadge
+                    referenceType="channel_settlement"
+                    referenceId={detail.id}
+                  />
+                </div>
               </div>
               <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
                 <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Periode</p>

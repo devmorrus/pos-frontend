@@ -41,6 +41,7 @@ import ConsignmentReturnCreatePage from "../../features/consignments/pages/Consi
 import ConsignmentReturnDetailPage from "../../features/consignments/pages/ConsignmentReturnDetailPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import ChartOfAccountsPage from "../../features/accounting/pages/ChartOfAccountsPage";
+import AccountingIntegrationsPage from "../../features/accounting-integrations/pages/AccountingIntegrationsPage";
 import CashFlowDetailPage from "../../features/cash-flows/pages/CashFlowDetailPage";
 import IncomeBusinessesPage from "../../features/cash-flows/pages/IncomeBusinessesPage";
 import OutcomeBusinessesPage from "../../features/cash-flows/pages/OutcomeBusinessesPage";
@@ -112,6 +113,7 @@ const usersPolicy = getNavigationItem("/users");
 const outletsPolicy = getNavigationItem("/outlets");
 const dashboardPolicy = getNavigationItem("/dashboard");
 const chartOfAccountsPolicy = getNavigationItem("/chart-of-accounts");
+const accountingIntegrationsPolicy = getNavigationItem("/accounting-integrations");
 const incomeBusinessesPolicy = getNavigationItem("/income-businesses");
 const outcomeBusinessesPolicy = getNavigationItem("/outcome-businesses");
 const cashFlowReportPolicy = getNavigationItem("/reports/cash-flow");
@@ -183,6 +185,17 @@ export default function AppRouter() {
                 fallbackRoles={chartOfAccountsPolicy?.fallbackRoles}
               >
                 <ChartOfAccountsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="accounting-integrations"
+            element={
+              <PermissionGuard
+                requiredPermissions={accountingIntegrationsPolicy?.requiredPermissions}
+                fallbackRoles={accountingIntegrationsPolicy?.fallbackRoles}
+              >
+                <AccountingIntegrationsPage />
               </PermissionGuard>
             }
           />

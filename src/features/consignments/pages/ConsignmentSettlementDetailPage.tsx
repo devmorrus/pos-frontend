@@ -13,6 +13,7 @@ import {
   formatDateTime,
   getSettlementStatusClasses,
 } from "../utils/formatters";
+import AccountingPostingBadge from "../../accounting-integrations/components/AccountingPostingBadge";
 
 type SettlementDetailLocationState = {
   successMessage?: string;
@@ -141,13 +142,19 @@ export default function ConsignmentSettlementDetailPage() {
               </div>
 
               <div className="space-y-4">
-                <span
-                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getSettlementStatusClasses(
-                    settlement.status,
-                  )}`}
-                >
-                  {settlement.status}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getSettlementStatusClasses(
+                      settlement.status,
+                    )}`}
+                  >
+                    {settlement.status}
+                  </span>
+                  <AccountingPostingBadge
+                    referenceType="consignment_settlement"
+                    referenceId={settlement.id}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/consignment-settlements"

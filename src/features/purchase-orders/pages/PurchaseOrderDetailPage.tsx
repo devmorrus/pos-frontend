@@ -6,6 +6,7 @@ import { getErrorMessage } from "../../../utils/errors";
 import { formatCurrency, formatDateOnly, formatDateTime, getPoStatusClasses } from "../../procurement/utils/formatters";
 import { getPurchaseOrderById, updatePurchaseOrderStatus } from "../api/purchaseOrdersApi";
 import type { PurchaseOrderDto } from "../types/purchaseOrder";
+import AccountingPostingBadge from "../../accounting-integrations/components/AccountingPostingBadge";
 
 type PurchaseOrderDetailLocationState = {
   successMessage?: string;
@@ -162,9 +163,15 @@ export default function PurchaseOrderDetailPage() {
               </div>
 
               <div className="space-y-4">
-                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPoStatusClasses(order.status)}`}>
-                  {order.status}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPoStatusClasses(order.status)}`}>
+                    {order.status}
+                  </span>
+                  <AccountingPostingBadge
+                    referenceType="purchase_order"
+                    referenceId={order.id}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/purchase-orders"

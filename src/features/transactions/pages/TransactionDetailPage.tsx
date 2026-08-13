@@ -13,6 +13,7 @@ import {
 import TransactionActionPanel from "../components/TransactionActionPanel";
 import ReceiptCard from "../components/ReceiptCard";
 import TransactionStatusBadge from "../components/TransactionStatusBadge";
+import AccountingPostingBadge from "../../accounting-integrations/components/AccountingPostingBadge";
 
 export default function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -74,6 +75,10 @@ export default function TransactionDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <TransactionStatusBadge status={transaction.status} />
+                <AccountingPostingBadge
+                  referenceType="transaction_sale"
+                  referenceId={transaction.id}
+                />
                 <Link
                   to="/transactions"
                   className="app-no-print rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 dark:border-gray-800 dark:text-gray-200"

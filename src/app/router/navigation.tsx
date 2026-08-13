@@ -244,6 +244,12 @@ export const appNavigation: NavItem[] = [
         fallbackRoles: accountingRoles,
       },
       {
+        label: "Integrasi Akuntansi",
+        path: "/accounting-integrations",
+        requiredPermissions: ["account.manage"],
+        fallbackRoles: accountingRoles,
+      },
+      {
         label: "Pendapatan Toko",
         path: "/income-businesses",
         requiredPermissions: ["cashflow.view"],
