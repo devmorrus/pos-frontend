@@ -1,8 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
-import { getOutlets } from "../../outlets/api/outletsApi";
-import type { OutletDto } from "../../outlets/types/outlet";
 import { getSalesRecapReport, exportSalesRecapExcel } from "../api/reportsApi";
 import type { SalesRecapReportDto } from "../types/reports";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
@@ -18,13 +16,13 @@ function formatCurrency(value: number) {
 
 export default function SalesRecapReportPage() {
   const { session } = useAuth();
-  const { selectedOutletId, setSelectedOutletId } = useOutlet();
+  const { selectedOutletId } = useOutlet();
   
   const userRole = session?.role;
   const isPrivileged = userRole === "Owner" || userRole === "Admin" || userRole === "Keuangan";
   const effectiveOutletId = isPrivileged ? selectedOutletId : session?.outletId ?? null;
 
-  const [outlets, setOutlets] = useState<OutletDto[]>([]);
+
   const [report, setReport] = useState<SalesRecapReportDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -69,13 +67,7 @@ export default function SalesRecapReportPage() {
     };
   }, [rangeType, customDates]);
 
-  useEffect(() => {
-    if (isPrivileged) {
-      getOutlets()
-        .then((res) => setOutlets(res))
-        .catch(() => {});
-    }
-  }, [isPrivileged]);
+
 
   const loadData = async () => {
     setIsLoading(true);
@@ -124,23 +116,6 @@ export default function SalesRecapReportPage() {
       {/* FILTER & ACTIONS PANEL */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-wrap items-center gap-3">
-          {/* Outlet Selector */}
-          {isPrivileged && (
-            <div className="min-w-[200px]">
-              <select
-                value={selectedOutletId ?? ""}
-                onChange={(e) => setSelectedOutletId(e.target.value || null)}
-                className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              >
-                <option value="">Semua Outlet</option>
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           {/* Preset Dates */}
           <div className="inline-flex rounded-2xl bg-gray-100 p-1 dark:bg-gray-950">

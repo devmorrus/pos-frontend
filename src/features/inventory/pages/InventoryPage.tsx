@@ -7,14 +7,13 @@ import { getErrorMessage } from "../../../utils/errors";
 import { getConsignmentLabel, getConsignmentTone } from "../../products/utils/presentation";
 import { useRealtime } from "../../../lib/realtime/hooks";
 import { getInventory } from "../api/inventoryApi";
-import StockOutletSelector from "../components/StockOutletSelector";
 import StockStatusBadge from "../components/StockStatusBadge";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 import type { InventoryListItem } from "../types/inventory";
 import { formatDateTime, formatQuantity } from "../utils/presentation";
 
 export default function InventoryPage() {
-  const { ownerMode, activeOutlets, effectiveOutletId, selectedOutletId, setSelectedOutletId } =
+  const { ownerMode, effectiveOutletId } =
     useStockOutletScope();
   const { onStockUpdate } = useRealtime();
   const [items, setItems] = useState<InventoryListItem[]>([]);
@@ -84,12 +83,6 @@ export default function InventoryPage() {
         description={`Total item: ${items.length} · Stok rendah: ${lowStockCount}`}
         actions={
           <>
-            <StockOutletSelector
-              ownerMode={ownerMode}
-              value={selectedOutletId}
-              onChange={setSelectedOutletId}
-              outlets={activeOutlets}
-            />
             <Link
               to="/stock-opnames/create"
               className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"

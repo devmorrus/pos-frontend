@@ -6,13 +6,12 @@ import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui"
 import { getErrorMessage } from "../../../utils/errors";
 import { getInventory, createStockTransfer, getOutgoingStockTransfers } from "../api/inventoryApi";
 import TransferCreateModal from "../components/TransferCreateModal";
-import StockOutletSelector from "../components/StockOutletSelector";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 import type { InventoryListItem, StockTransferDto } from "../types/inventory";
 import { formatDateTime, getTransferStatusTone } from "../utils/presentation";
 
 export default function StockTransfersOutgoingPage() {
-  const { ownerMode, activeOutlets, effectiveOutletId, selectedOutletId, setSelectedOutletId } =
+  const { ownerMode, activeOutlets, effectiveOutletId } =
     useStockOutletScope();
   const [items, setItems] = useState<StockTransferDto[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryListItem[]>([]);
@@ -101,21 +100,13 @@ export default function StockTransfersOutgoingPage() {
         title="Outgoing transfer"
         description={`Total transfer: ${items.length} · Pending: ${pendingCount}`}
         actions={
-          <>
-            <StockOutletSelector
-              ownerMode={ownerMode}
-              value={selectedOutletId}
-              onChange={setSelectedOutletId}
-              outlets={activeOutlets}
-            />
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
-            >
-              Buat transfer
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Buat transfer
+          </button>
         }
       >
         {isLoading ? (

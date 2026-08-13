@@ -5,13 +5,12 @@ import { AppTableShell } from "../../../components/tables";
 import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
 import { getStockOpnames } from "../api/inventoryApi";
-import StockOutletSelector from "../components/StockOutletSelector";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 import type { StockOpnameDto } from "../types/inventory";
 import { formatDateTime, formatQuantity } from "../utils/presentation";
 
 export default function StockOpnamesPage() {
-  const { ownerMode, activeOutlets, effectiveOutletId, selectedOutletId, setSelectedOutletId } =
+  const { ownerMode, effectiveOutletId } =
     useStockOutletScope();
   const [items, setItems] = useState<StockOpnameDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,21 +48,14 @@ export default function StockOpnamesPage() {
       <InlineAlert tone="error" message={error} />
       <AppTableShell
         title="Histori stock opname"
+        description="Daftar stock opname yang pernah dilakukan."
         actions={
-          <>
-            <StockOutletSelector
-              ownerMode={ownerMode}
-              value={selectedOutletId}
-              onChange={setSelectedOutletId}
-              outlets={activeOutlets}
-            />
-            <Link
-              to="/stock-opnames/create"
-              className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
-            >
-              Buat stock opname
-            </Link>
-          </>
+          <Link
+            to="/stock-opnames/create"
+            className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Buat stock opname
+          </Link>
         }
       >
         {isLoading ? (

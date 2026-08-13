@@ -9,13 +9,12 @@ import {
   getIncomingStockTransfers,
   rejectStockTransfer,
 } from "../api/inventoryApi";
-import StockOutletSelector from "../components/StockOutletSelector";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 import type { StockTransferDto } from "../types/inventory";
 import { getTransferStatusTone } from "../utils/presentation";
 
 export default function StockTransfersIncomingPage() {
-  const { ownerMode, activeOutlets, effectiveOutletId, selectedOutletId, setSelectedOutletId } =
+  const { ownerMode, effectiveOutletId } =
     useStockOutletScope();
   const [items, setItems] = useState<StockTransferDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,14 +97,6 @@ export default function StockTransfersIncomingPage() {
 
       <AppTableShell
         title="Incoming transfer"
-        actions={
-          <StockOutletSelector
-            ownerMode={ownerMode}
-            value={selectedOutletId}
-            onChange={setSelectedOutletId}
-            outlets={activeOutlets}
-          />
-        }
       >
         {isLoading ? (
           <AppLoader label="Memuat transfer stok incoming..." />

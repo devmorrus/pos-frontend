@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
 import { AppErrorState, AppLoader, InlineAlert } from "../../../components/ui";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { isOwner } from "../../auth/utils/access";
-import { getOutlets } from "../../outlets/api/outletsApi";
-import type { OutletLookupDto } from "../../outlets/types/outlet";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { getErrorMessage } from "../../../utils/errors";
 import { getRecentTransactions } from "../api/transactionsApi";
@@ -19,34 +17,13 @@ import TransactionStatusBadge from "../components/TransactionStatusBadge";
 
 export default function TransactionsPage() {
   const { session } = useAuth();
-  const { selectedOutletId, setSelectedOutletId } = useOutlet();
+  const { selectedOutletId } = useOutlet();
   const [transactions, setTransactions] = useState<TransactionListItemDto[]>([]);
-  const [outlets, setOutlets] = useState<OutletLookupDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const ownerMode = isOwner(session?.role);
-  const activeOutlets = useMemo(
-    () => outlets.filter((outlet) => outlet.isActive),
-    [outlets],
-  );
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
 
-  useEffect(() => {
-    async function loadOutletsIfNeeded() {
-      if (!ownerMode) {
-        return;
-      }
-
-      try {
-        setOutlets(await getOutlets());
-      } catch {
-        // best-effort only; main error comes from list loading
-      }
-    }
-
-    void loadOutletsIfNeeded();
-  }, [ownerMode]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadTransactions() {
@@ -81,22 +58,6 @@ export default function TransactionsPage() {
       <AppTableShell
         title="Histori transaksi terbaru"
         description="Daftar ini memakai endpoint histori dasar backend dan dibatasi ke outlet operasional yang aktif."
-        actions={
-          ownerMode ? (
-            <select
-              value={selectedOutletId ?? ""}
-              onChange={(event) => setSelectedOutletId(event.target.value || null)}
-              className="h-11 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-            >
-              <option value="">Pilih outlet</option>
-              {activeOutlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  {outlet.name}
-                </option>
-              ))}
-            </select>
-          ) : null
-        }
       >
         {!effectiveOutletId && ownerMode ? (
           <AppErrorState

@@ -13,8 +13,7 @@ import { isOwner } from "../../auth/utils/access";
 import { getErrorMessage } from "../../../utils/errors";
 import { getCategories } from "../../categories/api/categoriesApi";
 import type { CategoryDto } from "../../categories/types/category";
-import { getOutlets } from "../../outlets/api/outletsApi";
-import type { OutletLookupDto } from "../../outlets/types/outlet";
+import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { deleteProduct, getProducts } from "../api/productsApi";
 import type { ProductDto } from "../types/product";
 import {
@@ -35,8 +34,7 @@ export default function ProductsPage() {
   const { session } = useAuth();
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [outlets, setOutlets] = useState<OutletLookupDto[]>([]);
-  const [selectedOutletId, setSelectedOutletId] = useState<string>(session?.outletId ?? "");
+  const { selectedOutletId } = useOutlet();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(
@@ -46,18 +44,6 @@ export default function ProductsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const ownerMode = isOwner(session?.role);
-  const canChangeOutlet = ownerMode;
-  const selectableOutlets = useMemo(
-    () =>
-      outlets.filter((outlet) => {
-        if (outlet.isActive) {
-          return true;
-        }
-
-        return !canChangeOutlet && outlet.id === session?.outletId;
-      }),
-    [canChangeOutlet, outlets, session?.outletId],
-  );
 
   const categoryNameById = useMemo(
     () =>
@@ -71,16 +57,11 @@ export default function ProductsPage() {
   );
 
   async function loadLookups() {
-    const [categoriesResult, outletsResult] = await Promise.all([
-      getCategories(),
-      ownerMode || session?.role === "Admin" ? getOutlets() : Promise.resolve([]),
-    ]);
-
+    const categoriesResult = await getCategories();
     setCategories(categoriesResult);
-    setOutlets(outletsResult);
   }
 
-  async function loadProducts(currentOutletId: string) {
+  async function loadProducts(currentOutletId: string | null) {
     if (ownerMode && !currentOutletId) {
       setProducts([]);
       setError(null);
@@ -147,32 +128,12 @@ export default function ProductsPage() {
         title="Daftar produk"
         description="Kelola master produk beserta stok per outlet aktif."
         actions={
-          <>
-            {(ownerMode || session?.role === "Admin") && selectableOutlets.length > 0 ? (
-              <select
-                value={selectedOutletId}
-                disabled={!canChangeOutlet && Boolean(session?.outletId)}
-                onChange={(event) => setSelectedOutletId(event.target.value)}
-                className="h-11 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none disabled:cursor-not-allowed disabled:bg-gray-100 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-900"
-              >
-                <option value="">
-                  {ownerMode ? "Pilih outlet" : "Outlet aktif pengguna"}
-                </option>
-                {selectableOutlets.map((outlet) => (
-                  <option key={outlet.id} value={outlet.id}>
-                    {outlet.name}
-                    {!outlet.isActive ? " (nonaktif)" : ""}
-                  </option>
-                ))}
-              </select>
-            ) : null}
-            <Link
-              to="/products/create"
-              className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
-            >
-              Tambah produk
-            </Link>
-          </>
+          <Link
+            to="/products/create"
+            className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Tambah produk
+          </Link>
         }
       >
         {isLoading ? (

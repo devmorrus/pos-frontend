@@ -21,7 +21,7 @@ export default function DashboardTopbar({
   onToggleSidebar: () => void;
 }) {
   const { session, logout } = useAuth();
-  const { selectedOutletId } = useOutlet();
+  const { selectedOutletId, setSelectedOutletId } = useOutlet();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [outlets, setOutlets] = useState<OutletLookupDto[]>([]);
   const profileRef = useRef<HTMLDivElement | null>(null);
@@ -93,6 +93,23 @@ export default function DashboardTopbar({
         </div>
 
         <div className="flex items-center gap-3">
+          {isPrivilegedUser(session?.role) ? (
+            <div className="relative">
+              <select
+                value={selectedOutletId || ""}
+                onChange={(e) => setSelectedOutletId(e.target.value || null)}
+                className="h-10 rounded-xl border border-gray-200 bg-white/50 backdrop-blur pl-3 pr-8 text-xs font-semibold text-gray-700 outline-none hover:bg-gray-50 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950/50 dark:text-gray-200 dark:hover:bg-gray-900/50"
+              >
+                <option value="">Semua outlet</option>
+                {outlets.filter((o) => o.isActive).map((outlet) => (
+                  <option key={outlet.id} value={outlet.id}>
+                    {outlet.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <ThemeToggleButton />
           <div className="hidden rounded-2xl border border-gray-200 px-4 py-2 text-right dark:border-gray-800 sm:block">
             <p className="text-sm font-semibold text-gray-900 dark:text-white">
