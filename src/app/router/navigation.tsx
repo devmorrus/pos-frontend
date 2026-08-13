@@ -33,6 +33,8 @@ export type PermissionCode =
   | "customer.manage"
   | "customer.view"
   | "account.manage"
+  | "cashflow.view"
+  | "cashflow.create"
   | "report.view"
   | string;
 
@@ -66,6 +68,7 @@ const consignmentRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const channelRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const pricingRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const accountingRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
+const cashFlowRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const customerViewRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Kasir"];
 const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Gudang", "Kasir"];
 const reportRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
@@ -237,6 +240,18 @@ export const appNavigation: NavItem[] = [
         path: "/chart-of-accounts",
         requiredPermissions: ["account.manage"],
         fallbackRoles: accountingRoles,
+      },
+      {
+        label: "Pendapatan Toko",
+        path: "/income-businesses",
+        requiredPermissions: ["cashflow.view"],
+        fallbackRoles: cashFlowRoles,
+      },
+      {
+        label: "Pengeluaran Toko",
+        path: "/outcome-businesses",
+        requiredPermissions: ["cashflow.view"],
+        fallbackRoles: cashFlowRoles,
       },
     ],
   },

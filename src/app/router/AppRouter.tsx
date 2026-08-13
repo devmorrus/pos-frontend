@@ -41,6 +41,10 @@ import ConsignmentReturnCreatePage from "../../features/consignments/pages/Consi
 import ConsignmentReturnDetailPage from "../../features/consignments/pages/ConsignmentReturnDetailPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import ChartOfAccountsPage from "../../features/accounting/pages/ChartOfAccountsPage";
+import CashFlowDetailPage from "../../features/cash-flows/pages/CashFlowDetailPage";
+import IncomeBusinessesPage from "../../features/cash-flows/pages/IncomeBusinessesPage";
+import OutcomeBusinessesPage from "../../features/cash-flows/pages/OutcomeBusinessesPage";
+import CashFlowFormPage from "../../features/cash-flows/components/CashFlowFormPage";
 import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportPage";
 import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapReportPage";
 import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
@@ -107,6 +111,8 @@ const usersPolicy = getNavigationItem("/users");
 const outletsPolicy = getNavigationItem("/outlets");
 const dashboardPolicy = getNavigationItem("/dashboard");
 const chartOfAccountsPolicy = getNavigationItem("/chart-of-accounts");
+const incomeBusinessesPolicy = getNavigationItem("/income-businesses");
+const outcomeBusinessesPolicy = getNavigationItem("/outcome-businesses");
 const reportPolicy = getNavigationItem("/reports/profit-loss");
 const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
 const salesRecapPolicy = getNavigationItem("/reports/sales");
@@ -175,6 +181,72 @@ export default function AppRouter() {
                 fallbackRoles={chartOfAccountsPolicy?.fallbackRoles}
               >
                 <ChartOfAccountsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="income-businesses"
+            element={
+              <PermissionGuard
+                requiredPermissions={incomeBusinessesPolicy?.requiredPermissions}
+                fallbackRoles={incomeBusinessesPolicy?.fallbackRoles}
+              >
+                <IncomeBusinessesPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="income-businesses/create"
+            element={
+              <PermissionGuard
+                requiredPermissions={["cashflow.create"]}
+                fallbackRoles={incomeBusinessesPolicy?.fallbackRoles}
+              >
+                <CashFlowFormPage trxType="in" />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="income-businesses/:id"
+            element={
+              <PermissionGuard
+                requiredPermissions={incomeBusinessesPolicy?.requiredPermissions}
+                fallbackRoles={incomeBusinessesPolicy?.fallbackRoles}
+              >
+                <CashFlowDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="outcome-businesses"
+            element={
+              <PermissionGuard
+                requiredPermissions={outcomeBusinessesPolicy?.requiredPermissions}
+                fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
+              >
+                <OutcomeBusinessesPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="outcome-businesses/create"
+            element={
+              <PermissionGuard
+                requiredPermissions={["cashflow.create"]}
+                fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
+              >
+                <CashFlowFormPage trxType="out" />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="outcome-businesses/:id"
+            element={
+              <PermissionGuard
+                requiredPermissions={outcomeBusinessesPolicy?.requiredPermissions}
+                fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
+              >
+                <CashFlowDetailPage />
               </PermissionGuard>
             }
           />
