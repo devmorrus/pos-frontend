@@ -42,6 +42,18 @@ export function getProfitLossReport(params: AccountingProfitLossReportFilters) {
   return apiClient.get<AccountingProfitLossReportDto>(`/api/reports/profit-loss?${query.toString()}`);
 }
 
+export async function exportProfitLossExcel(params: AccountingProfitLossReportFilters) {
+  const query = new URLSearchParams();
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.keyword) query.append("keyword", params.keyword);
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+
+  return apiClient.get<Blob>(`/api/reports/profit-loss/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
+}
+
 export function getPurchaseRecapReport(params: {
   outletId?: string;
   startDate: string;

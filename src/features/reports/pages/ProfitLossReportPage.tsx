@@ -6,7 +6,7 @@ import { getOutlets } from "../../outlets/api/outletsApi";
 import type { OutletDto } from "../../outlets/types/outlet";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { getProfitLossReport } from "../api/reportsApi";
+import { exportProfitLossExcel, getProfitLossReport } from "../api/reportsApi";
 import type { AccountingProfitLossReportDto, AccountingProfitLossSectionDto } from "../types/reports";
 
 function formatCurrency(value: number) {
@@ -119,6 +119,7 @@ export default function ProfitLossReportPage() {
   const [keyword, setKeyword] = useState("");
   const [outletId, setOutletId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isPrivileged = session?.role === "Owner" || session?.role === "Admin" || session?.role === "Keuangan";
@@ -172,6 +173,35 @@ export default function ProfitLossReportPage() {
 
   const summary = useMemo(() => report?.summary ?? null, [report]);
 
+  async function handleExport() {
+    setIsExporting(true);
+    setError(null);
+
+    try {
+      const file = await exportProfitLossExcel({
+        dateFrom,
+        dateTo,
+        outletId: effectiveOutletId || undefined,
+        keyword: keyword.trim() || undefined,
+      });
+
+      const url = window.URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      const formattedStart = dateFrom.replace(/-/g, "");
+      const formattedEnd = dateTo.replace(/-/g, "");
+      link.setAttribute("download", `Laporan_Laba_Rugi_Akuntansi_${formattedStart}_${formattedEnd}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Gagal mengekspor laporan laba rugi."));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <ProtectedPageShell
       title="Laporan Laba Rugi"
@@ -180,7 +210,8 @@ export default function ProfitLossReportPage() {
       <InlineAlert tone="error" message={error} />
 
       <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="grid gap-4 lg:grid-cols-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="grid flex-1 gap-4 lg:grid-cols-4">
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Tanggal mulai</span>
             <input
@@ -228,6 +259,15 @@ export default function ProfitLossReportPage() {
               className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
             />
           </label>
+        </div>
+          <button
+            type="button"
+            onClick={() => void handleExport()}
+            disabled={isLoading || isExporting}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-brand-500 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isExporting ? "Mengekspor..." : "Ekspor Excel"}
+          </button>
         </div>
       </section>
 

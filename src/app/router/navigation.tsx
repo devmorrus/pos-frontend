@@ -270,7 +270,7 @@ export const appNavigation: NavItem[] = [
       {
         label: "Laba Rugi",
         path: "/reports/profit-loss",
-        fallbackRoles: reportRoles,
+        requiredPermissions: ["report.profitloss_accounting.view"],
       },
       {
         label: "Rekap Pembelian",
