@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   BoxCubeIcon,
   DocsIcon,
+  DollarLineIcon,
   GridIcon,
   GroupIcon,
   PlugInIcon,
@@ -31,6 +32,7 @@ export type PermissionCode =
   | "pricing.manage"
   | "customer.manage"
   | "customer.view"
+  | "account.manage"
   | "report.view"
   | string;
 
@@ -63,6 +65,7 @@ const supplierReturnRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const consignmentRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const channelRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const pricingRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
+const accountingRoles: AppRole[] = ["Owner", "Admin", "Keuangan"];
 const customerViewRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Kasir"];
 const dashboardRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang", "Gudang", "Kasir"];
 const reportRoles: AppRole[] = ["Owner", "Admin", "Keuangan", "KepalaCabang"];
@@ -225,6 +228,19 @@ export const appNavigation: NavItem[] = [
     ],
   },
   {
+    label: "Keuangan",
+    icon: <DollarLineIcon />,
+    status: "active",
+    subItems: [
+      {
+        label: "Chart of Accounts",
+        path: "/chart-of-accounts",
+        requiredPermissions: ["account.manage"],
+        fallbackRoles: accountingRoles,
+      },
+    ],
+  },
+  {
     label: "Laporan",
     icon: <DocsIcon />,
     status: "active",
@@ -309,6 +325,8 @@ export function getNavigationItem(path: string) {
           path: foundSub.path,
           icon: item.icon,
           status: "active" as MenuStatus,
+          requiredPermissions: foundSub.requiredPermissions,
+          fallbackRoles: foundSub.fallbackRoles,
         };
       }
     }

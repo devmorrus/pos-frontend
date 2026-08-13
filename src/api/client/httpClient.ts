@@ -86,9 +86,12 @@ async function executeRequest<T>(
     ...rest,
     method,
     headers: mergedHeaders,
-    body: body !== undefined
-      ? (isFormData ? (body as any) : JSON.stringify(body))
-      : undefined,
+    body:
+      body !== undefined
+        ? isFormData
+          ? body
+          : JSON.stringify(body)
+        : undefined,
   });
 
   if (response.status === 401 && auth && !hasRetried && sessionBridge.getRefreshToken()) {
@@ -127,6 +130,8 @@ export const apiClient = {
     executeRequest<T>(path, "POST", { ...options, body }),
   put: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "body">) =>
     executeRequest<T>(path, "PUT", { ...options, body }),
+  patch: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "body">) =>
+    executeRequest<T>(path, "PATCH", { ...options, body }),
   delete: <T>(path: string, options?: RequestOptions) =>
     executeRequest<T>(path, "DELETE", options),
 };
