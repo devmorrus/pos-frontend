@@ -72,6 +72,7 @@ export default function PosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([createPaymentRow()]);
+  const [step, setStep] = useState<"catalog" | "checkout">("catalog");
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isPricingLoading, setIsPricingLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,6 +151,10 @@ export default function PosPage() {
     const normalized = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
+      if (product.qtyOnHand <= 0) {
+        return false;
+      }
+
       if (!normalized) {
         return true;
       }
@@ -442,10 +447,10 @@ export default function PosPage() {
       setCustomerQuery("");
       setSelectedCustomer(null);
       setCustomerResults([]);
+      setStep("catalog");
       await loadProducts();
       await refreshCurrentSession();
-      navigate(`/transactions/${result.id}`);
-    } catch (requestError) {
+      navigate(`/transactions/${result.id}`);} catch (requestError) {
       const message = getErrorMessage(requestError, "Checkout gagal diproses.");
       setError(message);
       if (message.toLowerCase().includes("sesi kasir")) {
@@ -498,25 +503,26 @@ export default function PosPage() {
       <InlineAlert tone="info" message={warning} />
       <InlineAlert tone="error" message={pricingError} />
 
-      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-          <div className="mb-4 space-y-3">
-            <input
-              ref={searchInputRef}
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Cari produk berdasarkan nama, SKU, atau barcode"
-              className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-            />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Produk habis tetap ditampilkan sebagai referensi, tetapi tidak bisa ditambahkan ke keranjang.
-            </p>
-          </div>
+      <section className="w-full space-y-6">
+        {step === "catalog" ? (
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-4 space-y-3">
+              <input
+                ref={searchInputRef}
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari produk berdasarkan nama, SKU, atau barcode"
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Produk habis tidak ditampilkan di katalog penjualan kasir.
+              </p>
+            </div>
 
           {isLoadingProducts ? (
             <AppLoader label="Memuat katalog produk..." />
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filteredProducts.map((product) => {
                 const outOfStock = product.qtyOnHand <= 0;
                 return (
@@ -542,14 +548,19 @@ export default function PosPage() {
                       </div>
                     )}
 
-                    <div className="flex-1 min-w-0 flex flex-col justify-between h-16">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm sm:text-base leading-snug">{product.name}</h3>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">{product.sku}</p>
-                        </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-1 gap-1">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base leading-snug break-words">{product.name}</h3>
+                      </div>
+
+                      <div className="flex items-baseline gap-1 mt-1 text-sm font-bold text-brand-600 dark:text-brand-400">
+                        <span>{formatCurrency(product.basePrice)}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal uppercase">/{product.unit}</span>
+                      </div>
+
+                      <div className="mt-1">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold flex-shrink-0 ${
+                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                             outOfStock
                               ? "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300"
                               : "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"
@@ -558,300 +569,351 @@ export default function PosPage() {
                           Stok {product.qtyOnHand}
                         </span>
                       </div>
-
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-sm font-bold text-brand-600 dark:text-brand-400">
-                          {formatCurrency(product.basePrice)}
-                        </span>
-                        <span className="text-[11px] text-gray-400 dark:text-gray-500 uppercase">{product.unit}</span>
-                      </div>
                     </div>
                   </button>
                 );
               })}
             </div>
           )}
-        </div>
 
-        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Keranjang</h2>
-
-          <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">Customer checkout</h3>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Pilih guest atau cari customer berdasarkan nomor HP / nama.
-                  </p>
-                </div>
-                {selectedCustomer ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCustomer(null);
-                      setCustomerQuery("");
-                      setCustomerResults([]);
-                    }}
-                    className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
-                  >
-                    Kembali ke guest
-                  </button>
-                ) : null}
+          {cart.length > 0 && (
+            <div className="mt-6 flex items-center justify-between rounded-2xl border border-brand-200 bg-brand-50/50 p-4 dark:border-brand-900/30 dark:bg-brand-950/20">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {cart.length} Produk terpilih
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Estimasi subtotal: <span className="font-semibold text-brand-600 dark:text-brand-400">{formatCurrency(fallbackSubtotal)}</span>
+                </p>
               </div>
-
-              {selectedCustomer ? (
-                <div className="mt-4 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
-                  <p className="font-semibold">{selectedCustomer.name}</p>
-                  <p className="mt-1">{selectedCustomer.phone} · {selectedCustomer.customerCode}</p>
-                </div>
+              <button
+                type="button"
+                onClick={() => setStep("checkout")}
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-theme-sm transition hover:bg-brand-600"
+              >
+                Checkout & Bayar
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="h-4 w-4"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setStep("catalog")}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-955 dark:text-gray-200 dark:hover:bg-gray-900"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="h-3.5 w-3.5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              Kembali ke Katalog Produk
+            </button>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            {/* Left Column: Cart items review */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Detail Keranjang ({cart.length} item)</h2>
+              
+              {cart.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                  Belum ada item di keranjang.
+                </p>
               ) : (
-                <div className="mt-4 space-y-3">
-                  <input
-                    value={customerQuery}
-                    onChange={(event) => setCustomerQuery(event.target.value)}
-                    placeholder="Cari customer by HP atau nama"
-                    className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  />
-                  {isLoadingCustomers ? (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Mencari customer...</p>
-                  ) : customerResults.length > 0 ? (
-                    <div className="space-y-2">
-                      {customerResults.map((customer) => (
-                        <button
-                          key={customer.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setCustomerQuery(customer.phone);
-                            setCustomerResults([]);
-                          }}
-                          className="flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-left transition hover:border-brand-300 dark:border-gray-800 dark:hover:border-brand-500/40"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{customer.name}</p>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{customer.phone} · {customer.customerCode}</p>
-                          </div>
-                          <span className="text-xs font-semibold text-brand-600 dark:text-brand-300">Pilih</span>
-                        </button>
-                      ))}
+                cart.map((item) => (
+                  <div key={item.productId} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{item.productName}</h3>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {item.sku} · stok {item.availableStock}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeCartItem(item.productId)}
+                        className="text-xs font-semibold text-error-700 dark:text-error-300"
+                      >
+                        Hapus
+                      </button>
                     </div>
-                  ) : (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Mode default saat ini: guest.</p>
-                  )}
-                </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Qty</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.qty}
+                          onChange={(event) => updateCartItem(item.productId, "qty", event.target.value)}
+                          onBlur={() => {
+                            if (!item.qty || Number(item.qty) < 1) {
+                              updateCartItem(item.productId, "qty", "1");
+                            }
+                          }}
+                          className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Diskon item</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.discountAmount}
+                          onChange={(event) =>
+                            updateCartItem(item.productId, "discountAmount", event.target.value)
+                          }
+                          onBlur={() => {
+                            if (item.discountAmount === "" || Number(item.discountAmount) < 0) {
+                              updateCartItem(item.productId, "discountAmount", "0");
+                            }
+                          }}
+                          className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                        />
+                      </label>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {formatCurrency(item.unitPrice)} × {item.qty}
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {formatCurrency(item.unitPrice * (Number(item.qty) || 0) - (Number(item.discountAmount) || 0))}
+                      </span>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
 
-            {cart.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                Belum ada item di keranjang.
-              </p>
-            ) : (
-              cart.map((item) => (
-                <div key={item.productId} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white">{item.productName}</h3>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {item.sku} · stok {item.availableStock}
-                      </p>
-                    </div>
+            {/* Right Column: Checkout Info & Payments */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Detail Pembayaran</h2>
+              
+              <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-white">Customer checkout</h3>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Pilih guest atau cari customer berdasarkan nomor HP / nama.
+                    </p>
+                  </div>
+                  {selectedCustomer ? (
                     <button
                       type="button"
-                      onClick={() => removeCartItem(item.productId)}
-                      className="text-xs font-semibold text-error-700 dark:text-error-300"
+                      onClick={() => {
+                        setSelectedCustomer(null);
+                        setCustomerQuery("");
+                        setCustomerResults([]);
+                      }}
+                      className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
                     >
-                      Hapus
+                      Kembali ke guest
                     </button>
+                  ) : null}
+                </div>
+
+                {selectedCustomer ? (
+                  <div className="mt-4 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
+                    <p className="font-semibold">{selectedCustomer.name}</p>
+                    <p className="mt-1">{selectedCustomer.phone} · {selectedCustomer.customerCode}</p>
                   </div>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <label className="block">
-                      <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Qty</span>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={item.qty}
-                        onChange={(event) => updateCartItem(item.productId, "qty", event.target.value)}
-                        onBlur={() => {
-                          if (!item.qty || Number(item.qty) < 1) {
-                            updateCartItem(item.productId, "qty", "1");
-                          }
-                        }}
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Diskon item</span>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    <input
+                      value={customerQuery}
+                      onChange={(event) => setCustomerQuery(event.target.value)}
+                      placeholder="Cari customer by HP atau nama"
+                      className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    />
+                    {isLoadingCustomers ? (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Mencari customer...</p>
+                    ) : customerResults.length > 0 ? (
+                      <div className="space-y-2">
+                        {customerResults.map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setCustomerQuery(customer.phone);
+                              setCustomerResults([]);
+                            }}
+                            className="flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-left transition hover:border-brand-300 dark:border-gray-800 dark:hover:border-brand-500/40"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{customer.name}</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{customer.phone} · {customer.customerCode}</p>
+                            </div>
+                            <span className="text-xs font-semibold text-brand-600 dark:text-brand-300">Pilih</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Mode default saat ini: guest.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 space-y-3 border-t border-gray-200 pt-5 dark:border-gray-800">
+                <label className="block">
+                  <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Kode voucher</span>
+                  <input
+                    value={voucherCode}
+                    onChange={(event) => setVoucherCode(event.target.value)}
+                    placeholder="Masukkan voucher jika ada"
+                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </label>
+                {isPricingLoading ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Menghitung pricing terbaru...</p>
+                ) : null}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Diskon item manual</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(manualDiscountTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Promo otomatis</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(promoDiscountTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Voucher</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(voucherDiscountTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Service charge</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(serviceChargeTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Pajak</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(taxTotal)}</span>
+                </div>
+                {pricing?.appliedPromo ? (
+                  <div className="rounded-2xl bg-brand-50 px-4 py-3 text-xs text-brand-700 dark:bg-brand-500/10 dark:text-brand-200">
+                    Promo aktif: {pricing.appliedPromo.name}
+                  </div>
+                ) : null}
+                {pricing?.appliedVoucher ? (
+                  <div className="rounded-2xl bg-success-50 px-4 py-3 text-xs text-success-700 dark:bg-success-500/10 dark:text-success-200">
+                    Voucher terpakai: {pricing.appliedVoucher.code}
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between text-base font-semibold">
+                  <span className="text-gray-900 dark:text-white">Grand Total</span>
+                  <span className="text-gray-900 dark:text-white">{formatCurrency(grandTotal)}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">Pembayaran</h3>
+                  <button
+                    type="button"
+                    onClick={addPaymentRow}
+                    className="text-sm font-semibold text-brand-600"
+                  >
+                    Tambah metode
+                  </button>
+                </div>
+
+                {payments.map((payment) => (
+                  <div key={payment.id} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                    <div className="grid gap-3">
+                      <select
+                        value={payment.method}
+                        onChange={(event) => updatePaymentRow(payment.id, "method", event.target.value)}
+                        className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      >
+                        {defaultPaymentMethods.map((method) => (
+                          <option key={method.value} value={method.value}>
+                            {method.label}
+                          </option>
+                        ))}
+                      </select>
                       <input
                         type="number"
                         min="0"
                         step="0.01"
-                        value={item.discountAmount}
-                        onChange={(event) =>
-                          updateCartItem(item.productId, "discountAmount", event.target.value)
-                        }
-                        onBlur={() => {
-                          if (item.discountAmount === "" || Number(item.discountAmount) < 0) {
-                            updateCartItem(item.productId, "discountAmount", "0");
-                          }
-                        }}
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        value={payment.amount}
+                        onChange={(event) => updatePaymentRow(payment.id, "amount", event.target.value)}
+                        placeholder="Nominal pembayaran"
+                        className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
                       />
-                    </label>
+                      <input
+                        value={payment.referenceNumber}
+                        onChange={(event) =>
+                          updatePaymentRow(payment.id, "referenceNumber", event.target.value)
+                        }
+                        placeholder={payment.method === "cash" ? "Nomor referensi (opsional)" : "Nomor referensi (wajib) *"}
+                        className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                      />
+                      {payment.method !== "cash" && !payment.referenceNumber.trim() && (
+                        <p className="text-[11px] text-error-600 -mt-2">Nomor referensi wajib diisi untuk non-tunai.</p>
+                      )}
+                      {payments.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => removePaymentRow(payment.id)}
+                          className="text-left text-xs font-semibold text-error-700 dark:text-error-300"
+                        >
+                          Hapus metode ini
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {formatCurrency(item.unitPrice)} × {item.qty}
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(item.unitPrice * (Number(item.qty) || 0) - (Number(item.discountAmount) || 0))}
+                ))}
+
+                <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-950">
+                  <span className="text-gray-500 dark:text-gray-400">Total pembayaran</span>
+                  <span className={`font-semibold ${paymentBalanced ? "text-success-700 dark:text-success-300" : "text-error-700 dark:text-error-300"}`}>
+                    {formatCurrency(totalPayment)}
+                  </span>
+                </div>
+
+                {changeAmount > 0 ? (
+                  <div className="flex items-center justify-between rounded-2xl bg-success-50 dark:bg-success-950/20 px-4 py-3 text-sm border border-success-200 dark:border-success-800/30">
+                    <span className="text-success-700 dark:text-success-400 font-medium">Kembalian</span>
+                    <span className="font-semibold text-success-700 dark:text-success-300">
+                      {formatCurrency(changeAmount)}
                     </span>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                ) : null}
 
-          <div className="mt-6 space-y-3 border-t border-gray-200 pt-5 dark:border-gray-800">
-            <label className="block">
-              <span className="mb-1 block text-xs uppercase tracking-[0.2em] text-gray-500">Kode voucher</span>
-              <input
-                value={voucherCode}
-                onChange={(event) => setVoucherCode(event.target.value)}
-                placeholder="Masukkan voucher jika ada"
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
-            </label>
-            {isPricingLoading ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400">Menghitung pricing terbaru...</p>
-            ) : null}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(subtotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Diskon item manual</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(manualDiscountTotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Promo otomatis</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(promoDiscountTotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Voucher</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(voucherDiscountTotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Service charge</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(serviceChargeTotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Pajak</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(taxTotal)}</span>
-            </div>
-            {pricing?.appliedPromo ? (
-              <div className="rounded-2xl bg-brand-50 px-4 py-3 text-xs text-brand-700 dark:bg-brand-500/10 dark:text-brand-200">
-                Promo aktif: {pricing.appliedPromo.name}
+                <button
+                  type="button"
+                  onClick={() => void handleCheckout()}
+                  disabled={isSubmitting || isPricingLoading || !paymentBalanced || cart.length === 0}
+                  className="inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-5 py-4 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? "Memproses checkout..." : "Checkout sekarang"}
+                </button>
               </div>
-            ) : null}
-            {pricing?.appliedVoucher ? (
-              <div className="rounded-2xl bg-success-50 px-4 py-3 text-xs text-success-700 dark:bg-success-500/10 dark:text-success-200">
-                Voucher terpakai: {pricing.appliedVoucher.code}
-              </div>
-            ) : null}
-            <div className="flex items-center justify-between text-base font-semibold">
-              <span className="text-gray-900 dark:text-white">Grand Total</span>
-              <span className="text-gray-900 dark:text-white">{formatCurrency(grandTotal)}</span>
             </div>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">Pembayaran</h3>
-              <button
-                type="button"
-                onClick={addPaymentRow}
-                className="text-sm font-semibold text-brand-600"
-              >
-                Tambah metode
-              </button>
-            </div>
-
-            {payments.map((payment) => (
-              <div key={payment.id} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
-                <div className="grid gap-3">
-                  <select
-                    value={payment.method}
-                    onChange={(event) => updatePaymentRow(payment.id, "method", event.target.value)}
-                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  >
-                    {defaultPaymentMethods.map((method) => (
-                      <option key={method.value} value={method.value}>
-                        {method.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={payment.amount}
-                    onChange={(event) => updatePaymentRow(payment.id, "amount", event.target.value)}
-                    placeholder="Nominal pembayaran"
-                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  />
-                  <input
-                    value={payment.referenceNumber}
-                    onChange={(event) =>
-                      updatePaymentRow(payment.id, "referenceNumber", event.target.value)
-                    }
-                    placeholder={payment.method === "cash" ? "Nomor referensi (opsional)" : "Nomor referensi (wajib) *"}
-                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  />
-                  {payment.method !== "cash" && !payment.referenceNumber.trim() && (
-                    <p className="text-[11px] text-error-600 -mt-2">Nomor referensi wajib diisi untuk non-tunai.</p>
-                  )}
-                  {payments.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => removePaymentRow(payment.id)}
-                      className="text-left text-xs font-semibold text-error-700 dark:text-error-300"
-                    >
-                      Hapus metode ini
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-
-            <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-950">
-              <span className="text-gray-500 dark:text-gray-400">Total pembayaran</span>
-              <span className={`font-semibold ${paymentBalanced ? "text-success-700 dark:text-success-300" : "text-error-700 dark:text-error-300"}`}>
-                {formatCurrency(totalPayment)}
-              </span>
-            </div>
-
-            {changeAmount > 0 ? (
-              <div className="flex items-center justify-between rounded-2xl bg-success-50 dark:bg-success-950/20 px-4 py-3 text-sm border border-success-200 dark:border-success-800/30">
-                <span className="text-success-700 dark:text-success-400 font-medium">Kembalian</span>
-                <span className="font-semibold text-success-700 dark:text-success-300">
-                  {formatCurrency(changeAmount)}
-                </span>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={() => void handleCheckout()}
-              disabled={isSubmitting || isPricingLoading || !paymentBalanced || cart.length === 0}
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-5 py-4 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? "Memproses checkout..." : "Checkout sekarang"}
-            </button>
           </div>
         </div>
+      )}
       </section>
     </div>
   );
