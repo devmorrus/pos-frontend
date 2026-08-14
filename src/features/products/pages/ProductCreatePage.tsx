@@ -95,10 +95,10 @@ export default function ProductCreatePage() {
         imageUrl: values.imageUrl.trim() || null,
         isTaxable: values.isTaxable === "inherit" ? null : values.isTaxable === "true",
         isServiceChargeable: values.isServiceChargeable === "inherit" ? null : values.isServiceChargeable === "true",
-        hasVariants: values.hasVariants,
-        isRawMaterial: values.isRawMaterial,
-        variants: values.hasVariants ? values.variants : [],
-        recipes: values.isRawMaterial ? [] : (values.recipes ?? []),
+        hasVariants: false,
+        isRawMaterial: false,
+        variants: [],
+        recipes: [],
       });
 
       navigate("/products", {
