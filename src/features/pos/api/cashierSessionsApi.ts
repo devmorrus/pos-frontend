@@ -3,6 +3,8 @@ import type {
   CashierSessionDto,
   CloseSessionRequest,
   OpenSessionRequest,
+  CreatePettyCashRequest,
+  PettyCashExpenseDto,
 } from "../types/cashier";
 
 export function getCurrentCashierSession(outletId?: string | null) {
@@ -16,4 +18,12 @@ export function openCashierSession(payload: OpenSessionRequest) {
 
 export function closeCashierSession(id: string, payload: CloseSessionRequest) {
   return apiClient.post<CashierSessionDto>(`/api/cashier-sessions/close/${id}`, payload);
+}
+
+export function recordPettyCash(sessionId: string, payload: CreatePettyCashRequest) {
+  return apiClient.post<PettyCashExpenseDto>(`/api/cashier-sessions/${sessionId}/petty-cash`, payload);
+}
+
+export function getPettyCashExpenses(sessionId: string) {
+  return apiClient.get<PettyCashExpenseDto[]>(`/api/cashier-sessions/${sessionId}/petty-cash`);
 }
