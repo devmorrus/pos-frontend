@@ -8,7 +8,7 @@ import { useRealtime } from "../../../lib/realtime/hooks";
 import { getErrorMessage } from "../../../utils/errors";
 import { getProducts } from "../../products/api/productsApi";
 import type { ProductDto } from "../../products/types/product";
-import { lookupCustomers } from "../../customers/api/customersApi";
+import { lookupCustomers, updateCustomer } from "../../customers/api/customersApi";
 import type { CustomerListItemDto } from "../../customers/types/customer";
 import { API_BASE_URL } from "../../../api/client/config";
 import { useCashierSession } from "../hooks/useCashierSession";
@@ -90,6 +90,14 @@ export default function PosPage() {
   const [customerResults, setCustomerResults] = useState<CustomerListItemDto[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerListItemDto | null>(null);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+
+  // States for Tempo (Kasbon) & Profile Completion
+  const [isTempo, setIsTempo] = useState(false);
+  const [tempoDays, setTempoDays] = useState(14);
+  const [ktpInput, setKtpInput] = useState("");
+  const [addressInput, setAddressInput] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
 
   // States for Variant Selection Modal
   const [showVariantModal, setShowVariantModal] = useState(false);
@@ -204,18 +212,46 @@ export default function PosPage() {
   );
   const paymentBalanced = useMemo(() => {
     if (grandTotal <= 0) return false;
+    if (isTempo) {
+      return selectedCustomer !== null && totalPayment < grandTotal;
+    }
     if (hasCashPayment) {
       return totalPayment >= grandTotal;
     }
     return totalPayment === grandTotal;
-  }, [totalPayment, grandTotal, hasCashPayment]);
+  }, [totalPayment, grandTotal, hasCashPayment, isTempo, selectedCustomer]);
 
   const changeAmount = useMemo(() => {
+    if (isTempo) return 0;
     if (totalPayment > grandTotal && hasCashPayment) {
       return totalPayment - grandTotal;
     }
     return 0;
-  }, [totalPayment, grandTotal, hasCashPayment]);
+  }, [totalPayment, grandTotal, hasCashPayment, isTempo]);
+
+  const creditLimitExceeded = useMemo(() => {
+    if (!isTempo || !selectedCustomer) return false;
+    const dueAmount = grandTotal - totalPayment;
+    const currentDebt = selectedCustomer.currentDebt || 0;
+    const limit = selectedCustomer.creditLimit || 0;
+    return currentDebt + dueAmount > limit;
+  }, [isTempo, selectedCustomer, grandTotal, totalPayment]);
+
+  const customerProfileIncomplete = useMemo(() => {
+    if (!isTempo || !selectedCustomer) return false;
+    return !selectedCustomer.ktpNumber?.trim() || !selectedCustomer.address?.trim();
+  }, [isTempo, selectedCustomer]);
+
+  const canCheckout = useMemo(() => {
+    if (isSubmitting || isPricingLoading || cart.length === 0) return false;
+    if (isTempo) {
+      return selectedCustomer !== null &&
+             totalPayment < grandTotal &&
+             !creditLimitExceeded &&
+             !customerProfileIncomplete;
+    }
+    return paymentBalanced;
+  }, [isSubmitting, isPricingLoading, cart.length, isTempo, selectedCustomer, totalPayment, grandTotal, creditLimitExceeded, customerProfileIncomplete, paymentBalanced]);
 
   useEffect(() => {
     if (!effectiveOutletId || cart.length === 0) {
@@ -393,9 +429,24 @@ export default function PosPage() {
       return;
     }
 
-    if (!paymentBalanced) {
-      setError("Total pembayaran harus sama dengan grand total sebelum checkout.");
-      return;
+    if (isTempo) {
+      if (!selectedCustomer) {
+        setError("Pelanggan harus dipilih untuk transaksi piutang.");
+        return;
+      }
+      if (customerProfileIncomplete) {
+        setError("Data KTP dan Alamat pelanggan harus lengkap untuk transaksi piutang.");
+        return;
+      }
+      if (creditLimitExceeded) {
+        setError("Batas limit kredit pelanggan terlampaui.");
+        return;
+      }
+    } else {
+      if (!paymentBalanced) {
+        setError("Total pembayaran harus sama dengan grand total sebelum checkout.");
+        return;
+      }
     }
 
     const nonCashWithoutRef = payments.some(
@@ -422,9 +473,23 @@ export default function PosPage() {
         discountAmount: Number(item.discountAmount) || 0,
       })),
       payments: (() => {
+        if (isTempo && totalPayment === 0) {
+          return [];
+        }
+        
         const nonCashTotal = payments
           .filter((p) => p.method !== "cash")
           .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+        if (isTempo) {
+          return payments
+            .map<PaymentRequest>((payment) => ({
+              method: payment.method,
+              amount: Number(payment.amount) || 0,
+              referenceNumber: payment.referenceNumber || null,
+            }))
+            .filter((p) => p.amount > 0);
+        }
 
         const requiredCash = Math.max(0, grandTotal - nonCashTotal);
         let cashApplied = false;
@@ -453,6 +518,9 @@ export default function PosPage() {
       appliedPromoCode: pricing?.appliedPromo?.code ?? null,
       customerId: selectedCustomer?.id ?? null,
       customerPhone: selectedCustomer?.phone ?? null,
+      paymentDueDate: isTempo 
+        ? new Date(Date.now() + tempoDays * 24 * 60 * 60 * 1000).toISOString() 
+        : null
     };
 
     setIsSubmitting(true);
@@ -467,10 +535,13 @@ export default function PosPage() {
       setCustomerQuery("");
       setSelectedCustomer(null);
       setCustomerResults([]);
+      setIsTempo(false);
+      setTempoDays(14);
       setStep("catalog");
       await loadProducts();
       await refreshCurrentSession();
-      navigate(`/transactions/${result.id}`);} catch (requestError) {
+      navigate(`/transactions/${result.id}`);
+    } catch (requestError) {
       const message = getErrorMessage(requestError, "Checkout gagal diproses.");
       setError(message);
       if (message.toLowerCase().includes("sesi kasir")) {
@@ -478,6 +549,35 @@ export default function PosPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleUpdateProfile() {
+    if (!selectedCustomer) return;
+    if (!ktpInput.trim() || !addressInput.trim()) {
+      setError("NIK KTP dan Alamat harus diisi.");
+      return;
+    }
+
+    setIsUpdatingProfile(true);
+    try {
+      const updated = await updateCustomer(selectedCustomer.id, {
+        name: selectedCustomer.name,
+        phone: selectedCustomer.phone,
+        email: selectedCustomer.email,
+        isActive: selectedCustomer.isActive,
+        creditLimit: selectedCustomer.creditLimit || 0,
+        ktpNumber: ktpInput.trim(),
+        address: addressInput.trim()
+      });
+
+      setSelectedCustomer(updated);
+      setShowProfileUpdateModal(false);
+      setError(null);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Gagal memperbarui profil pelanggan."));
+    } finally {
+      setIsUpdatingProfile(false);
     }
   }
 
@@ -754,6 +854,22 @@ export default function PosPage() {
                   <div className="mt-4 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
                     <p className="font-semibold">{selectedCustomer.name}</p>
                     <p className="mt-1">{selectedCustomer.phone} · {selectedCustomer.customerCode}</p>
+                    <div className="mt-2 border-t border-brand-100 dark:border-brand-500/20 pt-2 space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span>Limit Kredit:</span>
+                        <span className="font-semibold">{formatCurrency(selectedCustomer.creditLimit || 0)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Hutang Berjalan:</span>
+                        <span className="font-semibold text-error-700 dark:text-error-400">{formatCurrency(selectedCustomer.currentDebt || 0)}</span>
+                      </div>
+                      <div className="flex justify-between font-medium">
+                        <span>Sisa Limit:</span>
+                        <span className="font-bold text-success-700 dark:text-success-400">
+                          {formatCurrency(Math.max(0, (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0)))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-4 space-y-3">
@@ -788,6 +904,75 @@ export default function PosPage() {
                       </div>
                     ) : (
                       <p className="text-xs text-gray-500 dark:text-gray-400">Mode default saat ini: guest.</p>
+                    )}
+                  </div>
+                )}
+
+                {selectedCustomer && (
+                  <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isTempo}
+                        onChange={(e) => {
+                          setIsTempo(e.target.checked);
+                          if (e.target.checked) {
+                            // If checking, clean payments except what was already entered
+                            // but usually they pay nothing or partial.
+                          }
+                        }}
+                        className="h-5 w-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">Bayar Nanti (Kasbon / Tempo)</span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-normal">Simpan transaksi sebagai piutang pelanggan</p>
+                      </div>
+                    </label>
+
+                    {isTempo && (
+                      <div className="space-y-3 pl-8">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            Durasi Jatuh Tempo
+                          </label>
+                          <select
+                            value={tempoDays}
+                            onChange={(e) => setTempoDays(Number(e.target.value))}
+                            className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                          >
+                            <option value={7}>7 Hari</option>
+                            <option value={14}>14 Hari</option>
+                            <option value={30}>30 Hari</option>
+                            <option value={45}>45 Hari</option>
+                            <option value={60}>60 Hari</option>
+                          </select>
+                        </div>
+
+                        {creditLimitExceeded && (
+                          <div className="rounded-xl bg-error-50 dark:bg-error-950/20 border border-error-200 dark:border-error-800/30 p-3 text-xs text-error-700 dark:text-error-400">
+                            <strong>Peringatan:</strong> Batas limit kredit pelanggan terlampaui! Rencana belanja baru melebihi limit kredit.
+                          </div>
+                        )}
+
+                        {customerProfileIncomplete && (
+                          <div className="rounded-xl bg-warning-50 dark:bg-warning-950/20 border border-warning-200 dark:border-warning-800/30 p-3 text-xs text-warning-800 dark:text-warning-300 space-y-2">
+                            <div>
+                              <strong>Perhatian:</strong> Data NIK KTP dan Alamat pelanggan wajib diisi untuk transaksi kasbon.
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setKtpInput(selectedCustomer.ktpNumber || "");
+                                setAddressInput(selectedCustomer.address || "");
+                                setShowProfileUpdateModal(true);
+                              }}
+                              className="w-full inline-flex justify-center rounded-lg bg-warning-600 px-3 py-2 text-xs font-semibold text-white hover:bg-warning-700"
+                            >
+                              Lengkapi Profil
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
@@ -924,7 +1109,7 @@ export default function PosPage() {
                 <button
                   type="button"
                   onClick={() => void handleCheckout()}
-                  disabled={isSubmitting || isPricingLoading || !paymentBalanced || cart.length === 0}
+                  disabled={isSubmitting || isPricingLoading || !canCheckout || cart.length === 0}
                   className="inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-5 py-4 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? "Memproses checkout..." : "Checkout sekarang"}
@@ -1075,6 +1260,70 @@ export default function PosPage() {
             >
               Tambahkan ke Keranjang
             </button>
+          </div>
+        </div>
+      )}
+
+      {showProfileUpdateModal && selectedCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-950 border border-gray-100 dark:border-gray-900 space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Lengkapi Profil Pelanggan</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-normal">
+                NIK KTP dan Alamat lengkap wajib diisi untuk menggunakan metode pembayaran kasbon (piutang).
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                  Nomor NIK KTP
+                </label>
+                <input
+                  type="text"
+                  maxLength={16}
+                  value={ktpInput}
+                  onChange={(e) => setKtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Masukkan 16 digit NIK"
+                  className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                  Alamat Lengkap
+                </label>
+                <textarea
+                  value={addressInput}
+                  onChange={(e) => setAddressInput(e.target.value)}
+                  placeholder="Masukkan alamat tinggal lengkap"
+                  rows={3}
+                  className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProfileUpdateModal(false);
+                  setKtpInput("");
+                  setAddressInput("");
+                }}
+                className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleUpdateProfile()}
+                disabled={isUpdatingProfile || ktpInput.length < 16 || !addressInput.trim()}
+                className="flex-1 rounded-2xl bg-brand-500 hover:bg-brand-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {isUpdatingProfile ? "Menyimpan..." : "Simpan Profil"}
+              </button>
+            </div>
           </div>
         </div>
       )}

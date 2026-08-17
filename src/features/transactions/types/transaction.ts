@@ -78,6 +78,9 @@ export type TransactionDto = {
   grandTotal: number;
   appliedVoucherCode: string | null;
   appliedPromoName: string | null;
+  amountPaid: number;
+  dueAmount: number;
+  paymentDueDate: string | null;
   voidedBy: string | null;
   voidedByName: string | null;
   voidedReason: string | null;
@@ -116,6 +119,13 @@ export type CheckoutRequest = {
   appliedPromoCode?: string | null;
   customerId?: string | null;
   customerPhone?: string | null;
+  paymentDueDate?: string | null;
+};
+
+export type PayDueRequest = {
+  amount: number;
+  method: string;
+  referenceNumber?: string | null;
 };
 
 export type VoidTransactionRequest = {

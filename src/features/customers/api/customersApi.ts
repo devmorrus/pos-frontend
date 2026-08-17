@@ -22,6 +22,9 @@ type CustomerPayload = {
   birthDate?: string | null;
   notes?: string | null;
   isActive: boolean;
+  creditLimit?: number;
+  ktpNumber?: string | null;
+  address?: string | null;
 };
 
 function buildQuery(params: Record<string, string>) {
