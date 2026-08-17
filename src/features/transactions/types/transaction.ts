@@ -122,12 +122,6 @@ export type CheckoutRequest = {
   paymentDueDate?: string | null;
 };
 
-export type PayDueRequest = {
-  amount: number;
-  method: string;
-  referenceNumber?: string | null;
-};
-
 export type VoidTransactionRequest = {
   reason: string;
 };

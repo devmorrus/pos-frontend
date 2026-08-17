@@ -908,8 +908,9 @@ export default function PosPage() {
                   </div>
                 )}
 
+                {/* Pembayaran Tempo / Kasbon di kasir di-hide dulu untuk saat ini */}
                 {selectedCustomer && (
-                  <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+                  <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-4 hidden">
                     <label className="flex items-center space-x-3 cursor-pointer">
                       <input
                         type="checkbox"

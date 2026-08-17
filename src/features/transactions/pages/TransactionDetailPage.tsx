@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppErrorState, AppLoader, InlineAlert } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
-import { getTransactionById, payTransactionDue } from "../api/transactionsApi";
+import { getTransactionById } from "../api/transactionsApi";
 import type { TransactionDto } from "../types/transaction";
 import {
   formatCurrency,
@@ -21,44 +21,7 @@ export default function TransactionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // States for pay due (pelunasan)
-  const [payAmount, setPayAmount] = useState("");
-  const [payMethod, setPayMethod] = useState("cash");
-  const [payRef, setPayRef] = useState("");
-  const [isPayingDue, setIsPayingDue] = useState(false);
-  const [payDueError, setPayDueError] = useState<string | null>(null);
 
-  async function handlePayDue() {
-    if (!id || !transaction) return;
-    const amount = Number(payAmount);
-    if (isNaN(amount) || amount <= 0 || amount > transaction.dueAmount) {
-      setPayDueError("Nominal pembayaran tidak valid.");
-      return;
-    }
-    if (payMethod !== "cash" && !payRef.trim()) {
-      setPayDueError("Nomor referensi wajib diisi untuk non-tunai.");
-      return;
-    }
-
-    setIsPayingDue(true);
-    setPayDueError(null);
-
-    try {
-      const updated = await payTransactionDue(id, {
-        amount,
-        method: payMethod,
-        referenceNumber: payRef.trim() || null
-      });
-      setTransaction(updated);
-      setPayAmount("");
-      setPayRef("");
-      setPayDueError(null);
-    } catch (requestError) {
-      setPayDueError(getErrorMessage(requestError, "Gagal memproses pelunasan."));
-    } finally {
-      setIsPayingDue(false);
-    }
-  }
 
   useEffect(() => {
     async function loadDetail() {
@@ -226,79 +189,6 @@ export default function TransactionDetailPage() {
                   ))}
                 </div>
               </div>
-
-              {transaction.dueAmount > 0 && (
-                <div className="border-t border-gray-200 pt-6 dark:border-gray-800 space-y-4">
-                  <h5 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Pelunasan Piutang / Kasbon</h5>
-                  
-                  <div className="rounded-2xl bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200 flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">Sisa Piutang Berjalan</p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                        {transaction.paymentDueDate ? `Jatuh tempo: ${formatDateTime(transaction.paymentDueDate)}` : "Tanpa jatuh tempo"}
-                      </p>
-                    </div>
-                    <span className="text-lg font-bold">{formatCurrency(transaction.dueAmount)}</span>
-                  </div>
-
-                  {payDueError && <InlineAlert tone="error" message={payDueError} />}
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                        Metode Pelunasan
-                      </label>
-                      <select
-                        value={payMethod}
-                        onChange={(e) => setPayMethod(e.target.value)}
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      >
-                        <option value="cash">Cash</option>
-                        <option value="qris">QRIS</option>
-                        <option value="transfer">Transfer</option>
-                        <option value="edc">EDC</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                        Nominal Pembayaran
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max={transaction.dueAmount}
-                        value={payAmount}
-                        onChange={(e) => setPayAmount(e.target.value)}
-                        placeholder="Jumlah bayar"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                      Nomor Referensi {payMethod !== "cash" && "*"}
-                    </label>
-                    <input
-                      type="text"
-                      value={payRef}
-                      onChange={(e) => setPayRef(e.target.value)}
-                      placeholder={payMethod === "cash" ? "Opsional" : "Struk EDC / Ref transfer bank (wajib)"}
-                      className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => void handlePayDue()}
-                    disabled={isPayingDue || !payAmount || Number(payAmount) <= 0 || Number(payAmount) > transaction.dueAmount || (payMethod !== "cash" && !payRef.trim())}
-                    className="w-full h-11 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center transition-all shadow-lg hover:shadow-brand-500/20"
-                  >
-                    {isPayingDue ? "Memproses pelunasan..." : "Catat Pembayaran"}
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">

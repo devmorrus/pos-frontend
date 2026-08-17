@@ -1,7 +1,6 @@
 import { apiClient } from "../../../api/client";
 import type {
   CheckoutRequest,
-  PayDueRequest,
   RefundTransactionRequest,
   TransactionDto,
   TransactionListItemDto,
@@ -36,8 +35,4 @@ export function voidTransaction(id: string, payload: VoidTransactionRequest) {
 
 export function refundTransaction(id: string, payload: RefundTransactionRequest) {
   return apiClient.post<TransactionDto>(`/api/transactions/${id}/refund`, payload);
-}
-
-export function payTransactionDue(id: string, payload: PayDueRequest) {
-  return apiClient.post<TransactionDto>(`/api/transactions/${id}/pay-due`, payload);
 }
