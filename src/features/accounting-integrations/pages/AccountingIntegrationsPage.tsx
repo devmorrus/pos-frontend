@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { InlineAlert } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
@@ -13,6 +13,9 @@ import type {
   AccountingPostingStatusDto,
   AccountingReferenceType,
 } from "../types/accountingIntegration";
+import { useOutlet } from "../../outlets/hooks/useOutlet";
+import { getRecentTransactions } from "../../transactions/api/transactionsApi";
+import { getPurchaseOrders } from "../../purchase-orders/api/purchaseOrdersApi";
 
 type ReferenceOption = {
   value: AccountingReferenceType;
@@ -41,6 +44,8 @@ const defaultBackfillState: AccountingBackfillRequest = {
 };
 
 export default function AccountingIntegrationsPage() {
+  const { selectedOutletId } = useOutlet();
+
   const [referenceType, setReferenceType] = useState<AccountingReferenceType>("transaction_sale");
   const [referenceId, setReferenceId] = useState("");
   const [lookupResult, setLookupResult] = useState<AccountingPostingStatusDto | null>(null);
@@ -50,6 +55,42 @@ export default function AccountingIntegrationsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isBackfilling, setIsBackfilling] = useState(false);
+
+  // States for lookup helper
+  const [recentTransactions, setRecentTransactions] = useState<{ id: string; num: string; date: string; amount: number }[]>([]);
+  const [recentPOs, setRecentPOs] = useState<{ id: string; num: string; date: string; amount: number }[]>([]);
+  const [isLoadingHelpers, setIsLoadingHelpers] = useState(false);
+
+  useEffect(() => {
+    async function loadHelpers() {
+      if (!selectedOutletId) return;
+      setIsLoadingHelpers(true);
+      try {
+        if (referenceType === "transaction_sale") {
+          const list = await getRecentTransactions(selectedOutletId, 5);
+          setRecentTransactions(list.map(t => ({
+            id: t.id,
+            num: t.transactionNumber,
+            date: t.createdAt,
+            amount: t.grandTotal
+          })));
+        } else if (referenceType === "purchase_order") {
+          const list = await getPurchaseOrders({ outletId: selectedOutletId });
+          setRecentPOs(list.slice(0, 5).map(po => ({
+            id: po.id,
+            num: po.poNumber,
+            date: po.poDate,
+            amount: po.totalAmount
+          })));
+        }
+      } catch (err) {
+        console.error("Failed to load helpers", err);
+      } finally {
+        setIsLoadingHelpers(false);
+      }
+    }
+    void loadHelpers();
+  }, [referenceType, selectedOutletId]);
 
   const selectedReference = useMemo(
     () => referenceOptions.find((option) => option.value === referenceType) ?? referenceOptions[0],
@@ -160,15 +201,69 @@ export default function AccountingIntegrationsPage() {
               </label>
 
               <label className="grid gap-2 text-sm text-gray-700 dark:text-gray-200">
-                <span className="font-medium">Reference ID</span>
+                <span className="font-medium">Reference ID / Nomor Dokumen</span>
                 <input
                   type="text"
                   value={referenceId}
                   onChange={(event) => setReferenceId(event.target.value)}
-                  placeholder="Masukkan GUID transaksi source"
+                  placeholder="Masukkan Nomor Invoice, Nomor PO, atau GUID"
                   className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 />
               </label>
+
+              {/* Helper list for selecting recent IDs */}
+              {(referenceType === "transaction_sale" || referenceType === "purchase_order") && (
+                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800/60 dark:bg-gray-900/50">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span>Pilih dari Transaksi / PO Terakhir</span>
+                    {isLoadingHelpers && <span className="text-[10px] text-brand-500 lowercase normal-case">Memuat...</span>}
+                  </h4>
+                  {referenceType === "transaction_sale" && recentTransactions.length > 0 && (
+                    <div className="space-y-2">
+                      {recentTransactions.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between text-xs border-b border-gray-100/60 pb-1.5 last:border-0 last:pb-0 dark:border-gray-800">
+                          <div className="truncate pr-2">
+                            <span className="font-semibold text-gray-800 dark:text-gray-200">{item.num}</span>
+                            <span className="text-gray-400 mx-1.5">·</span>
+                            <span className="text-gray-500">{new Date(item.date).toLocaleDateString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setReferenceId(item.num)}
+                            className="text-brand-600 dark:text-brand-400 font-bold px-2 py-0.5 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-950/30 flex-shrink-0"
+                          >
+                            Pilih
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {referenceType === "purchase_order" && recentPOs.length > 0 && (
+                    <div className="space-y-2">
+                      {recentPOs.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between text-xs border-b border-gray-100/60 pb-1.5 last:border-0 last:pb-0 dark:border-gray-800">
+                          <div className="truncate pr-2">
+                            <span className="font-semibold text-gray-800 dark:text-gray-200">{item.num}</span>
+                            <span className="text-gray-400 mx-1.5">·</span>
+                            <span className="text-gray-500">{new Date(item.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setReferenceId(item.num)}
+                            className="text-brand-600 dark:text-brand-400 font-bold px-2 py-0.5 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-950/30 flex-shrink-0"
+                          >
+                            Pilih
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {((referenceType === "transaction_sale" && recentTransactions.length === 0) || 
+                    (referenceType === "purchase_order" && recentPOs.length === 0)) && !isLoadingHelpers && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Tidak ada data terbaru.</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center gap-3">
                 <button
