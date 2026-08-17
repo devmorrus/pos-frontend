@@ -321,20 +321,23 @@ Kondisi saat ini:
 
 Artinya, project ini belum final sebagai produk operasional penuh, tetapi pondasi untuk migrasi modul sudah mulai dibangun.
 
-## Target Fitur
+## Fitur Utama yang Telah Diimplementasikan
 
-Frontend ini ditujukan untuk mendukung roadmap MorrusPOS berikut:
+Aplikasi frontend ini telah terintegrasi penuh dengan backend untuk modul-modul bisnis berikut:
 
-1. autentikasi, role, dan hak akses
-2. master produk dan kategori
-3. POS kasir dan sesi kasir
-4. stok, stok opname, dan transfer cabang
-5. supplier, purchase order, dan utang usaha
-6. konsinyasi dan settlement supplier
-7. integrasi online order
-8. dashboard bisnis dan laporan
+### 1. POS Kasir & Pembayaran Tempo (Piutang / Kasbon)
+- **Bayar Nanti (Tempo)**: Checkbox pilihan tempo saat checkout dengan masa jatuh tempo fleksibel (7 s/d 60 hari).
+- **Dashboard Kredit Pelanggan**: Menampilkan sisa limit kredit (`Credit Limit`), total utang berjalan (`Current Debt`), dan sisa plafon kredit secara real-time.
+- **Validasi Otorisasi Profil**: Validasi otomatis yang mewajibkan pengisian Nomor KTP dan Alamat. Tombol *Lengkapi Profil* memunculkan modal popup instan di layar POS tanpa perlu keluar dari proses checkout.
+- **Riwayat Pelunasan Cicilan**: Form pelunasan cicilan di halaman Detail Transaksi (`/transactions/:id`). Kasir dapat mencatat pembayaran bertahap (Cash, QRIS, EDC, Transfer) yang langsung memotong sisa piutang.
 
-Untuk tahap sekarang, fokus implementasi frontend diprioritaskan sampai **Fase 6**, mengikuti kesiapan backend.
+### 2. Sesi Shift Kasir (Shift Control) & Kas Kecil (Petty Cash)
+- **Reconciliation Dashboard**: Tampilan visual di `/cashier/session` yang membandingkan Modal Awal, Penjualan Tunai, Pengeluaran Kas Kecil, dan Estimasi Uang di Laci (*Expected Cash*).
+- **Ringkasan Non-Tunai**: Detail penerimaan non-cash (seperti QRIS, EDC, atau Transfer Bank) disajikan terpisah untuk mempermudah pencocokan EDC fisik saat closing.
+- **Petty Cash Logger**: Form penginputan kas keluar (ATK, Konsumsi, Operasional, dll) yang langsung memotong saldo kas laci POS aktif dan mencatat histori pengeluaran per sesi.
+- **Live Variance Calculator**: Input nominal uang fisik laci kas secara interaktif yang menghitung otomatis selisih kas (*Variance*) dengan notifikasi status (Pas/Cocok, Selisih Lebih, Selisih Kurang).
+
+---
 
 ## Tech Stack
 
