@@ -179,6 +179,14 @@ export default function PurchaseOrderDetailPage() {
                   >
                     Kembali ke daftar
                   </Link>
+                  {(order.status === "pending" || order.status === "partially_received") && (
+                    <Link
+                      to={`/purchase-orders/${order.id}/receive`}
+                      className="rounded-xl bg-green-600 hover:bg-green-700 px-4 py-2 text-sm font-semibold text-white inline-flex items-center"
+                    >
+                      Terima Barang
+                    </Link>
+                  )}
                   {availableActions.map((action) => (
                     <button
                       key={action.nextStatus}

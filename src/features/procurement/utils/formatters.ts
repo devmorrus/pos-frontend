@@ -27,6 +27,7 @@ export function getPoStatusClasses(status: string) {
     case "completed":
       return "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300";
     case "pending":
+    case "partially_received":
       return "bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-300";
     case "cancelled":
       return "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300";

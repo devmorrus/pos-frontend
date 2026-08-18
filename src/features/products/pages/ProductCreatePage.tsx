@@ -28,6 +28,9 @@ const initialValues: ProductFormValues = {
   imageUrl: "",
   isTaxable: "inherit",
   isServiceChargeable: "inherit",
+  hasVariants: false,
+  isRawMaterial: false,
+  variants: [],
 };
 
 export default function ProductCreatePage() {
@@ -59,7 +62,7 @@ export default function ProductCreatePage() {
     void loadCategories();
   }, []);
 
-  function handleChange(key: keyof ProductFormValues, value: string | boolean) {
+  function handleChange(key: keyof ProductFormValues, value: any) {
     setValues((current) => ({
       ...current,
       [key]: value,
@@ -92,6 +95,10 @@ export default function ProductCreatePage() {
         imageUrl: values.imageUrl.trim() || null,
         isTaxable: values.isTaxable === "inherit" ? null : values.isTaxable === "true",
         isServiceChargeable: values.isServiceChargeable === "inherit" ? null : values.isServiceChargeable === "true",
+        hasVariants: false,
+        isRawMaterial: false,
+        variants: [],
+        recipes: [],
       });
 
       navigate("/products", {

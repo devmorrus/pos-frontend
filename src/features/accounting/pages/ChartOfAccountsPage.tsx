@@ -3,7 +3,6 @@ import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
 import { AppLoader, ConfirmDialog, InlineAlert, PagePlaceholder } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
-import { useAuth } from "../../auth/hooks/useAuth";
 import { getOutlets } from "../../outlets/api/outletsApi";
 import type { OutletDto } from "../../outlets/types/outlet";
 import {
@@ -49,7 +48,6 @@ type ModalState =
   | { open: true; mode: "edit"; account: ChartOfAccountDto };
 
 export default function ChartOfAccountsPage() {
-  const { session } = useAuth();
   const [accounts, setAccounts] = useState<ChartOfAccountDto[]>([]);
   const [outlets, setOutlets] = useState<OutletDto[]>([]);
   const [modalState, setModalState] = useState<ModalState>({
@@ -68,7 +66,6 @@ export default function ChartOfAccountsPage() {
   const [typeFilter, setTypeFilter] = useState<ChartOfAccountType | "all">("all");
   const [scopeFilter, setScopeFilter] = useState<ChartOfAccountScope | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
-  const [outletFilter, setOutletFilter] = useState("");
 
   async function loadData() {
     setIsLoading(true);
@@ -118,9 +115,8 @@ export default function ChartOfAccountsPage() {
 
         return statusFilter === "active" ? account.isActive : !account.isActive;
       })
-      .filter((account) => (outletFilter ? account.outletId === outletFilter : true))
       .sort((left, right) => left.accountCode.localeCompare(right.accountCode, "id-ID"));
-  }, [accounts, keyword, outletFilter, scopeFilter, statusFilter, typeFilter]);
+  }, [accounts, keyword, scopeFilter, statusFilter, typeFilter]);
 
   function openCreateModal() {
     setSubmitError(null);
@@ -211,8 +207,6 @@ export default function ChartOfAccountsPage() {
     }
   }
 
-  const canFilterOutlet = session?.role === "Owner" || session?.role === "Admin" || session?.role === "Keuangan";
-
   return (
     <ProtectedPageShell
       title="Chart of Accounts"
@@ -234,7 +228,7 @@ export default function ChartOfAccountsPage() {
           </button>
         }
       >
-        <div className="grid gap-3 border-b border-gray-200 p-4 dark:border-gray-800 md:grid-cols-5">
+        <div className="grid gap-3 border-b border-gray-200 p-4 dark:border-gray-800 md:grid-cols-4">
           <input
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
@@ -275,26 +269,6 @@ export default function ChartOfAccountsPage() {
             <option value="inactive">Akun nonaktif</option>
             <option value="all">Semua status</option>
           </select>
-
-          {canFilterOutlet ? (
-            <select
-              value={outletFilter}
-              onChange={(event) => setOutletFilter(event.target.value)}
-              className="h-11 rounded-2xl border border-gray-200 px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-            >
-              <option value="">Semua outlet</option>
-              {outlets
-                .filter((outlet) => outlet.isActive)
-                .sort((left, right) => left.name.localeCompare(right.name, "id-ID"))
-                .map((outlet) => (
-                  <option key={outlet.id} value={outlet.id}>
-                    {outlet.name}
-                  </option>
-                ))}
-            </select>
-          ) : (
-            <div />
-          )}
         </div>
 
         {isLoading ? (

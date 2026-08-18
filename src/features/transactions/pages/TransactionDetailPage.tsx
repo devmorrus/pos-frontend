@@ -21,6 +21,8 @@ export default function TransactionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+
+
   useEffect(() => {
     async function loadDetail() {
       if (!id) {
@@ -161,29 +163,31 @@ export default function TransactionDetailPage() {
           </section>
 
           <section className="app-no-print grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Pembayaran</h4>
-              <div className="mt-4 space-y-3">
-                {transaction.payments.map((payment, index) => (
-                  <div
-                    key={`${payment.method}-${index}`}
-                    className="rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {formatPaymentMethod(payment.method)}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(payment.amount)}
-                      </span>
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 space-y-6">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Pembayaran</h4>
+                <div className="mt-4 space-y-3">
+                  {transaction.payments.map((payment, index) => (
+                    <div
+                      key={`${payment.method}-${index}`}
+                      className="rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {formatPaymentMethod(payment.method)}
+                        </span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(payment.amount)}
+                        </span>
+                      </div>
+                      {payment.referenceNumber ? (
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Ref: {payment.referenceNumber}
+                        </p>
+                      ) : null}
                     </div>
-                    {payment.referenceNumber ? (
-                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Ref: {payment.referenceNumber}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -244,6 +248,22 @@ export default function TransactionDetailPage() {
                     {formatCurrency(transaction.grandTotal)}
                   </dd>
                 </div>
+                {transaction.dueAmount > 0 && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-gray-500 dark:text-gray-400">Telah Dibayar</dt>
+                      <dd className="font-semibold text-success-700 dark:text-success-400">
+                        {formatCurrency(transaction.amountPaid)}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-gray-500 dark:text-gray-400">Sisa Piutang</dt>
+                      <dd className="font-bold text-error-700 dark:text-error-400">
+                        {formatCurrency(transaction.dueAmount)}
+                      </dd>
+                    </div>
+                  </>
+                )}
               </dl>
             </div>
           </section>

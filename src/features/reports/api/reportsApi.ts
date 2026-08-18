@@ -6,6 +6,8 @@ import type {
   AccountingProfitLossReportFilters,
   PurchaseRecapReportDto,
   SalesRecapReportDto,
+  GeneralLedgerReportDto,
+  GeneralLedgerReportFilters,
 } from "../types/reports";
 
 export function getCashFlowReport(params: AccountingCashFlowReportFilters) {
@@ -138,4 +140,28 @@ export async function exportSalesRecapExcel(params: {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+}
+
+export function getGeneralLedgerReport(params: GeneralLedgerReportFilters) {
+  const query = new URLSearchParams();
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.chartOfAccountId) query.append("chartOfAccountId", params.chartOfAccountId);
+  if (params.keyword) query.append("keyword", params.keyword);
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+
+  return apiClient.get<GeneralLedgerReportDto>(`/api/reports/general-ledger?${query.toString()}`);
+}
+
+export async function exportGeneralLedgerExcel(params: GeneralLedgerReportFilters) {
+  const query = new URLSearchParams();
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.chartOfAccountId) query.append("chartOfAccountId", params.chartOfAccountId);
+  if (params.keyword) query.append("keyword", params.keyword);
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+
+  return apiClient.get<Blob>(`/api/reports/general-ledger/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
 }

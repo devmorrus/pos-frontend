@@ -215,6 +215,26 @@ export default function DashboardPage() {
     if (!summary) return null;
     return (
       <div className="space-y-6">
+        {/* Banner Target Bulanan */}
+        <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-brand-600 to-indigo-700 p-6 text-white shadow-theme-sm dark:border-gray-800 dark:bg-gradient-to-r dark:from-brand-950 dark:to-indigo-950 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="space-y-1">
+            <h4 className="text-lg font-bold">Pencapaian Target Penjualan</h4>
+            <p className="text-sm text-brand-100 font-medium">Outlet sedang beroperasi dengan performa optimal hari ini.</p>
+          </div>
+          <div className="flex-1 max-w-md w-full">
+            <div className="flex justify-between text-xs font-semibold mb-2 text-brand-200 uppercase tracking-wider">
+              <span>Progress: {((summary.totalSales / 50000000) * 100).toFixed(1)}%</span>
+              <span>Target: Rp 50.000.000</span>
+            </div>
+            <div className="w-full bg-brand-500/30 rounded-full h-3.5">
+              <div 
+                className="bg-white h-3.5 rounded-full shadow-lg transition-all duration-500" 
+                style={{ width: `${Math.min(100, (summary.totalSales / 50000000) * 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
         {/* WIDGET CARDS / KPIS */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {/* Card 1: Omzet */}
@@ -430,6 +450,26 @@ export default function DashboardPage() {
 
     return (
       <div className="space-y-6">
+        {/* Banner Cash Flow Summary */}
+        <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-success-600 to-emerald-700 p-6 text-white shadow-theme-sm dark:border-gray-800 dark:bg-gradient-to-r dark:from-success-950 dark:to-emerald-950 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="space-y-1">
+            <h4 className="text-lg font-bold">Ringkasan Arus Kas Masuk & Keluar</h4>
+            <p className="text-sm text-success-100 font-medium">Laporan likuiditas dan rasio beban kas terhadap pendapatan operasional.</p>
+          </div>
+          <div className="flex-1 max-w-md w-full">
+            <div className="flex justify-between text-xs font-semibold mb-2 text-success-200 uppercase tracking-wider">
+              <span>Beban Pembelian vs Kas: {data.totalPurchases > 0 ? ((data.totalPurchases / (data.cashOnHand + data.totalPurchases)) * 100).toFixed(1) : 0}%</span>
+              <span>Rasio Likuiditas Sehat</span>
+            </div>
+            <div className="w-full bg-success-500/30 rounded-full h-3.5">
+              <div 
+                className="bg-white h-3.5 rounded-full shadow-lg transition-all duration-500" 
+                style={{ width: `${Math.min(100, data.totalPurchases > 0 ? (data.totalPurchases / (data.cashOnHand + data.totalPurchases)) * 100 : 0)}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Estimasi Kas Aktif</p>
@@ -511,6 +551,26 @@ export default function DashboardPage() {
   const renderGudangDashboard = (data: any) => {
     return (
       <div className="space-y-6">
+        {/* Banner Manajemen Stok */}
+        <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-amber-600 to-orange-700 p-6 text-white shadow-theme-sm dark:border-gray-800 dark:bg-gradient-to-r dark:from-amber-950 dark:to-orange-950 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="space-y-1">
+            <h4 className="text-lg font-bold">Kesehatan Persediaan Gudang</h4>
+            <p className="text-sm text-amber-100 font-medium">Peringatan stok menipis dan pemantauan distribusi antar cabang outlet.</p>
+          </div>
+          <div className="flex-1 max-w-md w-full">
+            <div className="flex justify-between text-xs font-semibold mb-2 text-amber-200 uppercase tracking-wider">
+              <span>Rasio Aman Stok: {(((data.totalProducts - data.lowStockAlertsCount) / Math.max(1, data.totalProducts)) * 100).toFixed(1)}%</span>
+              <span>{data.lowStockAlertsCount > 0 ? `${data.lowStockAlertsCount} item perlu reorder` : "Seluruh stok aman"}</span>
+            </div>
+            <div className="w-full bg-amber-500/30 rounded-full h-3.5">
+              <div 
+                className="bg-white h-3.5 rounded-full shadow-lg transition-all duration-500" 
+                style={{ width: `${Math.min(100, ((data.totalProducts - data.lowStockAlertsCount) / Math.max(1, data.totalProducts)) * 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Total Produk</p>
@@ -625,6 +685,28 @@ export default function DashboardPage() {
 
     return (
       <div className="space-y-6">
+        {/* Banner Sesi Kasir & Link POS */}
+        <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-brand-600 to-indigo-700 p-6 text-white shadow-theme-sm dark:border-gray-800 dark:bg-gradient-to-r dark:from-brand-950 dark:to-indigo-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="space-y-1">
+            <h4 className="text-lg font-bold">Sesi Kasir Aktif & Siap Melayani</h4>
+            <p className="text-sm text-brand-100 font-medium">Gunakan tombol di sebelah kanan untuk mempercepat navigasi layanan POS kasir.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <a 
+              href="/pos" 
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-xs font-bold text-brand-600 hover:bg-brand-50 transition-colors shadow-lg"
+            >
+              Buka Layar POS (Kasir)
+            </a>
+            <a 
+              href="/cashier/session" 
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-500/30 px-4 text-xs font-bold text-white hover:bg-brand-500/50 transition-colors border border-white/20"
+            >
+              Kelola Sesi & Petty Cash
+            </a>
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-4">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Status Sesi</p>

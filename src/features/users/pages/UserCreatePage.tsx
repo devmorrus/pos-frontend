@@ -115,7 +115,7 @@ export default function UserCreatePage() {
   return (
     <ProtectedPageShell
       title="Tambah Pengguna"
-      description="Buat akun baru berdasarkan role dan outlet yang diizinkan oleh backend fase 1."
+      description="Buat akun staf baru dan tentukan hak akses peran serta penugasan outletnya."
     >
       {isLoading ? (
         <AppLoader label="Memuat form pengguna..." />

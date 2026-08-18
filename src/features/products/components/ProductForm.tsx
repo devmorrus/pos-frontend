@@ -18,7 +18,7 @@ type ProductFormProps = {
   categories: CategoryDto[];
   isSubmitting: boolean;
   submitError?: string | null;
-  onChange: (key: keyof ProductFormValues, value: string | boolean) => void;
+  onChange: (key: keyof ProductFormValues, value: any) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -35,6 +35,8 @@ export default function ProductForm({
   const isEditMode = mode === "edit";
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -154,49 +156,57 @@ export default function ProductForm({
               <FieldErrorText message={errors.unit} />
             </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Harga jual <span className="text-error-500">*</span>
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={values.basePrice}
-                onChange={(event) => onChange("basePrice", event.target.value)}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
-              <p className="mt-1 text-xs text-gray-400">Harus lebih besar dari Harga Modal.</p>
-              <FieldErrorText message={errors.basePrice} />
-            </label>
+            {!values.hasVariants && (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Harga jual <span className="text-error-500">*</span>
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={values.basePrice}
+                    onChange={(event) => onChange("basePrice", event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Harus lebih besar dari Harga Modal.</p>
+                  <FieldErrorText message={errors.basePrice} />
+                </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Harga modal <span className="text-error-500">*</span>
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={values.costPrice}
-                onChange={(event) => onChange("costPrice", event.target.value)}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-              />
-              <p className="mt-1 text-xs text-gray-400">Harga modal harus lebih rendah dari harga jual.</p>
-              <FieldErrorText message={errors.costPrice} />
-            </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Harga modal <span className="text-error-500">*</span>
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={values.costPrice}
+                    onChange={(event) => onChange("costPrice", event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Harga modal harus lebih rendah dari harga jual.</p>
+                  <FieldErrorText message={errors.costPrice} />
+                </label>
+              </>
+            )}
 
-            <label className="inline-flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={values.isConsignment}
-                onChange={(event) => onChange("isConsignment", event.target.checked)}
-                className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-              />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                Produk konsinyasi
-              </span>
-            </label>
+            <div className="flex flex-col gap-3 md:col-span-2">
+              <label className="inline-flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={values.isConsignment}
+                  onChange={(event) => onChange("isConsignment", event.target.checked)}
+                  className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Produk konsinyasi
+                </span>
+              </label>
+            </div>
+
+
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -294,6 +304,8 @@ export default function ProductForm({
               </div>
             </div>
           </div>
+
+
 
           <div className="flex flex-wrap items-center justify-end gap-3">
             <Link

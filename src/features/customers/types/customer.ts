@@ -12,6 +12,10 @@ export type CustomerListItemDto = {
   lifetimeSpend: number;
   lastTransactionAt: string | null;
   createdAt: string;
+  creditLimit: number;
+  currentDebt: number;
+  ktpNumber: string | null;
+  address: string | null;
 };
 
 export type CustomerDto = {
@@ -34,6 +38,10 @@ export type CustomerDto = {
   lastTransactionAt: string | null;
   createdAt: string;
   updatedAt: string;
+  creditLimit: number;
+  currentDebt: number;
+  ktpNumber: string | null;
+  address: string | null;
 };
 
 export type CustomerFormValues = {
@@ -44,6 +52,9 @@ export type CustomerFormValues = {
   birthDate: string;
   notes: string;
   isActive: boolean;
+  creditLimit?: number;
+  ktpNumber?: string;
+  address?: string;
 };
 
 export type CustomerTransactionsResponse = TransactionListItemDto[];

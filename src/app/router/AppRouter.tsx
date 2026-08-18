@@ -48,6 +48,7 @@ import OutcomeBusinessesPage from "../../features/cash-flows/pages/OutcomeBusine
 import CashFlowFormPage from "../../features/cash-flows/components/CashFlowFormPage";
 import CashFlowReportPage from "../../features/reports/pages/CashFlowReportPage";
 import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportPage";
+import GeneralLedgerReportPage from "../../features/reports/pages/GeneralLedgerReportPage";
 import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapReportPage";
 import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
 import SupplierDebtsPage from "../../features/debts/pages/SupplierDebtsPage";
@@ -74,6 +75,7 @@ import ProductsPage from "../../features/products/pages/ProductsPage";
 import PurchaseOrdersPage from "../../features/purchase-orders/pages/PurchaseOrdersPage";
 import PurchaseOrderCreatePage from "../../features/purchase-orders/pages/PurchaseOrderCreatePage";
 import PurchaseOrderDetailPage from "../../features/purchase-orders/pages/PurchaseOrderDetailPage";
+import PurchaseOrderReceivePage from "../../features/purchase-orders/pages/PurchaseOrderReceivePage";
 import SuppliersPage from "../../features/suppliers/pages/SuppliersPage";
 import SupplierReturnsPage from "../../features/supplier-returns/pages/SupplierReturnsPage";
 import SupplierReturnDetailPage from "../../features/supplier-returns/pages/SupplierReturnDetailPage";
@@ -118,6 +120,7 @@ const incomeBusinessesPolicy = getNavigationItem("/income-businesses");
 const outcomeBusinessesPolicy = getNavigationItem("/outcome-businesses");
 const cashFlowReportPolicy = getNavigationItem("/reports/cash-flow");
 const reportPolicy = getNavigationItem("/reports/profit-loss");
+const generalLedgerPolicy = getNavigationItem("/reports/general-ledger");
 const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
 const salesRecapPolicy = getNavigationItem("/reports/sales");
 
@@ -284,6 +287,17 @@ export default function AppRouter() {
                 fallbackRoles={reportPolicy?.fallbackRoles}
               >
                 <ProfitLossReportPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/general-ledger"
+            element={
+              <PermissionGuard
+                requiredPermissions={generalLedgerPolicy?.requiredPermissions}
+                fallbackRoles={generalLedgerPolicy?.fallbackRoles}
+              >
+                <GeneralLedgerReportPage />
               </PermissionGuard>
             }
           />
@@ -488,6 +502,17 @@ export default function AppRouter() {
                 fallbackRoles={purchaseOrdersPolicy?.fallbackRoles}
               >
                 <PurchaseOrderDetailPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="purchase-orders/:id/receive"
+            element={
+              <PermissionGuard
+                requiredPermissions={purchaseOrdersPolicy?.requiredPermissions}
+                fallbackRoles={purchaseOrdersPolicy?.fallbackRoles}
+              >
+                <PurchaseOrderReceivePage />
               </PermissionGuard>
             }
           />
