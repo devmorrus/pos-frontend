@@ -101,7 +101,7 @@ export default function UsersPage() {
   return (
     <ProtectedPageShell
       title="Pengguna"
-      description="Kelola akun pengguna MorrusPOS berdasarkan role dan outlet yang diizinkan oleh backend fase 1."
+      description="Kelola akun staf MorrusPOS, atur hak akses berdasarkan peran (role), dan batasi akses data sesuai dengan outlet yang ditentukan."
     >
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={error} />

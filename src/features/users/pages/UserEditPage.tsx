@@ -140,7 +140,7 @@ export default function UserEditPage() {
   return (
     <ProtectedPageShell
       title="Edit Pengguna"
-      description={`Perbarui data akun ${user?.name ?? ""} sesuai aturan role dan outlet backend.`}
+      description={`Perbarui profil, hak akses peran (role), dan penugasan outlet untuk ${user?.name ?? "staf"}.`}
     >
       {isLoading ? (
         <AppLoader label="Memuat detail pengguna..." />
