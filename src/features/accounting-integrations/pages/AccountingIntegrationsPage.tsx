@@ -16,6 +16,10 @@ import type {
 import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { getRecentTransactions } from "../../transactions/api/transactionsApi";
 import { getPurchaseOrders } from "../../purchase-orders/api/purchaseOrdersApi";
+import { getSupplierPayments } from "../../debts/api/debtsApi";
+import { getSupplierReturns } from "../../supplier-returns/api/supplierReturnsApi";
+import { getChannelSettlements } from "../../channels/api/channelsApi";
+import { getConsignmentSettlements } from "../../consignments/api/consignmentsApi";
 
 type ReferenceOption = {
   value: AccountingReferenceType;
@@ -54,11 +58,19 @@ const backfillModules = [
   { key: "includeConsignmentSettlements",label: "Settlement Konsinyasi", icon: "🤝" },
 ] as const;
 
+interface RecentItem {
+  id: string;
+  num: string;
+  date: string;
+  amount: number;
+}
+
 export default function AccountingIntegrationsPage() {
   const { selectedOutletId } = useOutlet();
 
   const [referenceType, setReferenceType] = useState<AccountingReferenceType>("transaction_sale");
-  const [referenceId, setReferenceId] = useState("");
+  const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [lookupResult, setLookupResult] = useState<AccountingPostingStatusDto | null>(null);
   const [backfillResult, setBackfillResult] = useState<AccountingBackfillResultDto | null>(null);
   const [backfillForm, setBackfillForm] = useState<AccountingBackfillRequest>(defaultBackfillState);
@@ -66,36 +78,100 @@ export default function AccountingIntegrationsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
 
-  const [recentTransactions, setRecentTransactions] = useState<{ id: string; num: string; date: string; amount: number }[]>([]);
-  const [recentPOs, setRecentPOs] = useState<{ id: string; num: string; date: string; amount: number }[]>([]);
-  const [isLoadingHelpers, setIsLoadingHelpers] = useState(false);
+  async function fetchItemPostingStatus(itemId: string, refType: AccountingReferenceType) {
+    if (!itemId) return;
+    setIsChecking(true);
+    setError(null);
+    try {
+      const result = await getAccountingPostingStatus(refType, itemId);
+      setLookupResult(result);
+    } catch (requestError) {
+      setLookupResult(null);
+      setError(getErrorMessage(requestError, "Gagal memeriksa status integrasi akuntansi."));
+    } finally {
+      setIsChecking(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadHelpers() {
+    async function loadRecentItems() {
       if (!selectedOutletId) return;
-      setIsLoadingHelpers(true);
+      setIsLoadingItems(true);
+      setRecentItems([]);
+      setSelectedItemId("");
+      setLookupResult(null);
+      setError(null);
       try {
+        let items: RecentItem[] = [];
         if (referenceType === "transaction_sale") {
-          const list = await getRecentTransactions(selectedOutletId, 5);
-          setRecentTransactions(list.map(t => ({ id: t.id, num: t.transactionNumber, date: t.createdAt, amount: t.grandTotal })));
+          const list = await getRecentTransactions(selectedOutletId, 10);
+          items = list.map(t => ({
+            id: t.id,
+            num: t.transactionNumber,
+            date: t.createdAt,
+            amount: t.grandTotal
+          }));
         } else if (referenceType === "purchase_order") {
           const list = await getPurchaseOrders({ outletId: selectedOutletId });
-          setRecentPOs(list.slice(0, 5).map(po => ({ id: po.id, num: po.poNumber, date: po.poDate, amount: po.totalAmount })));
+          items = list.slice(0, 10).map(po => ({
+            id: po.id,
+            num: po.poNumber,
+            date: po.poDate,
+            amount: po.totalAmount
+          }));
+        } else if (referenceType === "supplier_payment") {
+          const list = await getSupplierPayments({ outletId: selectedOutletId });
+          items = list.slice(0, 10).map(p => ({
+            id: p.id,
+            num: p.referenceNumber || `Pay #${p.poNumber}`,
+            date: p.paymentDate,
+            amount: p.amount
+          }));
+        } else if (referenceType === "supplier_return") {
+          const list = await getSupplierReturns({ outletId: selectedOutletId });
+          items = list.slice(0, 10).map(r => ({
+            id: r.id,
+            num: r.returnNumber,
+            date: r.returnDate,
+            amount: r.totalAmount
+          }));
+        } else if (referenceType === "channel_settlement") {
+          const list = await getChannelSettlements({ outletId: selectedOutletId });
+          items = list.slice(0, 10).map(s => ({
+            id: s.id,
+            num: s.settlementNumber,
+            date: s.settlementDate,
+            amount: s.netAmount
+          }));
+        } else if (referenceType === "consignment_settlement") {
+          const list = await getConsignmentSettlements(selectedOutletId);
+          items = list.slice(0, 10).map(s => ({
+            id: s.id,
+            num: s.settlementNumber,
+            date: s.settlementDate,
+            amount: s.totalAmount
+          }));
+        }
+
+        setRecentItems(items);
+
+        // Auto select the first item if available
+        if (items.length > 0) {
+          const firstItem = items[0];
+          setSelectedItemId(firstItem.id);
+          void fetchItemPostingStatus(firstItem.id, referenceType);
         }
       } catch (err) {
-        console.error("Failed to load helpers", err);
+        console.error("Failed to load recent items", err);
+        setError("Gagal memuat daftar dokumen terbaru.");
       } finally {
-        setIsLoadingHelpers(false);
+        setIsLoadingItems(false);
       }
     }
-    void loadHelpers();
+    void loadRecentItems();
   }, [referenceType, selectedOutletId]);
-
-  const selectedReference = useMemo(
-    () => referenceOptions.find(o => o.value === referenceType) ?? referenceOptions[0],
-    [referenceType],
-  );
 
   const backfillTotal = useMemo(() => {
     if (!backfillResult) return 0;
@@ -106,18 +182,10 @@ export default function AccountingIntegrationsPage() {
     );
   }, [backfillResult]);
 
-  async function handleLookup() {
-    if (!referenceId.trim()) { setError("Reference ID wajib diisi."); return; }
-    setIsChecking(true); setError(null); setSuccessMessage(null);
-    try {
-      const result = await getAccountingPostingStatus(referenceType, referenceId.trim());
-      setLookupResult(result);
-      setSuccessMessage("Status integrasi akuntansi berhasil dimuat.");
-    } catch (requestError) {
-      setLookupResult(null);
-      setError(getErrorMessage(requestError, "Gagal memeriksa status integrasi akuntansi."));
-    } finally { setIsChecking(false); }
-  }
+  const handleItemClick = (item: RecentItem) => {
+    setSelectedItemId(item.id);
+    void fetchItemPostingStatus(item.id, referenceType);
+  };
 
   async function handleBackfill() {
     setIsBackfilling(true); setError(null); setSuccessMessage(null);
@@ -130,9 +198,6 @@ export default function AccountingIntegrationsPage() {
       setError(getErrorMessage(requestError, "Gagal menjalankan backfill integrasi akuntansi."));
     } finally { setIsBackfilling(false); }
   }
-
-  const quickList = referenceType === "transaction_sale" ? recentTransactions : referenceType === "purchase_order" ? recentPOs : [];
-  const showQuickList = referenceType === "transaction_sale" || referenceType === "purchase_order";
 
   return (
     <ProtectedPageShell
@@ -195,7 +260,7 @@ export default function AccountingIntegrationsPage() {
                 <button
                   key={item.value}
                   type="button"
-                  onClick={() => { setReferenceType(item.value); setLookupResult(null); setReferenceId(""); }}
+                  onClick={() => { setReferenceType(item.value); setLookupResult(null); }}
                   className={`ai-card group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none ${
                     isActive
                       ? "border-transparent shadow-lg ring-2 ring-violet-500/40"
@@ -230,121 +295,72 @@ export default function AccountingIntegrationsPage() {
         {/* ── Status Check + Results ── */}
         <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
 
-          {/* Left: input form */}
+          {/* Left: list of recent documents */}
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-xl shadow-md">
-                🔍
+                📋
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Cek Status Posting</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Verifikasi jurnal akuntansi dari transaksi operasional</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Daftar Dokumen Terakhir</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pilih dokumen untuk melihat status penjurnalan otomatis</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {/* Reference type select */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Tipe Referensi
-                </label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg">{selectedReference.icon}</span>
-                  <select
-                    value={referenceType}
-                    onChange={(e) => setReferenceType(e.target.value as AccountingReferenceType)}
-                    className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  >
-                    {referenceOptions.map(o => (
-                      <option key={o.value} value={o.value}>{o.icon} {o.label}</option>
-                    ))}
-                  </select>
-                </div>
+            {isLoadingItems ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <svg className="h-8 w-8 animate-spin text-violet-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="mt-3 text-xs">Memuat dokumen terbaru...</p>
               </div>
-
-              {/* Reference ID input */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Nomor Dokumen / Reference ID
-                </label>
-                <input
-                  type="text"
-                  value={referenceId}
-                  onChange={(e) => setReferenceId(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && void handleLookup()}
-                  placeholder="Masukkan Nomor Invoice, Nomor PO, atau GUID…"
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                />
+            ) : recentItems.length > 0 ? (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {recentItems.map((item) => {
+                  const isActive = selectedItemId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleItemClick(item)}
+                      className={`w-full flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-2xl border p-4 text-left transition-all duration-200 focus:outline-none hover:scale-[1.01] ${
+                        isActive
+                          ? "border-violet-500 bg-violet-50/30 ring-2 ring-violet-500/10 dark:bg-violet-950/10"
+                          : "border-gray-200 bg-white hover:border-violet-200 dark:border-gray-800 dark:bg-gray-900/60"
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1 pr-3">
+                        <p className={`text-sm font-semibold truncate ${isActive ? "text-violet-700 dark:text-violet-300" : "text-gray-900 dark:text-white"}`}>
+                          {item.num}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                          {new Date(item.date).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      <div className="mt-2 sm:mt-0 flex-shrink-0">
+                        <span className={`text-xs font-bold ${isActive ? "text-violet-600 dark:text-violet-400" : "text-gray-600 dark:text-gray-300"}`}>
+                          Rp {item.amount.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* Quick pick list */}
-              {showQuickList && (
-                <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4 dark:border-violet-900/30 dark:bg-violet-950/20">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400">
-                      {referenceType === "transaction_sale" ? "Transaksi" : "Purchase Order"} Terakhir
-                    </span>
-                    {isLoadingHelpers && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-violet-500">
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" />
-                        Memuat…
-                      </span>
-                    )}
-                  </div>
-                  {quickList.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {quickList.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between rounded-xl border border-violet-100/60 bg-white px-3 py-2 dark:border-violet-900/20 dark:bg-gray-900/60"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-100">{item.num}</p>
-                            <p className="text-[10px] text-gray-400">
-                              {new Date(item.date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setReferenceId(item.num)}
-                            className="ml-3 flex-shrink-0 rounded-lg bg-violet-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm transition hover:bg-violet-600 active:scale-95"
-                          >
-                            Pilih
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : !isLoadingHelpers ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Tidak ada data terbaru untuk outlet ini.</p>
-                  ) : null}
-                </div>
-              )}
-
-              {/* CTA button */}
-              <button
-                type="button"
-                onClick={() => void handleLookup()}
-                disabled={isChecking}
-                className="shimmer-btn flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg shadow-violet-500/30 transition hover:opacity-90 disabled:opacity-60"
-              >
-                {isChecking ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Memeriksa…
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    Cek Status Jurnal
-                  </>
-                )}
-              </button>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-12 dark:border-gray-700">
+                <span className="text-4xl opacity-40">📭</span>
+                <p className="mt-3 text-center text-sm text-gray-400 dark:text-gray-500">
+                  Tidak ada dokumen terbaru untuk modul ini.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right: result panel */}
@@ -371,7 +387,15 @@ export default function AccountingIntegrationsPage() {
               </div>
             </div>
 
-            {lookupResult ? (
+            {isChecking ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <svg className="h-8 w-8 animate-spin text-violet-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="mt-3 text-xs">Memeriksa status jurnal...</p>
+              </div>
+            ) : lookupResult ? (
               <div className="space-y-4">
                 {/* Status badge */}
                 <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold ${
@@ -406,10 +430,12 @@ export default function AccountingIntegrationsPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-10 dark:border-gray-700">
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-16 dark:border-gray-700">
                 <span className="text-4xl opacity-40">🔎</span>
                 <p className="mt-3 text-center text-sm text-gray-400 dark:text-gray-500">
-                  Belum ada hasil pemeriksaan.<br />Pilih modul &amp; masukkan nomor dokumen.
+                  {isLoadingItems
+                    ? "Memuat data..."
+                    : "Pilih salah satu dokumen di sebelah kiri untuk melihat detail status jurnal."}
                 </p>
               </div>
             )}
