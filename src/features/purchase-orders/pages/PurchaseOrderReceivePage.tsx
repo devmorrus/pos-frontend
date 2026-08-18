@@ -78,6 +78,26 @@ export default function PurchaseOrderReceivePage() {
     if (!id || !order) return;
 
     // Validate quantities
+    const overReceivedRows = rows.filter((row) => {
+      const parsedQty = parseFloat(row.qtyToReceive) || 0;
+      const remaining = row.qtyOrdered - row.qtyReceivedSoFar;
+      return parsedQty > remaining;
+    });
+
+    if (overReceivedRows.length > 0) {
+      setError("Jumlah kuantitas masuk tidak boleh melebihi sisa pesanan.");
+      return;
+    }
+
+    // Validate expiry dates (must not be in the past)
+    const todayStr = getTodayString();
+    const pastExpiryRows = rows.filter((row) => row.expiryDate && row.expiryDate < todayStr);
+
+    if (pastExpiryRows.length > 0) {
+      setError("Tanggal kedaluwarsa tidak boleh kurang dari hari ini.");
+      return;
+    }
+
     const itemsPayload = rows
       .map((row) => ({
         productId: row.productId,
@@ -111,6 +131,23 @@ export default function PurchaseOrderReceivePage() {
       setIsSubmitting(false);
     }
   };
+
+  function getTodayString() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const todayStr = getTodayString();
+
+  const hasValidationError = rows.some((row) => {
+    const parsedQty = parseFloat(row.qtyToReceive) || 0;
+    const remaining = row.qtyOrdered - row.qtyReceivedSoFar;
+    const isPastExpiry = row.expiryDate && row.expiryDate < todayStr;
+    return parsedQty > remaining || parsedQty < 0 || isPastExpiry;
+  });
 
   return (
     <ProtectedPageShell
@@ -193,9 +230,18 @@ export default function PurchaseOrderReceivePage() {
                           min="0"
                           value={row.qtyToReceive}
                           onChange={(e) => handleRowChange(index, "qtyToReceive", e.target.value)}
-                          className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-950 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                          className={`w-24 rounded-lg border bg-white px-3 py-1.5 text-sm text-gray-955 shadow-theme-xs focus:outline-none dark:bg-gray-955 dark:text-white ${
+                            (parseFloat(row.qtyToReceive) || 0) > (row.qtyOrdered - row.qtyReceivedSoFar)
+                              ? "border-error-500 focus:border-error-500 focus:ring-4 focus:ring-error-500/10"
+                              : "border-gray-300 focus:border-brand-500"
+                          }`}
                           required
                         />
+                        {(parseFloat(row.qtyToReceive) || 0) > (row.qtyOrdered - row.qtyReceivedSoFar) && (
+                          <span className="mt-1 block text-xs font-medium text-error-600">
+                            Maks. {row.qtyOrdered - row.qtyReceivedSoFar}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <input
@@ -203,16 +249,47 @@ export default function PurchaseOrderReceivePage() {
                           placeholder="BATCH-123"
                           value={row.batchNumber}
                           onChange={(e) => handleRowChange(index, "batchNumber", e.target.value)}
-                          className="w-full min-w-[120px] rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-950 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                          className="w-full min-w-[120px] rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-955 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <input
-                          type="date"
-                          value={row.expiryDate}
-                          onChange={(e) => handleRowChange(index, "expiryDate", e.target.value)}
-                          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-950 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                        />
+                        <div className="relative flex flex-col min-w-[150px]">
+                          <div className="relative flex items-center w-full">
+                            <input
+                              type="date"
+                              value={row.expiryDate}
+                              min={todayStr}
+                              onClick={(e) => e.currentTarget.showPicker?.()}
+                              onChange={(e) => handleRowChange(index, "expiryDate", e.target.value)}
+                              className={`w-full rounded-lg border bg-white pl-3 pr-8 py-1.5 text-sm text-gray-955 shadow-theme-xs focus:outline-none dark:bg-gray-955 dark:text-white ${
+                                row.expiryDate && row.expiryDate < todayStr
+                                  ? "border-error-500 focus:border-error-500 focus:ring-4 focus:ring-error-500/10"
+                                  : "border-gray-300 focus:border-brand-500"
+                              }`}
+                            />
+                            <div className="absolute right-2.5 flex items-center pointer-events-none text-gray-400">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={1.5}
+                                stroke="currentColor"
+                                className="h-4 w-4"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                          {row.expiryDate && row.expiryDate < todayStr && (
+                            <span className="mt-1 block text-xs font-medium text-error-600">
+                              Harus hari ini atau setelahnya
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -246,7 +323,7 @@ export default function PurchaseOrderReceivePage() {
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasValidationError}
               className="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50"
             >
               {isSubmitting ? "Menyimpan..." : "Simpan Penerimaan"}
