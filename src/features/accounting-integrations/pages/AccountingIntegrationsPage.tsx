@@ -460,21 +460,59 @@ export default function AccountingIntegrationsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tanggal Mulai</label>
-                  <input
-                    type="date"
-                    value={backfillForm.dateFrom ?? ""}
-                    onChange={(e) => setBackfillForm(c => ({ ...c, dateFrom: e.target.value || null }))}
-                    className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type="date"
+                      value={backfillForm.dateFrom ?? ""}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) => setBackfillForm(c => ({ ...c, dateFrom: e.target.value || null }))}
+                      className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-3 pr-10 text-sm text-gray-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    />
+                    <div className="absolute right-3 flex items-center pointer-events-none text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tanggal Akhir</label>
-                  <input
-                    type="date"
-                    value={backfillForm.dateTo ?? ""}
-                    onChange={(e) => setBackfillForm(c => ({ ...c, dateTo: e.target.value || null }))}
-                    className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type="date"
+                      value={backfillForm.dateTo ?? ""}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) => setBackfillForm(c => ({ ...c, dateTo: e.target.value || null }))}
+                      className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-3 pr-10 text-sm text-gray-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    />
+                    <div className="absolute right-3 flex items-center pointer-events-none text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
 
