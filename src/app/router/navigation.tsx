@@ -277,6 +277,13 @@ export const appNavigation: NavItem[] = [
         label: "Laba Rugi",
         path: "/reports/profit-loss",
         requiredPermissions: ["report.profitloss_accounting.view"],
+        fallbackRoles: accountingRoles,
+      },
+      {
+        label: "Buku Besar",
+        path: "/reports/general-ledger",
+        requiredPermissions: ["report.profitloss_accounting.view"],
+        fallbackRoles: accountingRoles,
       },
       {
         label: "Rekap Pembelian",

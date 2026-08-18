@@ -48,6 +48,7 @@ import OutcomeBusinessesPage from "../../features/cash-flows/pages/OutcomeBusine
 import CashFlowFormPage from "../../features/cash-flows/components/CashFlowFormPage";
 import CashFlowReportPage from "../../features/reports/pages/CashFlowReportPage";
 import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportPage";
+import GeneralLedgerReportPage from "../../features/reports/pages/GeneralLedgerReportPage";
 import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapReportPage";
 import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
 import SupplierDebtsPage from "../../features/debts/pages/SupplierDebtsPage";
@@ -119,6 +120,7 @@ const incomeBusinessesPolicy = getNavigationItem("/income-businesses");
 const outcomeBusinessesPolicy = getNavigationItem("/outcome-businesses");
 const cashFlowReportPolicy = getNavigationItem("/reports/cash-flow");
 const reportPolicy = getNavigationItem("/reports/profit-loss");
+const generalLedgerPolicy = getNavigationItem("/reports/general-ledger");
 const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
 const salesRecapPolicy = getNavigationItem("/reports/sales");
 
@@ -285,6 +287,17 @@ export default function AppRouter() {
                 fallbackRoles={reportPolicy?.fallbackRoles}
               >
                 <ProfitLossReportPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/general-ledger"
+            element={
+              <PermissionGuard
+                requiredPermissions={generalLedgerPolicy?.requiredPermissions}
+                fallbackRoles={generalLedgerPolicy?.fallbackRoles}
+              >
+                <GeneralLedgerReportPage />
               </PermissionGuard>
             }
           />

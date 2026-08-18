@@ -152,3 +152,44 @@ export interface SalesRecapReportDto {
   productBreakdown: SalesProductSummary[];
   paymentBreakdown: SalesPaymentSummary[];
 }
+
+export interface GeneralLedgerReportFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  outletId?: string;
+  chartOfAccountId?: string;
+  keyword?: string;
+}
+
+export interface GeneralLedgerReportSummaryDto {
+  openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  closingBalance: number;
+}
+
+export interface GeneralLedgerReportLineDto {
+  accountTransactionId: string;
+  trxDate: string;
+  trxNumber: string;
+  referenceType: string;
+  referenceId: string | null;
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  outletId: string | null;
+  outletName: string | null;
+  note: string | null;
+  debitAmount: number;
+  creditAmount: number;
+  movementAmount: number;
+  runningBalance: number;
+}
+
+export interface GeneralLedgerReportDto {
+  filters: GeneralLedgerReportFilters;
+  summary: GeneralLedgerReportSummaryDto;
+  lines: GeneralLedgerReportLineDto[];
+}
+
