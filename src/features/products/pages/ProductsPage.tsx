@@ -184,11 +184,19 @@ export default function ProductsPage() {
                 <tr key={product.id} className="align-top">
                   <td className="px-6 py-4">
                     {product.imageUrl ? (
-                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                         <img
                           src={`${API_BASE_URL}${product.imageUrl}`}
                           alt={product.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = "none";
+                            const fallback = document.createElement("div");
+                            fallback.className = "w-full h-full flex items-center justify-center text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-900";
+                            fallback.innerText = product.name.substring(0, 1).toUpperCase();
+                            e.currentTarget.parentElement?.appendChild(fallback);
+                          }}
                         />
                       </div>
                     ) : (

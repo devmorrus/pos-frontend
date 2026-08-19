@@ -653,13 +653,20 @@ export default function PosPage() {
                     onClick={() => addToCart(product)}
                     className="flex gap-4 items-center rounded-2xl border border-gray-200 p-3 text-left transition hover:border-brand-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-800 dark:hover:border-brand-500/40 bg-white dark:bg-gray-900"
                   >
-                    {/* Product Image Thumbnail */}
                     {product.imageUrl ? (
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-855 bg-gray-50 dark:bg-gray-950 flex-shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-855 bg-gray-50 dark:bg-gray-950 flex-shrink-0 flex items-center justify-center">
                         <img
                           src={`${API_BASE_URL}${product.imageUrl}`}
                           alt={product.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = "none";
+                            const fallback = document.createElement("div");
+                            fallback.className = "w-full h-full flex items-center justify-center text-lg font-bold text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-950";
+                            fallback.innerText = product.name.substring(0, 1).toUpperCase();
+                            e.currentTarget.parentElement?.appendChild(fallback);
+                          }}
                         />
                       </div>
                     ) : (

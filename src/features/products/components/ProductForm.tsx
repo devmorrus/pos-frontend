@@ -260,11 +260,19 @@ export default function ProductForm({
               
               <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
                 {values.imageUrl ? (
-                  <div className="relative group overflow-hidden w-24 h-24 rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <div className="relative group overflow-hidden w-24 h-24 rounded-2xl border border-gray-200 dark:border-gray-800 flex items-center justify-center">
                     <img
                       src={`${API_BASE_URL}${values.imageUrl}`}
                       alt="Pratonton"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.style.display = "none";
+                        const fallback = document.createElement("div");
+                        fallback.className = "w-full h-full flex items-center justify-center text-xs font-semibold text-gray-400 bg-gray-100 dark:bg-gray-900";
+                        fallback.innerText = values.name ? values.name.substring(0, 1).toUpperCase() : "?";
+                        e.currentTarget.parentElement?.appendChild(fallback);
+                      }}
                     />
                     <button
                       type="button"
