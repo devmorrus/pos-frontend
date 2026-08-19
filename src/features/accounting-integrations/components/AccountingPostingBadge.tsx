@@ -5,6 +5,7 @@ import type { AccountingPostingStatusDto, AccountingReferenceType } from "../typ
 type AccountingPostingBadgeProps = {
   referenceType: AccountingReferenceType;
   referenceId: string;
+  trigger?: any;
 };
 
 function badgeClassName(isPosted: boolean) {
@@ -16,6 +17,7 @@ function badgeClassName(isPosted: boolean) {
 export default function AccountingPostingBadge({
   referenceType,
   referenceId,
+  trigger,
 }: AccountingPostingBadgeProps) {
   const [status, setStatus] = useState<AccountingPostingStatusDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function AccountingPostingBadge({
     return () => {
       isMounted = false;
     };
-  }, [referenceId, referenceType]);
+  }, [referenceId, referenceType, trigger]);
 
   if (isLoading) {
     return (

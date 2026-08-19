@@ -170,6 +170,7 @@ export default function PurchaseOrderDetailPage() {
                   <AccountingPostingBadge
                     referenceType="purchase_order"
                     referenceId={order.id}
+                    trigger={order.status}
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
