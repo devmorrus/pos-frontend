@@ -295,6 +295,18 @@ export const appNavigation: NavItem[] = [
         path: "/reports/sales",
         fallbackRoles: reportRoles,
       },
+      {
+        label: "Supplier 360",
+        path: "/reports/suppliers",
+        requiredPermissions: ["supplier.manage"],
+        fallbackRoles: supplierRoles,
+      },
+      {
+        label: "Kartu Stok",
+        path: "/reports/stock-card",
+        requiredPermissions: ["stock.manage"],
+        fallbackRoles: stockRoles,
+      },
     ],
   },
   {

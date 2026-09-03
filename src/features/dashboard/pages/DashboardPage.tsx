@@ -311,6 +311,69 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* TOP CATEGORIES */}
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Top Categories (Omzet Bersih)</h3>
+            <span className="text-xs font-medium text-gray-500">{summary.topCategories?.length ?? 0} kategori • Periode aktif</span>
+          </div>
+          {!summary.topCategories || summary.topCategories.length === 0 ? (
+            <p className="py-10 text-center text-sm text-gray-500">Belum ada penjualan kategori pada periode ini.</p>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <Chart
+                options={{
+                  chart: { type: "bar", fontFamily: "Outfit, sans-serif", toolbar: { show: false } },
+                  colors: ["#465fff"],
+                  plotOptions: { bar: { horizontal: true, borderRadius: 8, barHeight: "55%" } },
+                  dataLabels: { enabled: false },
+                  grid: { borderColor: "#E2E8F0", strokeDashArray: 4 },
+                  xaxis: {
+                    categories: summary.topCategories.map((c) => c.categoryName),
+                    labels: { formatter: (val: string) => val },
+                  },
+                  yaxis: { labels: { style: { fontSize: "11px" } } },
+                  tooltip: { y: { formatter: (val: number) => formatCurrency(val) } },
+                }}
+                series={[{ name: "Omzet Bersih", data: summary.topCategories.map((c) => Number(c.totalRevenue)) }]}
+                type="bar"
+                height={summary.topCategories.length * 48 + 40}
+              />
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                  <thead>
+                    <tr>
+                      {["Kategori", "Omzet Bersih", "Qty Terjual", "Transaksi", "Kontribusi"].map((c) => (
+                        <th key={c} className="pb-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                          {c}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-150 dark:divide-gray-800">
+                    {summary.topCategories.map((c) => (
+                      <tr key={c.categoryId}>
+                        <td className="py-3 text-sm font-medium text-gray-900 dark:text-white">{c.categoryName}</td>
+                        <td className="py-3 text-sm font-semibold text-brand-600">{formatCurrency(c.totalRevenue)}</td>
+                        <td className="py-3 text-sm text-gray-900 dark:text-white">{Number(c.totalQtySold).toLocaleString("id-ID")}</td>
+                        <td className="py-3 text-sm text-gray-500">{c.transactionCount}</td>
+                        <td className="py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                              <div className="h-1.5 rounded-full bg-brand-500" style={{ width: `${Math.min(100, c.contributionPercentage)}%` }} />
+                            </div>
+                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{c.contributionPercentage.toFixed(1)}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* LOWER GRID: TOP PRODUCTS & OUTLET COMPARISONS / CHANNELS */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Top Products Table */}

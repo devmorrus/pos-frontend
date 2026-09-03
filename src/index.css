@@ -326,7 +326,22 @@ layer(base);
     display: none !important;
   }
 
-  .receipt-print-root {
+  aside,
+  header,
+  nav {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .lg\:pl-72 {
+    padding-left: 0 !important;
+  }
+
+  .receipt-print-root,
+  .report-print-root {
     box-shadow: none !important;
     border: 0 !important;
     border-radius: 0 !important;

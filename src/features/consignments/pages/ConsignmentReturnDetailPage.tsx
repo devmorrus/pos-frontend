@@ -6,7 +6,16 @@ import { getErrorMessage } from "../../../utils/errors";
 import { getConsignmentReturnById, updateConsignmentReturnStatus } from "../api/consignmentsApi";
 import type { ConsignmentReturnDto } from "../types/consignment";
 import { formatDateTime } from "../utils/formatters";
-import { getConsignmentReturnStatusClasses } from "./ConsignmentReturnsPage";
+
+function getConsignmentReturnStatusClasses(status: string) {
+  if (status === "completed") {
+    return "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300";
+  }
+  if (status === "cancelled") {
+    return "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300";
+  }
+  return "bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-300";
+}
 
 type ConsignmentReturnDetailLocationState = {
   successMessage?: string;
@@ -99,7 +108,7 @@ export default function ConsignmentReturnDetailPage() {
       <ProtectedPageShell title="Detail Retur Konsinyasi" description="Detail tidak ditemukan.">
         <InlineAlert tone="error" message={error ?? "Retur konsinyasi tidak ditemukan."} />
         <div className="mt-4">
-          <Link to="/consignments/returns" className="text-sm font-semibold text-brand-500">
+          <Link to="/consignments?tab=returns" className="text-sm font-semibold text-brand-500">
             &larr; Kembali ke daftar
           </Link>
         </div>
@@ -117,7 +126,7 @@ export default function ConsignmentReturnDetailPage() {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Link to="/consignments/returns" className="text-sm font-semibold text-brand-500 hover:underline">
+          <Link to="/consignments?tab=returns" className="text-sm font-semibold text-brand-500 hover:underline">
             &larr; Kembali ke daftar
           </Link>
 
