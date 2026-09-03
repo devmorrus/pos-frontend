@@ -8,6 +8,10 @@ import type {
   SalesRecapReportDto,
   GeneralLedgerReportDto,
   GeneralLedgerReportFilters,
+  SupplierReportDto,
+  SupplierReportFilters,
+  StockCardReportDto,
+  StockCardReportFilters,
 } from "../types/reports";
 
 export function getCashFlowReport(params: AccountingCashFlowReportFilters) {
@@ -83,16 +87,15 @@ export async function exportPurchaseRecapExcel(params: {
   query.append("startDate", params.startDate);
   query.append("endDate", params.endDate);
 
-  const csvText = await apiClient.get<string>(`/api/reports/purchases/export-excel?${query.toString()}`);
-  
-  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+  const blob = await apiClient.get<Blob>(`/api/reports/purchases/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  
   const formattedStart = params.startDate.replace(/-/g, "");
   const formattedEnd = params.endDate.replace(/-/g, "");
-  link.setAttribute("download", `Rekap_Pembelian_${formattedStart}_${formattedEnd}.csv`);
+  link.setAttribute("download", `Rekap_Pembelian_${formattedStart}_${formattedEnd}.xlsx`);
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -126,16 +129,15 @@ export async function exportSalesRecapExcel(params: {
   query.append("startDate", params.startDate);
   query.append("endDate", params.endDate);
 
-  const csvText = await apiClient.get<string>(`/api/reports/sales/export-excel?${query.toString()}`);
-  
-  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+  const blob = await apiClient.get<Blob>(`/api/reports/sales/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  
   const formattedStart = params.startDate.replace(/-/g, "");
   const formattedEnd = params.endDate.replace(/-/g, "");
-  link.setAttribute("download", `Rekap_Penjualan_${formattedStart}_${formattedEnd}.csv`);
+  link.setAttribute("download", `Rekap_Penjualan_${formattedStart}_${formattedEnd}.xlsx`);
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -162,6 +164,48 @@ export async function exportGeneralLedgerExcel(params: GeneralLedgerReportFilter
   if (params.dateTo) query.append("dateTo", params.dateTo);
 
   return apiClient.get<Blob>(`/api/reports/general-ledger/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
+}
+
+export function getSupplierReport(params: SupplierReportFilters) {
+  const query = new URLSearchParams();
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+  if (params.supplierId) query.append("supplierId", params.supplierId);
+  if (params.outletId) query.append("outletId", params.outletId);
+  return apiClient.get<SupplierReportDto>(`/api/reports/suppliers?${query.toString()}`);
+}
+
+export async function exportSupplierReportExcel(params: SupplierReportFilters) {
+  const query = new URLSearchParams();
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+  if (params.supplierId) query.append("supplierId", params.supplierId);
+  if (params.outletId) query.append("outletId", params.outletId);
+  return apiClient.get<Blob>(`/api/reports/suppliers/export-excel?${query.toString()}`, {
+    responseType: "blob",
+  });
+}
+
+export function getStockCardReport(params: StockCardReportFilters) {
+  const query = new URLSearchParams();
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.productId) query.append("productId", params.productId);
+  if (params.productVariantId) query.append("productVariantId", params.productVariantId);
+  return apiClient.get<StockCardReportDto>(`/api/reports/stock-card?${query.toString()}`);
+}
+
+export async function exportStockCardReportExcel(params: StockCardReportFilters) {
+  const query = new URLSearchParams();
+  if (params.dateFrom) query.append("dateFrom", params.dateFrom);
+  if (params.dateTo) query.append("dateTo", params.dateTo);
+  if (params.outletId) query.append("outletId", params.outletId);
+  if (params.productId) query.append("productId", params.productId);
+  if (params.productVariantId) query.append("productVariantId", params.productVariantId);
+  return apiClient.get<Blob>(`/api/reports/stock-card/export-excel?${query.toString()}`, {
     responseType: "blob",
   });
 }

@@ -36,7 +36,6 @@ import ConsignmentCreatePage from "../../features/consignments/pages/Consignment
 import ConsignmentDetailPage from "../../features/consignments/pages/ConsignmentDetailPage";
 import ConsignmentSettlementsPage from "../../features/consignments/pages/ConsignmentSettlementsPage";
 import ConsignmentSettlementDetailPage from "../../features/consignments/pages/ConsignmentSettlementDetailPage";
-import ConsignmentReturnsPage from "../../features/consignments/pages/ConsignmentReturnsPage";
 import ConsignmentReturnCreatePage from "../../features/consignments/pages/ConsignmentReturnCreatePage";
 import ConsignmentReturnDetailPage from "../../features/consignments/pages/ConsignmentReturnDetailPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
@@ -51,6 +50,8 @@ import ProfitLossReportPage from "../../features/reports/pages/ProfitLossReportP
 import GeneralLedgerReportPage from "../../features/reports/pages/GeneralLedgerReportPage";
 import PurchaseRecapReportPage from "../../features/reports/pages/PurchaseRecapReportPage";
 import SalesRecapReportPage from "../../features/reports/pages/SalesRecapReportPage";
+import SupplierReportPage from "../../features/reports/pages/SupplierReportPage";
+import StockCardReportPage from "../../features/reports/pages/StockCardReportPage";
 import SupplierDebtsPage from "../../features/debts/pages/SupplierDebtsPage";
 import SupplierDebtPaymentsPage from "../../features/debts/pages/SupplierDebtPaymentsPage";
 import ChannelAccountsPage from "../../features/channels/pages/ChannelAccountsPage";
@@ -123,6 +124,8 @@ const reportPolicy = getNavigationItem("/reports/profit-loss");
 const generalLedgerPolicy = getNavigationItem("/reports/general-ledger");
 const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
 const salesRecapPolicy = getNavigationItem("/reports/sales");
+const supplierReportPolicy = getNavigationItem("/reports/suppliers");
+const stockCardReportPolicy = getNavigationItem("/reports/stock-card");
 
 export default function AppRouter() {
   return (
@@ -320,6 +323,28 @@ export default function AppRouter() {
                 fallbackRoles={salesRecapPolicy?.fallbackRoles}
               >
                 <SalesRecapReportPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/suppliers"
+            element={
+              <PermissionGuard
+                requiredPermissions={supplierReportPolicy?.requiredPermissions}
+                fallbackRoles={supplierReportPolicy?.fallbackRoles}
+              >
+                <SupplierReportPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="reports/stock-card"
+            element={
+              <PermissionGuard
+                requiredPermissions={stockCardReportPolicy?.requiredPermissions}
+                fallbackRoles={stockCardReportPolicy?.fallbackRoles}
+              >
+                <StockCardReportPage />
               </PermissionGuard>
             }
           />
@@ -693,6 +718,10 @@ export default function AppRouter() {
             }
           />
           <Route
+            path="consignments/returns"
+            element={<Navigate to="/consignments?tab=returns" replace />}
+          />
+          <Route
             path="consignments/:id"
             element={
               <PermissionGuard
@@ -700,17 +729,6 @@ export default function AppRouter() {
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
               >
                 <ConsignmentDetailPage />
-              </PermissionGuard>
-            }
-          />
-          <Route
-            path="consignments/returns"
-            element={
-              <PermissionGuard
-                requiredPermissions={consignmentsPolicy?.requiredPermissions}
-                fallbackRoles={consignmentsPolicy?.fallbackRoles}
-              >
-                <ConsignmentReturnsPage />
               </PermissionGuard>
             }
           />

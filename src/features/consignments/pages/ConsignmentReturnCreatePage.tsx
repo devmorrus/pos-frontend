@@ -293,7 +293,7 @@ export default function ConsignmentReturnCreatePage() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/consignments/returns")}
+                onClick={() => navigate("/consignments?tab=returns")}
                 className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
               >
                 Batal

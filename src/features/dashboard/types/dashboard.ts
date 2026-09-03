@@ -31,6 +31,15 @@ export interface OutletSalesComparison {
   totalTransactions: number;
 }
 
+export interface TopCategory {
+  categoryId: string;
+  categoryName: string;
+  totalRevenue: number;
+  totalQtySold: number;
+  transactionCount: number;
+  contributionPercentage: number;
+}
+
 export interface DashboardSummaryDto {
   totalSales: number;
   totalTransactions: number;
@@ -42,6 +51,7 @@ export interface DashboardSummaryDto {
   salesChannels: ChannelDistribution[];
   topProducts: TopProduct[];
   outletComparisons: OutletSalesComparison[];
+  topCategories: TopCategory[];
 }
 
 export interface RoleDashboardDto {
