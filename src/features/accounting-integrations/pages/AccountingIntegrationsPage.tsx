@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { InlineAlert } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
@@ -7,12 +8,18 @@ import {
   getAccountingPostingStatus,
   runAccountingBackfill,
 } from "../api/accountingIntegrationsApi";
+import {
+  createGoBizConnectUrl,
+  disconnectGoBiz,
+  getGoBizStatus,
+} from "../api/gobizApi";
 import type {
   AccountingBackfillRequest,
   AccountingBackfillResultDto,
   AccountingPostingStatusDto,
   AccountingReferenceType,
 } from "../types/accountingIntegration";
+import type { GoBizConnectionStatusDto } from "../types/gobiz";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { getRecentTransactions } from "../../transactions/api/transactionsApi";
 import { getPurchaseOrders } from "../../purchase-orders/api/purchaseOrdersApi";
@@ -66,6 +73,7 @@ interface RecentItem {
 }
 
 export default function AccountingIntegrationsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { selectedOutletId } = useOutlet();
 
   const [referenceType, setReferenceType] = useState<AccountingReferenceType>("transaction_sale");
@@ -79,6 +87,61 @@ export default function AccountingIntegrationsPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [goBizStatus, setGoBizStatus] = useState<GoBizConnectionStatusDto | null>(null);
+  const [goBizError, setGoBizError] = useState<string | null>(null);
+  const [goBizSuccess, setGoBizSuccess] = useState<string | null>(null);
+  const [isLoadingGoBizStatus, setIsLoadingGoBizStatus] = useState(false);
+  const [isConnectingGoBiz, setIsConnectingGoBiz] = useState(false);
+  const [isDisconnectingGoBiz, setIsDisconnectingGoBiz] = useState(false);
+
+  useEffect(() => {
+    const integration = searchParams.get("integration");
+    const status = searchParams.get("status");
+    const message = searchParams.get("message");
+
+    if (integration !== "gobiz" || !status || !message) {
+      return;
+    }
+
+    if (status === "success") {
+      setGoBizSuccess(message);
+      setGoBizError(null);
+    } else {
+      setGoBizError(message);
+      setGoBizSuccess(null);
+    }
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("integration");
+    next.delete("status");
+    next.delete("message");
+    next.delete("outletId");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    async function loadGoBizStatus() {
+      if (!selectedOutletId) {
+        setGoBizStatus(null);
+        setGoBizError(null);
+        setIsLoadingGoBizStatus(false);
+        return;
+      }
+
+      setIsLoadingGoBizStatus(true);
+      try {
+        const result = await getGoBizStatus(selectedOutletId);
+        setGoBizStatus(result);
+      } catch (requestError) {
+        setGoBizStatus(null);
+        setGoBizError(getErrorMessage(requestError, "Gagal memuat status koneksi GoBiz."));
+      } finally {
+        setIsLoadingGoBizStatus(false);
+      }
+    }
+
+    void loadGoBizStatus();
+  }, [selectedOutletId]);
 
   async function fetchItemPostingStatus(itemId: string, refType: AccountingReferenceType) {
     if (!itemId) return;
@@ -199,6 +262,50 @@ export default function AccountingIntegrationsPage() {
     } finally { setIsBackfilling(false); }
   }
 
+  async function handleConnectGoBiz() {
+    if (!selectedOutletId) {
+      setGoBizError("Pilih outlet terlebih dahulu sebelum menghubungkan GoBiz.");
+      setGoBizSuccess(null);
+      return;
+    }
+
+    setIsConnectingGoBiz(true);
+    setGoBizError(null);
+    setGoBizSuccess(null);
+
+    try {
+      const result = await createGoBizConnectUrl({ outletId: selectedOutletId });
+      window.location.href = result.authorizationUrl;
+    } catch (requestError) {
+      setGoBizError(getErrorMessage(requestError, "Gagal membuat URL koneksi GoBiz."));
+    } finally {
+      setIsConnectingGoBiz(false);
+    }
+  }
+
+  async function handleDisconnectGoBiz() {
+    if (!selectedOutletId) {
+      setGoBizError("Pilih outlet terlebih dahulu sebelum memutuskan koneksi GoBiz.");
+      setGoBizSuccess(null);
+      return;
+    }
+
+    setIsDisconnectingGoBiz(true);
+    setGoBizError(null);
+    setGoBizSuccess(null);
+
+    try {
+      await disconnectGoBiz(selectedOutletId);
+      const nextStatus = await getGoBizStatus(selectedOutletId);
+      setGoBizStatus(nextStatus);
+      setGoBizSuccess("Koneksi GoBiz berhasil dinonaktifkan untuk outlet ini.");
+    } catch (requestError) {
+      setGoBizError(getErrorMessage(requestError, "Gagal memutuskan koneksi GoBiz."));
+    } finally {
+      setIsDisconnectingGoBiz(false);
+    }
+  }
+
   return (
     <ProtectedPageShell
       title="Accounting Integrations"
@@ -233,6 +340,8 @@ export default function AccountingIntegrationsPage() {
       <div className="space-y-8">
         <InlineAlert tone="success" message={successMessage} />
         <InlineAlert tone="error" message={error} />
+        <InlineAlert tone="success" message={goBizSuccess} />
+        <InlineAlert tone="error" message={goBizError} />
 
         {/* ── Hero header banner ── */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 shadow-2xl">
@@ -247,6 +356,129 @@ export default function AccountingIntegrationsPage() {
             <p className="mt-2 max-w-lg text-sm text-white/75">
               Pantau status penjurnalan otomatis seluruh modul operasional dan jalankan backfill agar buku besar selalu sinkron.
             </p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500">GoBiz Developer</p>
+                <h3 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">Hubungkan Outlet ke GoBiz</h3>
+                <p className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
+                  Gunakan koneksi ini untuk otorisasi OAuth GoBiz per outlet. Proses akan membuka halaman GoBiz,
+                  lalu kembali lagi ke dashboard ini setelah berhasil atau gagal.
+                </p>
+              </div>
+              <div className={`rounded-full px-4 py-1.5 text-xs font-bold ${
+                goBizStatus?.isConnected && goBizStatus.isActive
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+              }`}>
+                {goBizStatus?.isConnected && goBizStatus.isActive ? "Connected" : "Not Connected"}
+              </div>
+            </div>
+
+            {!selectedOutletId ? (
+              <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-950/20 dark:text-amber-200">
+                Pilih outlet aktif terlebih dahulu. GoBiz dihubungkan per outlet, bukan global untuk semua outlet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Outlet Id</p>
+                    <p className="mt-2 break-all text-sm font-medium text-gray-900 dark:text-white">{selectedOutletId}</p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Merchant GoBiz</p>
+                    <p className="mt-2 break-all text-sm font-medium text-gray-900 dark:text-white">{goBizStatus?.externalMerchantId ?? "Belum tersedia"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Connected At</p>
+                    <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                      {goBizStatus?.connectedAtUtc ? formatDateTime(goBizStatus.connectedAtUtc) : "Belum pernah terhubung"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Token Expires</p>
+                    <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                      {goBizStatus?.expiresAtUtc ? formatDateTime(goBizStatus.expiresAtUtc) : "Belum tersedia"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleConnectGoBiz()}
+                    disabled={!selectedOutletId || isConnectingGoBiz}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-600 hover:to-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isConnectingGoBiz ? "Membuka OAuth GoBiz..." : goBizStatus?.isConnected && goBizStatus.isActive ? "Hubungkan Ulang GoBiz" : "Connect GoBiz"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDisconnectGoBiz()}
+                    disabled={!selectedOutletId || !goBizStatus?.isConnected || isDisconnectingGoBiz}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/40 dark:bg-rose-950/20 dark:text-rose-300"
+                  >
+                    {isDisconnectingGoBiz ? "Memutuskan koneksi..." : "Disconnect GoBiz"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-600 text-xl shadow-md">
+                🔐
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Status Otorisasi GoBiz</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Status ini diambil langsung dari backend outlet aktif.</p>
+              </div>
+            </div>
+
+            {isLoadingGoBizStatus ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <svg className="h-8 w-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="mt-3 text-xs">Memuat status GoBiz...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className={`rounded-2xl border p-4 ${
+                  goBizStatus?.isConnected && goBizStatus.isActive
+                    ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-800/40 dark:bg-emerald-950/20"
+                    : "border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-950/20"
+                }`}>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Connection Summary</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                    {goBizStatus?.isConnected && goBizStatus.isActive
+                      ? "Outlet ini sudah memiliki token GoBiz aktif."
+                      : "Outlet ini belum terhubung ke GoBiz atau koneksinya sudah dinonaktifkan."}
+                  </p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    {goBizStatus?.scope
+                      ? `Scope terakhir: ${goBizStatus.scope}`
+                      : "Scope otorisasi akan muncul di sini setelah callback GoBiz berhasil diproses."}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-dashed border-gray-200 p-4 dark:border-gray-700">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Pesan Error yang Perlu Diperhatikan</p>
+                  <div className="mt-3 space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                    <p><span className="font-semibold">"Pilih outlet terlebih dahulu"</span> berarti outlet aktif belum dipilih, jadi backend tidak tahu koneksi ini milik outlet mana.</p>
+                    <p><span className="font-semibold">"Gagal membuat URL koneksi GoBiz"</span> biasanya berarti konfigurasi backend belum lengkap atau backend menolak outlet yang dipilih.</p>
+                    <p><span className="font-semibold">Redirect dengan status error</span> berarti GoBiz mengembalikan kegagalan saat authorize atau token exchange gagal di backend.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
