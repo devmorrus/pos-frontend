@@ -192,6 +192,12 @@ export const appNavigation: NavItem[] = [
         requiredPermissions: ["channel_settlement.manage"],
         fallbackRoles: channelRoles,
       },
+      {
+        label: "Integrasi GoBiz",
+        path: "/gobiz",
+        requiredPermissions: ["channel_settlement.manage"],
+        fallbackRoles: channelRoles,
+      },
     ],
   },
   {
