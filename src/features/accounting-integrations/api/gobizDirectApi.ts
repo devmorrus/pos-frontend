@@ -22,8 +22,8 @@ export function disconnectGoBizDirect(outletId: string) {
   return apiClient.post<void>(`/api/gobiz/direct/disconnect?outletId=${encodeURIComponent(outletId)}`);
 }
 
-export function testGoBizDirectToken() {
-  return apiClient.get<GoBizDirectTokenStatusDto>("/api/gobiz/direct/token/test");
+export function testGoBizDirectToken(outletId: string) {
+  return apiClient.get<GoBizDirectTokenStatusDto>(`/api/gobiz/direct/token/test?outletId=${encodeURIComponent(outletId)}`);
 }
 
 export function getGoBizExternalCatalog(outletId: string) {
