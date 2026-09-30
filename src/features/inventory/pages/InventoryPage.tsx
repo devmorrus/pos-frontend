@@ -84,6 +84,12 @@ export default function InventoryPage() {
         actions={
           <>
             <Link
+              to="/buffer-stock"
+              className="inline-flex items-center rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 dark:border-brand-800 dark:bg-brand-500/10 dark:text-brand-300"
+            >
+              Atur buffer stock
+            </Link>
+            <Link
               to="/stock-opnames/create"
               className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
             >
@@ -171,7 +177,10 @@ export default function InventoryPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {items.map((item) => (
-                <tr key={item.productId} className="align-top">
+                <tr
+                  key={`${item.productId}::${item.productVariantId ?? "base"}`}
+                  className="align-top"
+                >
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.sku}</td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
@@ -205,6 +214,12 @@ export default function InventoryPage() {
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatDateTime(item.updatedAt)}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-2">
+                      <Link
+                        to="/buffer-stock"
+                        className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 dark:border-brand-800 dark:bg-brand-500/10 dark:text-brand-300"
+                      >
+                        Buffer
+                      </Link>
                       <Link
                         to="/stock-opnames/create"
                         className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"

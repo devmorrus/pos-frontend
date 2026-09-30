@@ -21,6 +21,7 @@ export interface GoBizConnectionStatusDto {
 export interface GoBizDirectConnectRequest {
   outletId: string;
   goBizOutletId: string;
+  partnerId?: string | null;
 }
 
 export interface GoBizDirectStatusDto {
@@ -89,4 +90,54 @@ export interface GoBizOrderInboxDto {
   errorMessage: string | null;
   receivedAtUtc: string;
   processedAtUtc: string | null;
+}
+
+export interface GoBizClientConfigDto {
+  businessId: string;
+  environment: string;
+  clientId: string;
+  hasClientSecret: boolean;
+  partnerId: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  apiBaseUrl: string;
+  redirectUri: string;
+  scope: string;
+  userType: string;
+  prompt: string;
+  hasWebhookSecret: boolean;
+  isActive: boolean;
+  source: string;
+  updatedAt: string | null;
+}
+
+export interface UpsertGoBizClientConfigRequest {
+  businessId: string;
+  environment: string;
+  clientId: string;
+  clientSecret?: string | null;
+  partnerId: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  apiBaseUrl: string;
+  redirectUri: string;
+  scope: string;
+  userType?: string | null;
+  prompt?: string | null;
+  webhookSecret?: string | null;
+  isActive: boolean;
+}
+
+export interface GoBizConfigDebugDto {
+  businessId: string;
+  environment: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  apiBaseUrl: string;
+  redirectUri: string;
+  clientIdConfigured: boolean;
+  clientSecretConfigured: boolean;
+  partnerIdConfigured: boolean;
+  webhookSecretConfigured: boolean;
+  source: string;
 }

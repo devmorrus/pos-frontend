@@ -4,6 +4,7 @@ import { InlineAlert } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
 import { formatDateTime } from "../../transactions/utils/formatters";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
+import { useAuth } from "../../auth/hooks/useAuth";
 import {
   connectGoBizDirect,
   disconnectGoBizDirect,
@@ -15,9 +16,16 @@ import {
   syncGoBizCatalog,
   testGoBizDirectToken,
 } from "../../accounting-integrations/api/gobizDirectApi";
+import {
+  getGoBizConfig,
+  getGoBizConfigDebug,
+  saveGoBizConfig,
+} from "../../accounting-integrations/api/gobizConfigApi";
 import type {
   GoBizCatalogPreviewDto,
   GoBizCatalogSyncResultDto,
+  GoBizClientConfigDto,
+  GoBizConfigDebugDto,
   GoBizDirectStatusDto,
   GoBizDirectTokenStatusDto,
   GoBizExternalCatalogDto,
@@ -25,8 +33,25 @@ import type {
   GoBizOrderInboxDto,
 } from "../../accounting-integrations/types/gobiz";
 
+const DEFAULT_URLS = {
+  Sandbox: {
+    authorizationUrl: "https://integration-goauth.gojekapi.com/oauth2/auth",
+    tokenUrl: "https://integration-goauth.gojekapi.com/oauth2/token",
+    apiBaseUrl: "https://api.partner-sandbox.gobiz.co.id",
+  },
+  Production: {
+    authorizationUrl: "https://integration-goauth.gojekapi.com/oauth2/auth",
+    tokenUrl: "https://integration-goauth.gojekapi.com/oauth2/token",
+    apiBaseUrl: "https://api.gobiz.co.id",
+  },
+};
+
 export default function GoBizIntegrationPage() {
   const { selectedOutletId } = useOutlet();
+  const { session } = useAuth();
+  const businessId = session?.businessId ?? null;
+  const canManageConfig = session?.role === "Owner" || session?.role === "Admin";
+
   const [status, setStatus] = useState<GoBizDirectStatusDto | null>(null);
   const [externalCatalog, setExternalCatalog] = useState<GoBizExternalCatalogDto | null>(null);
   const [preview, setPreview] = useState<GoBizCatalogPreviewDto | null>(null);
@@ -35,12 +60,85 @@ export default function GoBizIntegrationPage() {
   const [orders, setOrders] = useState<GoBizOrderInboxDto[]>([]);
   const [tokenStatus, setTokenStatus] = useState<GoBizDirectTokenStatusDto | null>(null);
   const [goBizOutletId, setGoBizOutletId] = useState("");
+  const [partnerIdOverride, setPartnerIdOverride] = useState("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
+
+  // Opsi B: kredensial per-Business
+  const [config, setConfig] = useState<GoBizClientConfigDto | null>(null);
+  const [debug, setDebug] = useState<GoBizConfigDebugDto | null>(null);
+  const [isConfigLoading, setIsConfigLoading] = useState(false);
+  const [isConfigSaving, setIsConfigSaving] = useState(false);
+  const [form, setForm] = useState({
+    environment: "Sandbox",
+    clientId: "",
+    clientSecret: "",
+    partnerId: "",
+    authorizationUrl: DEFAULT_URLS.Sandbox.authorizationUrl,
+    tokenUrl: DEFAULT_URLS.Sandbox.tokenUrl,
+    apiBaseUrl: DEFAULT_URLS.Sandbox.apiBaseUrl,
+    redirectUri: "",
+    scope: "gofood:catalog:write gofood:catalog:read gofood:order:write gofood:order:read gofood:outlet:write promo:food_promo:read promo:food_promo:write",
+    webhookSecret: "",
+    isActive: true,
+  });
+
+  function setField(key: keyof typeof form, value: string | boolean) {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "environment" && typeof value === "string") {
+        const preset = DEFAULT_URLS[value as keyof typeof DEFAULT_URLS];
+        if (preset) {
+          next.authorizationUrl = preset.authorizationUrl;
+          next.tokenUrl = preset.tokenUrl;
+          next.apiBaseUrl = preset.apiBaseUrl;
+        }
+      }
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    async function loadConfig() {
+      if (!businessId || !canManageConfig) return;
+      setIsConfigLoading(true);
+      try {
+        const [cfg, dbg] = await Promise.all([
+          getGoBizConfig(businessId).catch(() => null),
+          getGoBizConfigDebug({ businessId }).catch(() => null),
+        ]);
+        if (cfg) {
+          setConfig(cfg);
+          setForm((prev) => ({
+            ...prev,
+            environment: cfg.environment || "Sandbox",
+            clientId: cfg.clientId || "",
+            clientSecret: "",
+            partnerId: cfg.partnerId || "",
+            authorizationUrl: cfg.authorizationUrl || prev.authorizationUrl,
+            tokenUrl: cfg.tokenUrl || prev.tokenUrl,
+            apiBaseUrl: cfg.apiBaseUrl || prev.apiBaseUrl,
+            redirectUri: cfg.redirectUri || "",
+            scope: cfg.scope || prev.scope,
+            webhookSecret: "",
+            isActive: cfg.isActive,
+          }));
+          if (!partnerIdOverride && cfg.partnerId) setPartnerIdOverride(cfg.partnerId);
+        }
+        if (dbg) setDebug(dbg);
+      } catch {
+        // abaikan, status outlet tetap dimuat
+      } finally {
+        setIsConfigLoading(false);
+      }
+    }
+    void loadConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId]);
 
   useEffect(() => {
     async function loadStatus() {
@@ -89,6 +187,51 @@ export default function GoBizIntegrationPage() {
     setOrders(ordersResult);
   }
 
+  async function handleSaveConfig() {
+    if (!businessId) {
+      setError("Business tidak terdeteksi dari sesi login.");
+      return;
+    }
+    if (!form.clientId.trim() || !form.partnerId.trim()) {
+      setError("Client ID dan Partner ID wajib diisi.");
+      return;
+    }
+    if (!config && !form.clientSecret.trim()) {
+      setError("Client Secret wajib diisi untuk config baru.");
+      return;
+    }
+    setIsConfigSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const result = await saveGoBizConfig({
+        businessId,
+        environment: form.environment,
+        clientId: form.clientId.trim(),
+        clientSecret: form.clientSecret.trim() ? form.clientSecret.trim() : null,
+        partnerId: form.partnerId.trim(),
+        authorizationUrl: form.authorizationUrl.trim(),
+        tokenUrl: form.tokenUrl.trim(),
+        apiBaseUrl: form.apiBaseUrl.trim(),
+        redirectUri: form.redirectUri.trim(),
+        scope: form.scope.trim(),
+        userType: "merchant",
+        prompt: "login",
+        webhookSecret: form.webhookSecret.trim() ? form.webhookSecret.trim() : null,
+        isActive: form.isActive,
+      });
+      setConfig(result);
+      setForm((prev) => ({ ...prev, clientSecret: "", webhookSecret: "" }));
+      const dbg = await getGoBizConfigDebug({ businessId }).catch(() => null);
+      if (dbg) setDebug(dbg);
+      setSuccessMessage(`Kredensial tersimpan (sumber: ${result.source}). Client baru tinggal isi form ini.`);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Gagal menyimpan kredensial GoBiz."));
+    } finally {
+      setIsConfigSaving(false);
+    }
+  }
+
   async function handleConnect() {
     if (!selectedOutletId) {
       setError("Pilih outlet terlebih dahulu sebelum menghubungkan GoBiz.");
@@ -105,9 +248,14 @@ export default function GoBizIntegrationPage() {
     setSuccessMessage(null);
 
     try {
-      const result = await connectGoBizDirect({ outletId: selectedOutletId, goBizOutletId: goBizOutletId.trim() });
+      const result = await connectGoBizDirect({
+        outletId: selectedOutletId,
+        goBizOutletId: goBizOutletId.trim(),
+        partnerId: partnerIdOverride.trim() ? partnerIdOverride.trim() : null,
+      });
       setStatus(result);
-      setSuccessMessage("Outlet berhasil dihubungkan ke GoBiz direct integration sandbox.");
+      const env = result.environment || form.environment || "Sandbox";
+      setSuccessMessage(`Outlet berhasil dihubungkan ke GoBiz direct integration (${env}).`);
       await refreshAll();
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Gagal menghubungkan GoBiz direct."));
@@ -139,12 +287,16 @@ export default function GoBizIntegrationPage() {
   }
 
   async function handleTestToken() {
+    if (!selectedOutletId) {
+      setError("Pilih outlet terlebih dahulu untuk test token.");
+      return;
+    }
     setIsBusy(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      const result = await testGoBizDirectToken();
+      const result = await testGoBizDirectToken(selectedOutletId);
       setTokenStatus(result);
       setSuccessMessage(`Token GoBiz direct valid hingga ${formatDateTime(result.expiresAtUtc)}.`);
     } catch (requestError) {
@@ -197,23 +349,120 @@ export default function GoBizIntegrationPage() {
     }
   }
 
+  const envLabel = status?.environment ?? form.environment ?? "Sandbox";
+  const inputCls =
+    "mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 transition focus:border-emerald-400 dark:border-gray-700 dark:bg-gray-950 dark:text-white";
+
   return (
     <ProtectedPageShell
       title="Integrasi GoBiz Direct"
-      description="Kelola direct integration sandbox GoFood: token, outlet mapping, preview catalog, sync, logs, dan inbox order."
+      description={`Kelola direct integration GoFood per-client: kredensial, token, outlet mapping, preview catalog, sync, logs, dan inbox order. Sumber config aktif: ${debug?.source ?? config?.source ?? "-"}.`}
     >
       <div className="space-y-6">
         <InlineAlert tone="success" message={successMessage} />
         <InlineAlert tone="error" message={error} />
+
+        {canManageConfig && businessId ? (
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500">Opsi B — Kredensial per Client</p>
+                <h3 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">Kredensial GoBiz Client</h3>
+                <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                  Client baru tinggal isi form ini + Save. Tanpa edit appsettings, tanpa redeploy.
+                  Kosongkan Client Secret / Webhook Secret jika tidak ingin mengubahnya.
+                </p>
+              </div>
+              <div className="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                {isConfigLoading ? "Loading" : `Source: ${debug?.source ?? config?.source ?? "Belum ada"}`}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Environment</span>
+                <select value={form.environment} onChange={(e) => setField("environment", e.target.value)} className={inputCls}>
+                  <option value="Sandbox">Sandbox</option>
+                  <option value="Production">Production</option>
+                </select>
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Aktif</span>
+                <select
+                  value={form.isActive ? "true" : "false"}
+                  onChange={(e) => setField("isActive", e.target.value === "true")}
+                  className={inputCls}
+                >
+                  <option value="true">Aktif</option>
+                  <option value="false">Nonaktif</option>
+                </select>
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Client ID *</span>
+                <input value={form.clientId} onChange={(e) => setField("clientId", e.target.value)} placeholder="cth: fBaVFfEhr4bTWg5G" className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  Client Secret {config ? "(kosongkan = tidak diubah)" : "*"}
+                </span>
+                <input type="password" value={form.clientSecret} onChange={(e) => setField("clientSecret", e.target.value)} placeholder={config?.hasClientSecret ? "•••••••• (tersimpan)" : "isi client secret"} className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Partner ID *</span>
+                <input value={form.partnerId} onChange={(e) => setField("partnerId", e.target.value)} placeholder="cth: 0fff2ff8-..." className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Webhook Secret (opsional)</span>
+                <input type="password" value={form.webhookSecret} onChange={(e) => setField("webhookSecret", e.target.value)} placeholder={config?.hasWebhookSecret ? "•••••••• (tersimpan)" : "untuk verifikasi webhook"} className={inputCls} />
+              </label>
+              <label className="block text-sm md:col-span-2">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Redirect URI *</span>
+                <input value={form.redirectUri} onChange={(e) => setField("redirectUri", e.target.value)} placeholder="https://domain-client/api/gobiz/callback" className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Authorization URL</span>
+                <input value={form.authorizationUrl} onChange={(e) => setField("authorizationUrl", e.target.value)} className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Token URL</span>
+                <input value={form.tokenUrl} onChange={(e) => setField("tokenUrl", e.target.value)} className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">API Base URL</span>
+                <input value={form.apiBaseUrl} onChange={(e) => setField("apiBaseUrl", e.target.value)} className={inputCls} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-200">Scope</span>
+                <input value={form.scope} onChange={(e) => setField("scope", e.target.value)} className={inputCls} />
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void handleSaveConfig()}
+                disabled={isConfigSaving}
+                className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-600 hover:to-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isConfigSaving ? "Menyimpan..." : "Simpan Kredensial"}
+              </button>
+              {debug ? (
+                <span className="self-center text-xs text-gray-500">
+                  Debug: ClientID {debug.clientIdConfigured ? "✓" : "✗"} · Secret {debug.clientSecretConfigured ? "✓" : "✗"} · Partner {debug.partnerIdConfigured ? "✓" : "✗"} · Webhook {debug.webhookSecretConfigured ? "✓" : "✗"}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500">GoBiz Developer</p>
-                <h3 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">Direct Integration Sandbox</h3>
+                <h3 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">Direct Integration ({envLabel})</h3>
                 <p className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
-                  Gunakan client credentials untuk sinkronisasi katalog GoFood, baca status outlet, dan pantau webhook order.
+                  Gunakan client credentials per-Business untuk sinkronisasi katalog GoFood, baca status outlet, dan pantau webhook order.
                 </p>
               </div>
               <div className={`rounded-full px-4 py-1.5 text-xs font-bold ${
@@ -241,15 +490,24 @@ export default function GoBizIntegrationPage() {
                     <input
                       value={goBizOutletId}
                       onChange={(event) => setGoBizOutletId(event.target.value)}
-                      placeholder="G405270505"
+                      placeholder={envLabel === "Production" ? "ID outlet GoFood production" : "cth: G405270505 (sandbox)"}
+                      className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 transition focus:border-emerald-400 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                    />
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Partner ID (opsional, default dari kredensial)</p>
+                    <input
+                      value={partnerIdOverride}
+                      onChange={(event) => setPartnerIdOverride(event.target.value)}
+                      placeholder={form.partnerId || "default dari kredensial client"}
                       className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 transition focus:border-emerald-400 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                     />
                   </div>
                   <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Environment</p>
-                    <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{status?.environment ?? "Sandbox"}</p>
+                    <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{status?.environment ?? envLabel}</p>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-950/30 sm:col-span-2">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Last Sync</p>
                     <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
                       {status?.lastCatalogSyncedAtUtc ? formatDateTime(status.lastCatalogSyncedAtUtc) : "Belum pernah sync"}
@@ -264,7 +522,7 @@ export default function GoBizIntegrationPage() {
                   <button type="button" onClick={() => void handleDisconnect()} disabled={!selectedOutletId || !status?.isConnected || isBusy} className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/40 dark:bg-rose-950/20 dark:text-rose-300">
                     Disconnect
                   </button>
-                  <button type="button" onClick={() => void handleTestToken()} disabled={isBusy} className="rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-800/40 dark:bg-sky-950/20 dark:text-sky-300">
+                  <button type="button" onClick={() => void handleTestToken()} disabled={isBusy || !selectedOutletId} className="rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-800/40 dark:bg-sky-950/20 dark:text-sky-300">
                     Test Token
                   </button>
                   <button type="button" onClick={() => void handleExternalCatalog()} disabled={isBusy} className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">

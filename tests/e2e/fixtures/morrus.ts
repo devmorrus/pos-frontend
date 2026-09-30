@@ -137,3 +137,42 @@ export async function mockProducts(page: Page) {
     },
   ]);
 }
+
+export async function mockBufferStocks(page: Page) {
+  await mockJson(page, /\/api\/bufferstocks(\?.*)?$/, [
+    {
+      productId: "b5913550-7c9a-4ecf-a571-f7294e5ff111",
+      productVariantId: null,
+      sku: "SKU-001",
+      productName: "Nasi Goreng",
+      variantName: null,
+      categoryId: "c110af34-7383-41b1-9f8b-3fe1b5f1f111",
+      categoryName: "Makanan",
+      unit: "porsi",
+      qtyOnHand: 10,
+      bufferQty: 3,
+      availableOnlineQty: 7,
+      isOnlineAvailable: true,
+      isEnabled: true,
+      updatedAt: "2026-01-01T00:00:00Z",
+      bufferUpdatedAt: "2026-01-02T00:00:00Z",
+    },
+    {
+      productId: "c5913550-7c9a-4ecf-a571-f7294e5ff222",
+      productVariantId: null,
+      sku: "SKU-002",
+      productName: "Ayam Geprek",
+      variantName: null,
+      categoryId: "c110af34-7383-41b1-9f8b-3fe1b5f1f111",
+      categoryName: "Makanan",
+      unit: "pcs",
+      qtyOnHand: 3,
+      bufferQty: 3,
+      availableOnlineQty: 0,
+      isOnlineAvailable: false,
+      isEnabled: true,
+      updatedAt: "2026-01-01T00:00:00Z",
+      bufferUpdatedAt: "2026-01-02T00:00:00Z",
+    },
+  ]);
+}

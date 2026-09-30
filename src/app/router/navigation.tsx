@@ -137,6 +137,12 @@ export const appNavigation: NavItem[] = [
         fallbackRoles: stockRoles,
       },
       {
+        label: "Buffer Stock",
+        path: "/buffer-stock",
+        requiredPermissions: ["stock.manage"],
+        fallbackRoles: stockRoles,
+      },
+      {
         label: "Transfer Stok",
         path: "/stock-transfers/outgoing",
         requiredPermissions: ["stock.manage"],
