@@ -60,6 +60,7 @@ import ChannelSettlementsPage from "../../features/channels/pages/ChannelSettlem
 import ChannelSettlementDetailPage from "../../features/channels/pages/ChannelSettlementDetailPage";
 import ChannelSettlementFormPage from "../../features/channels/pages/ChannelSettlementFormPage";
 import InventoryPage from "../../features/inventory/pages/InventoryPage";
+import BufferStockPage from "../../features/inventory/pages/BufferStockPage";
 import StockOpnameCreatePage from "../../features/inventory/pages/StockOpnameCreatePage";
 import StockOpnameDetailPage from "../../features/inventory/pages/StockOpnameDetailPage";
 import StockOpnamesPage from "../../features/inventory/pages/StockOpnamesPage";
@@ -102,6 +103,7 @@ const customersPolicy = getNavigationItem("/customers");
 const productsPolicy = getNavigationItem("/products");
 const categoriesPolicy = getNavigationItem("/categories");
 const inventoryPolicy = getNavigationItem("/inventory");
+const bufferStockPolicy = getNavigationItem("/buffer-stock");
 const stockTransfersPolicy = getNavigationItem("/stock-transfers/outgoing");
 const suppliersPolicy = getNavigationItem("/suppliers");
 const purchaseOrdersPolicy = getNavigationItem("/purchase-orders");
@@ -424,6 +426,17 @@ export default function AppRouter() {
                 fallbackRoles={inventoryPolicy?.fallbackRoles}
               >
                 <InventoryPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="buffer-stock"
+            element={
+              <PermissionGuard
+                requiredPermissions={bufferStockPolicy?.requiredPermissions}
+                fallbackRoles={bufferStockPolicy?.fallbackRoles}
+              >
+                <BufferStockPage />
               </PermissionGuard>
             }
           />
