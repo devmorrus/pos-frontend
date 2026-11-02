@@ -12,8 +12,10 @@ export async function fetchPublicOutlets(): Promise<PublicOutlet[]> {
 /**
  * Ambil detail satu outlet berdasarkan code/slug.
  * Dipakai saat customer reload page atau direct URL — restore outlet context dari URL param.
- * Endpoint: GET /api/public/outlets/{code}
+ * Endpoint: GET /api/public/{businessSlug}/outlets/{code}
  */
-export async function fetchOutletByCode(code: string): Promise<PublicOutlet> {
-  return storefrontClient.get<PublicOutlet>(`/api/public/outlets/${encodeURIComponent(code)}`);
+export async function fetchOutletByCode(businessSlug: string, code: string): Promise<PublicOutlet> {
+  return storefrontClient.get<PublicOutlet>(
+    `/api/public/${encodeURIComponent(businessSlug)}/outlets/${encodeURIComponent(code)}`
+  );
 }

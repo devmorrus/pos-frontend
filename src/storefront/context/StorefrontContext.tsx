@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 
 export interface StorefrontOutlet {
   id: string;
+  businessSlug: string;
   code: string; // outlet slug/code in URL
   name: string;
   address?: string | null;
@@ -54,7 +55,9 @@ const StorefrontContext = createContext<StorefrontContextType | undefined>(undef
 export function StorefrontProvider({ children }: { children: ReactNode }) {
   const [selectedOutlet, setSelectedOutletState] = useState<StorefrontOutlet | null>(() => {
     const stored = localStorage.getItem("morrus_storefront_outlet");
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    const outlet = JSON.parse(stored) as StorefrontOutlet;
+    return outlet.businessSlug ? outlet : null;
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {

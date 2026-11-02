@@ -5,10 +5,10 @@ import { useCatalog } from "../hooks/useCatalog";
 import { getCategoryEmoji } from "../utils/catalogUtils";
 
 export default function ProductDetailPage() {
-  const { outletCode, productId } = useParams<{ outletCode: string; productId: string }>();
+  const { businessSlug, outletCode, productId } = useParams<{ businessSlug: string; outletCode: string; productId: string }>();
   const navigate = useNavigate();
   const { addToCart, cart } = useStorefront();
-  const { products, isLoading, error } = useCatalog(outletCode);
+  const { products, isLoading, error } = useCatalog(businessSlug, outletCode);
 
   const product = products.find((p) => p.id === productId);
   const inCartQty = cart.find((item) => item.product.id === productId)?.qty ?? 0;
@@ -41,7 +41,7 @@ export default function ProductDetailPage() {
         <div className="text-5xl">⚠️</div>
         <h3 className="text-base font-bold text-white">Gagal Memuat Menu</h3>
         <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{error}</p>
-        <Link to={`/shop/o/${outletCode}/menu`}
+        <Link to={`/shop/${businessSlug}/o/${outletCode}/menu`}
           className="mt-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
           style={{ background: "rgba(245,124,0,0.2)", border: "1px solid rgba(245,124,0,0.3)" }}>
           Kembali ke Menu
@@ -57,7 +57,7 @@ export default function ProductDetailPage() {
         <div className="text-5xl mb-4">🔍</div>
         <h3 className="text-lg font-bold text-white">Produk Tidak Ditemukan</h3>
         <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>Menu yang Anda cari tidak tersedia di outlet ini.</p>
-        <Link to={`/shop/o/${outletCode}/menu`}
+        <Link to={`/shop/${businessSlug}/o/${outletCode}/menu`}
           className="mt-6 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{ background: "rgba(245,124,0,0.2)", border: "1px solid rgba(245,124,0,0.3)" }}>
           Kembali ke Menu
@@ -86,7 +86,7 @@ export default function ProductDetailPage() {
       categoryName: product.categoryName ?? undefined,
       imageUrl: emoji,
     }, qty, notes);
-    navigate(`/shop/o/${outletCode}/menu`);
+    navigate(`/shop/${businessSlug}/o/${outletCode}/menu`);
   };
 
   return (
@@ -95,7 +95,7 @@ export default function ProductDetailPage() {
       {/* Back button */}
       <div className="mb-5">
         <Link
-          to={`/shop/o/${outletCode}/menu`}
+          to={`/shop/${businessSlug}/o/${outletCode}/menu`}
           className="inline-flex items-center space-x-1.5 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all"
           style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
         >
@@ -223,7 +223,7 @@ export default function ProductDetailPage() {
                   style={{ background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.15)" }}>
                   Semua stok sudah ditambahkan ke keranjang.
                 </p>
-                <Link to={`/shop/o/${outletCode}/cart`}
+                <Link to={`/shop/${businessSlug}/o/${outletCode}/cart`}
                   className="block w-full text-center py-4 px-6 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
                   style={{ background: "linear-gradient(135deg, #ffa726, #f57c00)", boxShadow: "0 20px 60px -10px rgba(245,124,0,0.4)" }}>
                   Lihat Keranjang Belanja →

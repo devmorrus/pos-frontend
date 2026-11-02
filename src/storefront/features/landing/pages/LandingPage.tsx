@@ -60,7 +60,7 @@ export default function LandingPage() {
         {selectedOutlet ? (
           <>
             <Link
-              to={`/shop/o/${selectedOutlet.code}/menu`}
+              to={`/shop/${selectedOutlet.businessSlug}/o/${selectedOutlet.code}/menu`}
               className="flex items-center justify-center space-x-2 w-full py-4 px-6 rounded-2xl text-white font-bold text-base transition-all active:scale-[0.98]"
               style={{ background: "linear-gradient(135deg, #ffa726, #f57c00)", boxShadow: "0 20px 60px -10px rgba(245,124,0,0.5)" }}
             >

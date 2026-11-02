@@ -9,7 +9,7 @@ const STEPS = [
 ];
 
 export default function OrderStatusPage() {
-  const { orderId, outletCode } = useParams<{ orderId: string; outletCode: string }>();
+  const { businessSlug, orderId, outletCode } = useParams<{ businessSlug: string; orderId: string; outletCode: string }>();
   const { customerInfo, selectedOutlet } = useStorefront();
 
   const clientName = customerInfo?.name ?? "Pelanggan Morrus";
@@ -147,7 +147,7 @@ export default function OrderStatusPage() {
           </a>
 
           <Link
-            to={`/shop/o/${outletCode}/menu`}
+            to={`/shop/${businessSlug}/o/${outletCode}/menu`}
             className="w-full flex items-center justify-center py-4 px-6 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
             style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
           >

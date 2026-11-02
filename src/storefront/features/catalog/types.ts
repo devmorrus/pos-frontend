@@ -1,4 +1,4 @@
-// Types untuk public catalog — dari GET /api/public/catalog/{outletCode}
+// Types untuk public catalog — dari GET /api/public/{businessSlug}/catalog/{outletCode}
 export interface PublicProduct {
   id: string;
   name: string;
@@ -10,7 +10,7 @@ export interface PublicProduct {
   qtyOnHand: number;
 }
 
-// Types untuk kategori — dari GET /api/public/categories
+// Types untuk kategori — dari GET /api/public/{businessSlug}/categories
 export interface PublicCategory {
   id: string;
   name: string;

@@ -4,10 +4,10 @@ import { useStorefront } from "../../../context/StorefrontContext";
 import { useCatalog } from "../../catalog/hooks/useCatalog";
 
 export default function CartPage() {
-  const { outletCode } = useParams<{ outletCode: string }>();
+  const { businessSlug, outletCode } = useParams<{ businessSlug: string; outletCode: string }>();
   const navigate = useNavigate();
   const { cart, updateCartQty, removeFromCart, cartSubtotal, cartTotalItems, syncCartWithCatalog } = useStorefront();
-  const { products, isLoading } = useCatalog(outletCode);
+  const { products, isLoading } = useCatalog(businessSlug, outletCode);
 
   // Sync cart with backend stock when page opens / catalog loads
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function CartPage() {
           Yuk, tambahkan menu-menu lezat Morrus Coffee ke keranjang!
         </p>
         <button
-          onClick={() => navigate(`/shop/o/${outletCode}/menu`)}
+          onClick={() => navigate(`/shop/${businessSlug}/o/${outletCode}/menu`)}
           className="mt-8 px-6 py-3.5 rounded-2xl text-white font-bold text-sm transition-all active:scale-[0.98]"
           style={{ background: "linear-gradient(135deg, #ffa726, #f57c00)", boxShadow: "0 10px 40px rgba(245,124,0,0.3)" }}
         >
@@ -48,7 +48,7 @@ export default function CartPage() {
           <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{cartTotalItems} item dipilih</p>
         </div>
         <Link
-          to={`/shop/o/${outletCode}/menu`}
+          to={`/shop/${businessSlug}/o/${outletCode}/menu`}
           className="flex items-center space-x-1.5 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all"
           style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
         >
@@ -167,7 +167,7 @@ export default function CartPage() {
           </div>
 
           <button
-            onClick={() => navigate(`/shop/o/${outletCode}/checkout`)}
+            onClick={() => navigate(`/shop/${businessSlug}/o/${outletCode}/checkout`)}
             className="w-full py-4 px-6 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
             style={{ background: "linear-gradient(135deg, #ffa726, #f57c00)", boxShadow: "0 20px 60px -10px rgba(245,124,0,0.4)" }}
           >

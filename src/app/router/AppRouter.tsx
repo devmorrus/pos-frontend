@@ -938,16 +938,16 @@ export default function AppRouter() {
           <Route element={<StorefrontLayout />}>
             <Route index element={<LandingPage />} />
             <Route path="outlets" element={<StorefrontOutletsPage />} />
-            <Route path="o/:outletCode/menu" element={<MenuPage />} />
-            <Route path="o/:outletCode/products/:productId" element={<ProductDetailPage />} />
-            <Route path="o/:outletCode/cart" element={<CartPage />} />
+            <Route path=":businessSlug/o/:outletCode/menu" element={<MenuPage />} />
+            <Route path=":businessSlug/o/:outletCode/products/:productId" element={<ProductDetailPage />} />
+            <Route path=":businessSlug/o/:outletCode/cart" element={<CartPage />} />
           </Route>
           
-          <Route path="o/:outletCode/checkout" element={<CheckoutLayout />}>
+          <Route path=":businessSlug/o/:outletCode/checkout" element={<CheckoutLayout />}>
             <Route index element={<CheckoutPage />} />
           </Route>
 
-          <Route path="o/:outletCode/orders/:orderId" element={<OrderStatusLayout />}>
+          <Route path=":businessSlug/o/:outletCode/orders/:orderId" element={<OrderStatusLayout />}>
             <Route index element={<OrderStatusPage />} />
           </Route>
         </Route>

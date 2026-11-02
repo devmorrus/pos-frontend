@@ -21,9 +21,9 @@ function toStorefrontProduct(p: PublicProduct) {
 }
 
 export default function MenuPage() {
-  const { outletCode } = useParams<{ outletCode: string }>();
+  const { businessSlug, outletCode } = useParams<{ businessSlug: string; outletCode: string }>();
   const { selectedOutlet, setSelectedOutlet, addToCart, cart, syncCartWithCatalog } = useStorefront();
-  const { products, categories, isLoading, error, refetch } = useCatalog(outletCode);
+  const { products, categories, isLoading, error, refetch } = useCatalog(businessSlug, outletCode);
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -34,13 +34,14 @@ export default function MenuPage() {
 
   // Restore outlet context dari URL jika hilang (misal saat page reload)
   useEffect(() => {
-    if (!outletCode) return;
-    if (selectedOutlet?.code === outletCode) return;
+    if (!businessSlug || !outletCode) return;
+    if (selectedOutlet?.businessSlug === businessSlug && selectedOutlet.code === outletCode) return;
 
-    fetchOutletByCode(outletCode)
+    fetchOutletByCode(businessSlug, outletCode)
       .then((outlet) => {
         setSelectedOutlet({
           id: outlet.id,
+          businessSlug: outlet.businessSlug,
           code: outlet.code,
           name: outlet.name,
           address: outlet.address ?? undefined,
@@ -50,7 +51,7 @@ export default function MenuPage() {
       .catch(() => {
         // Abaikan error — halaman masih bisa jalan tanpa outlet context
       });
-  }, [outletCode, selectedOutlet, setSelectedOutlet]);
+  }, [businessSlug, outletCode, selectedOutlet, setSelectedOutlet]);
 
   // Sinkronisasi cart dengan stok terbaru dari backend setelah catalog dimuat
   useEffect(() => {
@@ -216,7 +217,7 @@ export default function MenuPage() {
                 }}
               >
                 {/* Image area */}
-                <Link to={`/shop/o/${outletCode}/products/${product.id}`} className="block">
+                <Link to={`/shop/${businessSlug}/o/${outletCode}/products/${product.id}`} className="block">
                   <div className="aspect-square flex items-center justify-center text-4xl relative"
                     style={{ background: "linear-gradient(145deg, rgba(245,124,0,0.1), rgba(0,0,0,0.15))" }}>
                     <span className="select-none" style={{ filter: isOos ? "grayscale(0.7)" : "none" }}>
@@ -251,7 +252,7 @@ export default function MenuPage() {
 
                 {/* Info */}
                 <div className="flex flex-col flex-1 p-3 space-y-2">
-                  <Link to={`/shop/o/${outletCode}/products/${product.id}`}>
+                  <Link to={`/shop/${businessSlug}/o/${outletCode}/products/${product.id}`}>
                     <p className="text-xs font-bold text-white leading-tight line-clamp-2 group-hover:text-amber-300 transition-colors">
                       {product.name}
                     </p>
@@ -286,7 +287,7 @@ export default function MenuPage() {
       {cartCount > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 px-4 w-full max-w-md">
           <Link
-            to={`/shop/o/${outletCode}/cart`}
+            to={`/shop/${businessSlug}/o/${outletCode}/cart`}
             className="flex items-center justify-between w-full px-5 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl transition-all active:scale-[0.98]"
             style={{ background: "linear-gradient(135deg, #ffa726, #f57c00)", boxShadow: "0 20px 60px -10px rgba(245,124,0,0.5)" }}
           >

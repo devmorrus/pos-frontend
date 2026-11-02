@@ -17,14 +17,14 @@ interface UseCatalogResult {
  * Fetch dijalankan ulang otomatis ketika outletCode berubah.
  * Fetch catalog dan categories berjalan paralel.
  */
-export function useCatalog(outletCode: string | undefined): UseCatalogResult {
+export function useCatalog(businessSlug: string | undefined, outletCode: string | undefined): UseCatalogResult {
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!outletCode) {
+    if (!businessSlug || !outletCode) {
       setIsLoading(false);
       return;
     }
@@ -35,8 +35,8 @@ export function useCatalog(outletCode: string | undefined): UseCatalogResult {
     try {
       // Jalankan paralel untuk efisiensi
       const [productsData, categoriesData] = await Promise.all([
-        fetchCatalog(outletCode),
-        fetchCategories(),
+        fetchCatalog(businessSlug, outletCode),
+        fetchCategories(businessSlug),
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
@@ -49,7 +49,7 @@ export function useCatalog(outletCode: string | undefined): UseCatalogResult {
     } finally {
       setIsLoading(false);
     }
-  }, [outletCode]);
+  }, [businessSlug, outletCode]);
 
   useEffect(() => {
     load();

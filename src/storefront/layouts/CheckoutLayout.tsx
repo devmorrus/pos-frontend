@@ -3,12 +3,12 @@ import { useStorefront } from "../context/StorefrontContext";
 
 export default function CheckoutLayout() {
   const navigate = useNavigate();
-  const { outletCode } = useParams<{ outletCode?: string }>();
+  const { businessSlug, outletCode } = useParams<{ businessSlug?: string; outletCode?: string }>();
   const { selectedOutlet } = useStorefront();
 
   const handleBack = () => {
-    if (selectedOutlet) navigate(`/shop/o/${selectedOutlet.code}/cart`);
-    else if (outletCode) navigate(`/shop/o/${outletCode}/cart`);
+    if (selectedOutlet) navigate(`/shop/${selectedOutlet.businessSlug}/o/${selectedOutlet.code}/cart`);
+    else if (businessSlug && outletCode) navigate(`/shop/${businessSlug}/o/${outletCode}/cart`);
     else navigate("/shop");
   };
 

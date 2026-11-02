@@ -9,7 +9,7 @@ const FULFILLMENT_OPTIONS = [
 ];
 
 export default function CheckoutPage() {
-  const { outletCode } = useParams<{ outletCode: string }>();
+  const { businessSlug, outletCode } = useParams<{ businessSlug: string; outletCode: string }>();
   const navigate = useNavigate();
   const { cart, cartSubtotal, cartTotalItems, customerInfo, setCustomerInfo, clearCart } = useStorefront();
 
@@ -42,7 +42,7 @@ export default function CheckoutPage() {
       clearCart();
       const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       const randomPart = Math.floor(1000 + Math.random() * 9000);
-      navigate(`/shop/o/${outletCode}/orders/INV-${datePart}-${randomPart}`);
+      navigate(`/shop/${businessSlug}/o/${outletCode}/orders/INV-${datePart}-${randomPart}`);
     }, 1500);
   };
 
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
         <div className="text-5xl mb-4">🛒</div>
         <h3 className="text-lg font-bold text-white">Keranjang Kosong</h3>
         <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>Tambahkan produk sebelum checkout.</p>
-        <Link to={`/shop/o/${outletCode}/menu`} className="mt-6 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+        <Link to={`/shop/${businessSlug}/o/${outletCode}/menu`} className="mt-6 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{ background: "rgba(245,124,0,0.2)", border: "1px solid rgba(245,124,0,0.3)" }}>
           Lihat Menu
         </Link>

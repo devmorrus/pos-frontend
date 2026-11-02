@@ -11,12 +11,13 @@ export default function OutletsPage() {
   const handleSelectOutlet = (outlet: PublicOutlet) => {
     setSelectedOutlet({
       id: outlet.id,
+      businessSlug: outlet.businessSlug,
       code: outlet.code,
       name: outlet.name,
       address: outlet.address ?? undefined,
       phone: outlet.phone ?? undefined,
     });
-    navigate(`/shop/o/${outlet.code}/menu`);
+    navigate(`/shop/${outlet.businessSlug}/o/${outlet.code}/menu`);
   };
 
   return (

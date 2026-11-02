@@ -3,7 +3,7 @@ import { useStorefront } from "../context/StorefrontContext";
 
 export default function StorefrontLayout() {
   const { selectedOutlet, cartTotalItems, cartSubtotal } = useStorefront();
-  const { outletCode } = useParams<{ outletCode?: string }>();
+  const { businessSlug, outletCode } = useParams<{ businessSlug?: string; outletCode?: string }>();
   const location = useLocation();
 
   const formatCurrency = (val: number) =>
@@ -53,7 +53,7 @@ export default function StorefrontLayout() {
 
             {selectedOutlet && (
               <Link
-                to={`/shop/o/${outletCode || selectedOutlet.code}/cart`}
+                to={`/shop/${businessSlug || selectedOutlet.businessSlug}/o/${outletCode || selectedOutlet.code}/cart`}
                 className="relative flex items-center justify-center h-10 w-10 rounded-xl transition-all"
                 style={{ background: cartTotalItems > 0 ? "rgba(245,124,0,0.15)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(245,124,0,0.25)" }}
               >
@@ -80,7 +80,7 @@ export default function StorefrontLayout() {
       {showFloatingCart && (
         <div className="fixed bottom-5 right-4 sm:right-6 left-4 sm:left-auto sm:w-80 z-40" style={{ animation: "slideUp 0.3s ease" }}>
           <Link
-            to={`/shop/o/${outletCode || selectedOutlet.code}/cart`}
+            to={`/shop/${businessSlug || selectedOutlet.businessSlug}/o/${outletCode || selectedOutlet.code}/cart`}
             className="flex items-center justify-between w-full px-5 py-4 rounded-2xl text-white transition-all active:scale-[0.98]"
             style={{ background: "linear-gradient(135deg, #f57c00, #e65100)", boxShadow: "0 20px 60px -10px rgba(245,124,0,0.5), 0 4px 16px rgba(0,0,0,0.3)" }}
           >
