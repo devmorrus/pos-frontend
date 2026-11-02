@@ -94,6 +94,7 @@ import CustomerEditPage from "../../features/customers/pages/CustomerEditPage";
 import CustomersPage from "../../features/customers/pages/CustomersPage";
 import TransactionDetailPage from "../../features/transactions/pages/TransactionDetailPage";
 import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
+import CapabilitySettingsPage from "../../features/capabilities/pages/CapabilitySettingsPage";
 import { getNavigationItem } from "./navigation";
 
 const cashierSessionPolicy = getNavigationItem("/cashier/session");
@@ -104,6 +105,7 @@ const productsPolicy = getNavigationItem("/products");
 const categoriesPolicy = getNavigationItem("/categories");
 const inventoryPolicy = getNavigationItem("/inventory");
 const bufferStockPolicy = getNavigationItem("/buffer-stock");
+const stockOpnamesPolicy = getNavigationItem("/stock-opnames");
 const stockTransfersPolicy = getNavigationItem("/stock-transfers/outgoing");
 const suppliersPolicy = getNavigationItem("/suppliers");
 const purchaseOrdersPolicy = getNavigationItem("/purchase-orders");
@@ -130,6 +132,7 @@ const purchaseRecapPolicy = getNavigationItem("/reports/purchases");
 const salesRecapPolicy = getNavigationItem("/reports/sales");
 const supplierReportPolicy = getNavigationItem("/reports/suppliers");
 const stockCardReportPolicy = getNavigationItem("/reports/stock-card");
+const capabilitySettingsPolicy = getNavigationItem("/settings/capabilities");
 
 export default function AppRouter() {
   return (
@@ -182,6 +185,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={dashboardPolicy?.requiredPermissions}
                 fallbackRoles={dashboardPolicy?.fallbackRoles}
+                requiredCapabilities={dashboardPolicy?.requiredCapabilities}
               >
                 <DashboardPage />
               </PermissionGuard>
@@ -193,6 +197,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={chartOfAccountsPolicy?.requiredPermissions}
                 fallbackRoles={chartOfAccountsPolicy?.fallbackRoles}
+                requiredCapabilities={chartOfAccountsPolicy?.requiredCapabilities}
               >
                 <ChartOfAccountsPage />
               </PermissionGuard>
@@ -204,6 +209,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={accountingIntegrationsPolicy?.requiredPermissions}
                 fallbackRoles={accountingIntegrationsPolicy?.fallbackRoles}
+                requiredCapabilities={accountingIntegrationsPolicy?.requiredCapabilities}
               >
                 <AccountingIntegrationsPage />
               </PermissionGuard>
@@ -215,6 +221,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={gobizPolicy?.requiredPermissions}
                 fallbackRoles={gobizPolicy?.fallbackRoles}
+                requiredCapabilities={gobizPolicy?.requiredCapabilities}
               >
                 <GoBizIntegrationPage />
               </PermissionGuard>
@@ -226,6 +233,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={incomeBusinessesPolicy?.requiredPermissions}
                 fallbackRoles={incomeBusinessesPolicy?.fallbackRoles}
+                requiredCapabilities={incomeBusinessesPolicy?.requiredCapabilities}
               >
                 <IncomeBusinessesPage />
               </PermissionGuard>
@@ -237,6 +245,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={["cashflow.create"]}
                 fallbackRoles={incomeBusinessesPolicy?.fallbackRoles}
+                requiredCapabilities={incomeBusinessesPolicy?.requiredCapabilities}
               >
                 <CashFlowFormPage trxType="in" />
               </PermissionGuard>
@@ -248,6 +257,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={incomeBusinessesPolicy?.requiredPermissions}
                 fallbackRoles={incomeBusinessesPolicy?.fallbackRoles}
+                requiredCapabilities={incomeBusinessesPolicy?.requiredCapabilities}
               >
                 <CashFlowDetailPage />
               </PermissionGuard>
@@ -259,6 +269,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={outcomeBusinessesPolicy?.requiredPermissions}
                 fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
+                requiredCapabilities={outcomeBusinessesPolicy?.requiredCapabilities}
               >
                 <OutcomeBusinessesPage />
               </PermissionGuard>
@@ -270,6 +281,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={["cashflow.create"]}
                 fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
+                requiredCapabilities={outcomeBusinessesPolicy?.requiredCapabilities}
               >
                 <CashFlowFormPage trxType="out" />
               </PermissionGuard>
@@ -281,6 +293,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={outcomeBusinessesPolicy?.requiredPermissions}
                 fallbackRoles={outcomeBusinessesPolicy?.fallbackRoles}
+                requiredCapabilities={outcomeBusinessesPolicy?.requiredCapabilities}
               >
                 <CashFlowDetailPage />
               </PermissionGuard>
@@ -292,6 +305,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={cashFlowReportPolicy?.requiredPermissions}
                 fallbackRoles={cashFlowReportPolicy?.fallbackRoles}
+                requiredCapabilities={cashFlowReportPolicy?.requiredCapabilities}
               >
                 <CashFlowReportPage />
               </PermissionGuard>
@@ -303,6 +317,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={reportPolicy?.requiredPermissions}
                 fallbackRoles={reportPolicy?.fallbackRoles}
+                requiredCapabilities={reportPolicy?.requiredCapabilities}
               >
                 <ProfitLossReportPage />
               </PermissionGuard>
@@ -314,6 +329,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={generalLedgerPolicy?.requiredPermissions}
                 fallbackRoles={generalLedgerPolicy?.fallbackRoles}
+                requiredCapabilities={generalLedgerPolicy?.requiredCapabilities}
               >
                 <GeneralLedgerReportPage />
               </PermissionGuard>
@@ -325,6 +341,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={purchaseRecapPolicy?.requiredPermissions}
                 fallbackRoles={purchaseRecapPolicy?.fallbackRoles}
+                requiredCapabilities={purchaseRecapPolicy?.requiredCapabilities}
               >
                 <PurchaseRecapReportPage />
               </PermissionGuard>
@@ -336,6 +353,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={salesRecapPolicy?.requiredPermissions}
                 fallbackRoles={salesRecapPolicy?.fallbackRoles}
+                requiredCapabilities={salesRecapPolicy?.requiredCapabilities}
               >
                 <SalesRecapReportPage />
               </PermissionGuard>
@@ -347,6 +365,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierReportPolicy?.requiredPermissions}
                 fallbackRoles={supplierReportPolicy?.fallbackRoles}
+                requiredCapabilities={supplierReportPolicy?.requiredCapabilities}
               >
                 <SupplierReportPage />
               </PermissionGuard>
@@ -358,6 +377,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={stockCardReportPolicy?.requiredPermissions}
                 fallbackRoles={stockCardReportPolicy?.fallbackRoles}
+                requiredCapabilities={stockCardReportPolicy?.requiredCapabilities}
               >
                 <StockCardReportPage />
               </PermissionGuard>
@@ -369,6 +389,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={cashierSessionPolicy?.requiredPermissions}
                 fallbackRoles={cashierSessionPolicy?.fallbackRoles}
+                requiredCapabilities={cashierSessionPolicy?.requiredCapabilities}
               >
                 <CashierSessionPage />
               </PermissionGuard>
@@ -380,6 +401,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={productsPolicy?.requiredPermissions}
                 fallbackRoles={productsPolicy?.fallbackRoles}
+                requiredCapabilities={productsPolicy?.requiredCapabilities}
               >
                 <ProductsPage />
               </PermissionGuard>
@@ -391,6 +413,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={productsPolicy?.requiredPermissions}
                 fallbackRoles={productsPolicy?.fallbackRoles}
+                requiredCapabilities={productsPolicy?.requiredCapabilities}
               >
                 <ProductCreatePage />
               </PermissionGuard>
@@ -402,6 +425,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={productsPolicy?.requiredPermissions}
                 fallbackRoles={productsPolicy?.fallbackRoles}
+                requiredCapabilities={productsPolicy?.requiredCapabilities}
               >
                 <ProductEditPage />
               </PermissionGuard>
@@ -413,6 +437,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={categoriesPolicy?.requiredPermissions}
                 fallbackRoles={categoriesPolicy?.fallbackRoles}
+                requiredCapabilities={categoriesPolicy?.requiredCapabilities}
               >
                 <CategoriesPage />
               </PermissionGuard>
@@ -422,8 +447,9 @@ export default function AppRouter() {
             path="inventory"
             element={
               <PermissionGuard
-                requiredPermissions={inventoryPolicy?.requiredPermissions}
-                fallbackRoles={inventoryPolicy?.fallbackRoles}
+                requiredPermissions={stockOpnamesPolicy?.requiredPermissions}
+                fallbackRoles={stockOpnamesPolicy?.fallbackRoles}
+                requiredCapabilities={stockOpnamesPolicy?.requiredCapabilities}
               >
                 <InventoryPage />
               </PermissionGuard>
@@ -435,6 +461,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={bufferStockPolicy?.requiredPermissions}
                 fallbackRoles={bufferStockPolicy?.fallbackRoles}
+                requiredCapabilities={bufferStockPolicy?.requiredCapabilities}
               >
                 <BufferStockPage />
               </PermissionGuard>
@@ -450,8 +477,9 @@ export default function AppRouter() {
             path="stock-opnames"
             element={
               <PermissionGuard
-                requiredPermissions={inventoryPolicy?.requiredPermissions}
-                fallbackRoles={inventoryPolicy?.fallbackRoles}
+                requiredPermissions={stockOpnamesPolicy?.requiredPermissions}
+                fallbackRoles={stockOpnamesPolicy?.fallbackRoles}
+                requiredCapabilities={stockOpnamesPolicy?.requiredCapabilities}
               >
                 <StockOpnamesPage />
               </PermissionGuard>
@@ -461,8 +489,9 @@ export default function AppRouter() {
             path="stock-opnames/create"
             element={
               <PermissionGuard
-                requiredPermissions={inventoryPolicy?.requiredPermissions}
-                fallbackRoles={inventoryPolicy?.fallbackRoles}
+                requiredPermissions={stockOpnamesPolicy?.requiredPermissions}
+                fallbackRoles={stockOpnamesPolicy?.fallbackRoles}
+                requiredCapabilities={stockOpnamesPolicy?.requiredCapabilities}
               >
                 <StockOpnameCreatePage />
               </PermissionGuard>
@@ -474,6 +503,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={inventoryPolicy?.requiredPermissions}
                 fallbackRoles={inventoryPolicy?.fallbackRoles}
+                requiredCapabilities={inventoryPolicy?.requiredCapabilities}
               >
                 <StockOpnameDetailPage />
               </PermissionGuard>
@@ -485,6 +515,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={stockTransfersPolicy?.requiredPermissions}
                 fallbackRoles={stockTransfersPolicy?.fallbackRoles}
+                requiredCapabilities={stockTransfersPolicy?.requiredCapabilities}
               >
                 <StockTransfersOutgoingPage />
               </PermissionGuard>
@@ -496,6 +527,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={stockTransfersPolicy?.requiredPermissions}
                 fallbackRoles={stockTransfersPolicy?.fallbackRoles}
+                requiredCapabilities={stockTransfersPolicy?.requiredCapabilities}
               >
                 <StockTransfersIncomingPage />
               </PermissionGuard>
@@ -507,6 +539,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={stockTransfersPolicy?.requiredPermissions}
                 fallbackRoles={stockTransfersPolicy?.fallbackRoles}
+                requiredCapabilities={stockTransfersPolicy?.requiredCapabilities}
               >
                 <StockTransferDetailPage />
               </PermissionGuard>
@@ -518,6 +551,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={suppliersPolicy?.requiredPermissions}
                 fallbackRoles={suppliersPolicy?.fallbackRoles}
+                requiredCapabilities={suppliersPolicy?.requiredCapabilities}
               >
                 <SuppliersPage />
               </PermissionGuard>
@@ -529,6 +563,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={purchaseOrdersPolicy?.requiredPermissions}
                 fallbackRoles={purchaseOrdersPolicy?.fallbackRoles}
+                requiredCapabilities={purchaseOrdersPolicy?.requiredCapabilities}
               >
                 <PurchaseOrdersPage />
               </PermissionGuard>
@@ -540,6 +575,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={purchaseOrdersPolicy?.requiredPermissions}
                 fallbackRoles={purchaseOrdersPolicy?.fallbackRoles}
+                requiredCapabilities={purchaseOrdersPolicy?.requiredCapabilities}
               >
                 <PurchaseOrderCreatePage />
               </PermissionGuard>
@@ -551,6 +587,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={purchaseOrdersPolicy?.requiredPermissions}
                 fallbackRoles={purchaseOrdersPolicy?.fallbackRoles}
+                requiredCapabilities={purchaseOrdersPolicy?.requiredCapabilities}
               >
                 <PurchaseOrderDetailPage />
               </PermissionGuard>
@@ -562,6 +599,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={purchaseOrdersPolicy?.requiredPermissions}
                 fallbackRoles={purchaseOrdersPolicy?.fallbackRoles}
+                requiredCapabilities={purchaseOrdersPolicy?.requiredCapabilities}
               >
                 <PurchaseOrderReceivePage />
               </PermissionGuard>
@@ -573,6 +611,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierDebtsPolicy?.requiredPermissions}
                 fallbackRoles={supplierDebtsPolicy?.fallbackRoles}
+                requiredCapabilities={supplierDebtsPolicy?.requiredCapabilities}
               >
                 <SupplierDebtsPage />
               </PermissionGuard>
@@ -584,6 +623,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierDebtsPolicy?.requiredPermissions}
                 fallbackRoles={supplierDebtsPolicy?.fallbackRoles}
+                requiredCapabilities={supplierDebtsPolicy?.requiredCapabilities}
               >
                 <SupplierDebtPaymentsPage />
               </PermissionGuard>
@@ -595,6 +635,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
                 fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+                requiredCapabilities={supplierReturnsPolicy?.requiredCapabilities}
               >
                 <SupplierReturnsPage />
               </PermissionGuard>
@@ -606,6 +647,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
                 fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+                requiredCapabilities={supplierReturnsPolicy?.requiredCapabilities}
               >
                 <SupplierReturnFormPage />
               </PermissionGuard>
@@ -617,6 +659,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
                 fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+                requiredCapabilities={supplierReturnsPolicy?.requiredCapabilities}
               >
                 <SupplierReturnFormPage />
               </PermissionGuard>
@@ -628,6 +671,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={supplierReturnsPolicy?.requiredPermissions}
                 fallbackRoles={supplierReturnsPolicy?.fallbackRoles}
+                requiredCapabilities={supplierReturnsPolicy?.requiredCapabilities}
               >
                 <SupplierReturnDetailPage />
               </PermissionGuard>
@@ -639,6 +683,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={channelAccountsPolicy?.requiredPermissions}
                 fallbackRoles={channelAccountsPolicy?.fallbackRoles}
+                requiredCapabilities={channelAccountsPolicy?.requiredCapabilities}
               >
                 <ChannelAccountsPage />
               </PermissionGuard>
@@ -650,6 +695,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
                 fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+                requiredCapabilities={channelSettlementsPolicy?.requiredCapabilities}
               >
                 <ChannelSettlementsPage />
               </PermissionGuard>
@@ -661,6 +707,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
                 fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+                requiredCapabilities={channelSettlementsPolicy?.requiredCapabilities}
               >
                 <ChannelSettlementFormPage />
               </PermissionGuard>
@@ -672,6 +719,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
                 fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+                requiredCapabilities={channelSettlementsPolicy?.requiredCapabilities}
               >
                 <ChannelSettlementFormPage />
               </PermissionGuard>
@@ -683,6 +731,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={channelSettlementsPolicy?.requiredPermissions}
                 fallbackRoles={channelSettlementsPolicy?.fallbackRoles}
+                requiredCapabilities={channelSettlementsPolicy?.requiredCapabilities}
               >
                 <ChannelSettlementDetailPage />
               </PermissionGuard>
@@ -694,6 +743,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={pricingRulesPolicy?.requiredPermissions}
                 fallbackRoles={pricingRulesPolicy?.fallbackRoles}
+                requiredCapabilities={pricingRulesPolicy?.requiredCapabilities}
               >
                 <PricingRulesPage />
               </PermissionGuard>
@@ -705,6 +755,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={promoCampaignsPolicy?.requiredPermissions}
                 fallbackRoles={promoCampaignsPolicy?.fallbackRoles}
+                requiredCapabilities={promoCampaignsPolicy?.requiredCapabilities}
               >
                 <PromoCampaignsPage />
               </PermissionGuard>
@@ -716,6 +767,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={vouchersPolicy?.requiredPermissions}
                 fallbackRoles={vouchersPolicy?.fallbackRoles}
+                requiredCapabilities={vouchersPolicy?.requiredCapabilities}
               >
                 <VouchersPage />
               </PermissionGuard>
@@ -727,6 +779,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentsPage />
               </PermissionGuard>
@@ -738,6 +791,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentCreatePage />
               </PermissionGuard>
@@ -753,6 +807,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentDetailPage />
               </PermissionGuard>
@@ -764,6 +819,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentReturnCreatePage />
               </PermissionGuard>
@@ -775,6 +831,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentReturnDetailPage />
               </PermissionGuard>
@@ -786,6 +843,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentSettlementsPage />
               </PermissionGuard>
@@ -797,6 +855,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={consignmentsPolicy?.requiredPermissions}
                 fallbackRoles={consignmentsPolicy?.fallbackRoles}
+                requiredCapabilities={consignmentsPolicy?.requiredCapabilities}
               >
                 <ConsignmentSettlementDetailPage />
               </PermissionGuard>
@@ -808,6 +867,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={usersPolicy?.requiredPermissions}
                 fallbackRoles={usersPolicy?.fallbackRoles}
+                requiredCapabilities={usersPolicy?.requiredCapabilities}
               >
                 <UsersPage />
               </PermissionGuard>
@@ -819,6 +879,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={usersPolicy?.requiredPermissions}
                 fallbackRoles={usersPolicy?.fallbackRoles}
+                requiredCapabilities={usersPolicy?.requiredCapabilities}
               >
                 <UserCreatePage />
               </PermissionGuard>
@@ -830,6 +891,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={usersPolicy?.requiredPermissions}
                 fallbackRoles={usersPolicy?.fallbackRoles}
+                requiredCapabilities={usersPolicy?.requiredCapabilities}
               >
                 <UserEditPage />
               </PermissionGuard>
@@ -842,8 +904,21 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={outletsPolicy?.requiredPermissions}
                 fallbackRoles={outletsPolicy?.fallbackRoles}
+                requiredCapabilities={outletsPolicy?.requiredCapabilities}
               >
                 <OutletsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="settings/capabilities"
+            element={
+              <PermissionGuard
+                requiredPermissions={capabilitySettingsPolicy?.requiredPermissions}
+                fallbackRoles={capabilitySettingsPolicy?.fallbackRoles}
+                requiredCapabilities={capabilitySettingsPolicy?.requiredCapabilities}
+              >
+                <CapabilitySettingsPage />
               </PermissionGuard>
             }
           />
@@ -853,6 +928,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={transactionsPolicy?.requiredPermissions}
                 fallbackRoles={transactionsPolicy?.fallbackRoles}
+                requiredCapabilities={transactionsPolicy?.requiredCapabilities}
               >
                 <TransactionsPage />
               </PermissionGuard>
@@ -864,6 +940,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={transactionsPolicy?.requiredPermissions}
                 fallbackRoles={transactionsPolicy?.fallbackRoles}
+                requiredCapabilities={transactionsPolicy?.requiredCapabilities}
               >
                 <TransactionDetailPage />
               </PermissionGuard>
@@ -875,6 +952,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={customersPolicy?.requiredPermissions}
                 fallbackRoles={customersPolicy?.fallbackRoles}
+                requiredCapabilities={customersPolicy?.requiredCapabilities}
               >
                 <CustomersPage />
               </PermissionGuard>
@@ -897,6 +975,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={customersPolicy?.requiredPermissions}
                 fallbackRoles={customersPolicy?.fallbackRoles}
+                requiredCapabilities={customersPolicy?.requiredCapabilities}
               >
                 <CustomerDetailPage />
               </PermissionGuard>
@@ -919,6 +998,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={posPolicy?.requiredPermissions}
                 fallbackRoles={posPolicy?.fallbackRoles}
+                requiredCapabilities={posPolicy?.requiredCapabilities}
               >
                 <PosPage />
               </PermissionGuard>

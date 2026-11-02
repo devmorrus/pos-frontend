@@ -38,7 +38,11 @@ export type PermissionCode =
   | "report.view"
   | "report.cashflow.view"
   | "report.profitloss_accounting.view"
+  | "capability.view"
+  | "capability.manage"
   | string;
+
+export type CapabilityCode = string;
 
 export type MenuStatus = "active" | "placeholder";
 
@@ -47,6 +51,7 @@ export type NavSubItem = {
   path: string;
   requiredPermissions?: PermissionCode[];
   fallbackRoles?: AppRole[];
+  requiredCapabilities?: CapabilityCode[];
 };
 
 export type NavItem = {
@@ -55,6 +60,7 @@ export type NavItem = {
   icon: ReactNode;
   requiredPermissions?: PermissionCode[];
   fallbackRoles?: AppRole[];
+  requiredCapabilities?: CapabilityCode[];
   status: MenuStatus;
   subItems?: NavSubItem[];
 };
@@ -93,23 +99,27 @@ export const appNavigation: NavItem[] = [
         path: "/cashier/session",
         requiredPermissions: ["transaction.create"],
         fallbackRoles: transactionCreateRoles,
+        requiredCapabilities: ["sales.pos"],
       },
       {
         label: "POS Kasir",
         path: "/pos",
         requiredPermissions: ["transaction.create"],
         fallbackRoles: transactionCreateRoles,
+        requiredCapabilities: ["sales.pos"],
       },
       {
         label: "Transaksi",
         path: "/transactions",
         fallbackRoles: transactionReadRoles,
+        requiredCapabilities: ["sales.transactions"],
       },
       {
         label: "Customers",
         path: "/customers",
         requiredPermissions: ["customer.view"],
         fallbackRoles: customerViewRoles,
+        requiredCapabilities: ["customers"],
       },
     ],
   },
@@ -123,30 +133,42 @@ export const appNavigation: NavItem[] = [
         path: "/products",
         requiredPermissions: ["product.manage"],
         fallbackRoles: productRoles,
+        requiredCapabilities: ["catalog.products"],
       },
       {
         label: "Kategori",
         path: "/categories",
         requiredPermissions: ["product.manage"],
         fallbackRoles: productRoles,
+        requiredCapabilities: ["catalog.products"],
       },
       {
         label: "Stok",
         path: "/inventory",
         requiredPermissions: ["stock.manage"],
         fallbackRoles: stockRoles,
+        requiredCapabilities: ["inventory.stock"],
       },
       {
         label: "Buffer Stock",
         path: "/buffer-stock",
         requiredPermissions: ["stock.manage"],
         fallbackRoles: stockRoles,
+        requiredCapabilities: ["inventory.buffer_stock"],
+      },
+      {
+        label: "Stock Opname",
+        path: "/stock-opnames",
+        requiredPermissions: ["stock.manage"],
+        fallbackRoles: stockRoles,
+        requiredCapabilities: ["inventory.opname"],
       },
       {
         label: "Transfer Stok",
         path: "/stock-transfers/outgoing",
         requiredPermissions: ["stock.manage"],
         fallbackRoles: stockRoles,
+        requiredCapabilities: ["inventory.transfer"],
       },
     ],
   },
@@ -160,24 +182,28 @@ export const appNavigation: NavItem[] = [
         path: "/suppliers",
         requiredPermissions: ["supplier.manage"],
         fallbackRoles: supplierRoles,
+        requiredCapabilities: ["procurement.purchasing"],
       },
       {
         label: "Purchase Order",
         path: "/purchase-orders",
         requiredPermissions: ["supplier.manage"],
         fallbackRoles: supplierRoles,
+        requiredCapabilities: ["procurement.purchasing"],
       },
       {
         label: "Utang Supplier",
         path: "/supplier-debts",
         requiredPermissions: ["supplier.manage"],
         fallbackRoles: supplierRoles,
+        requiredCapabilities: ["procurement.supplier_debt"],
       },
       {
         label: "Supplier Return",
         path: "/supplier-returns",
         requiredPermissions: ["supplier_return.manage"],
         fallbackRoles: supplierReturnRoles,
+        requiredCapabilities: ["procurement.supplier_return"],
       },
     ],
   },
@@ -191,18 +217,21 @@ export const appNavigation: NavItem[] = [
         path: "/channel-accounts",
         requiredPermissions: ["channel_settlement.manage"],
         fallbackRoles: channelRoles,
+        requiredCapabilities: ["channels.settlement"],
       },
       {
         label: "Channel Settlements",
         path: "/channel-settlements",
         requiredPermissions: ["channel_settlement.manage"],
         fallbackRoles: channelRoles,
+        requiredCapabilities: ["channels.settlement"],
       },
       {
         label: "Integrasi GoBiz",
         path: "/gobiz",
         requiredPermissions: ["channel_settlement.manage"],
         fallbackRoles: channelRoles,
+        requiredCapabilities: ["channels.gobiz"],
       },
     ],
   },
@@ -216,18 +245,21 @@ export const appNavigation: NavItem[] = [
         path: "/pricing/tax-service",
         requiredPermissions: ["pricing.manage"],
         fallbackRoles: pricingRoles,
+        requiredCapabilities: ["pricing.tax_service"],
       },
       {
         label: "Promo Campaigns",
         path: "/pricing/promo-campaigns",
         requiredPermissions: ["pricing.manage"],
         fallbackRoles: pricingRoles,
+        requiredCapabilities: ["pricing.promotions"],
       },
       {
         label: "Vouchers",
         path: "/pricing/vouchers",
         requiredPermissions: ["pricing.manage"],
         fallbackRoles: pricingRoles,
+        requiredCapabilities: ["pricing.vouchers"],
       },
     ],
   },
@@ -241,6 +273,7 @@ export const appNavigation: NavItem[] = [
         path: "/consignments",
         requiredPermissions: ["consignment.manage"],
         fallbackRoles: consignmentRoles,
+        requiredCapabilities: ["consignment"],
       },
     ],
   },
@@ -254,24 +287,28 @@ export const appNavigation: NavItem[] = [
         path: "/chart-of-accounts",
         requiredPermissions: ["account.manage"],
         fallbackRoles: accountingRoles,
+        requiredCapabilities: ["accounting.core"],
       },
       {
         label: "Integrasi Akuntansi",
         path: "/accounting-integrations",
         requiredPermissions: ["account.manage"],
         fallbackRoles: accountingRoles,
+        requiredCapabilities: ["accounting.integration"],
       },
       {
         label: "Pendapatan Toko",
         path: "/income-businesses",
         requiredPermissions: ["cashflow.view"],
         fallbackRoles: cashFlowRoles,
+        requiredCapabilities: ["accounting.cashflow"],
       },
       {
         label: "Pengeluaran Toko",
         path: "/outcome-businesses",
         requiredPermissions: ["cashflow.view"],
         fallbackRoles: cashFlowRoles,
+        requiredCapabilities: ["accounting.cashflow"],
       },
     ],
   },
@@ -284,40 +321,47 @@ export const appNavigation: NavItem[] = [
         label: "Arus Kas",
         path: "/reports/cash-flow",
         requiredPermissions: ["report.cashflow.view"],
+        requiredCapabilities: ["reports.accounting"],
       },
       {
         label: "Laba Rugi",
         path: "/reports/profit-loss",
         requiredPermissions: ["report.profitloss_accounting.view"],
         fallbackRoles: accountingRoles,
+        requiredCapabilities: ["reports.accounting"],
       },
       {
         label: "Buku Besar",
         path: "/reports/general-ledger",
         requiredPermissions: ["report.profitloss_accounting.view"],
         fallbackRoles: accountingRoles,
+        requiredCapabilities: ["reports.accounting"],
       },
       {
         label: "Rekap Pembelian",
         path: "/reports/purchases",
         fallbackRoles: reportRoles,
+        requiredCapabilities: ["reports.operational"],
       },
       {
         label: "Rekap Penjualan",
         path: "/reports/sales",
         fallbackRoles: reportRoles,
+        requiredCapabilities: ["reports.operational"],
       },
       {
         label: "Supplier 360",
         path: "/reports/suppliers",
         requiredPermissions: ["supplier.manage"],
         fallbackRoles: supplierRoles,
+        requiredCapabilities: ["reports.operational"],
       },
       {
         label: "Kartu Stok",
         path: "/reports/stock-card",
         requiredPermissions: ["stock.manage"],
         fallbackRoles: stockRoles,
+        requiredCapabilities: ["reports.operational"],
       },
     ],
   },
@@ -336,12 +380,19 @@ export const appNavigation: NavItem[] = [
         path: "/outlets",
         fallbackRoles: ownerAdminRoles,
       },
+      {
+        label: "Profil Industri & Fitur",
+        path: "/settings/capabilities",
+        requiredPermissions: ["capability.view"],
+        fallbackRoles: ownerAdminRoles,
+      },
     ],
   },
 ];
 
 export function getVisibleNavigation(
   session: Pick<AuthSession, "role" | "permissions"> | null,
+  hasCapability: (code: string) => boolean = () => true,
 ): NavItem[] {
   if (!session?.role) {
     return [];
@@ -354,7 +405,7 @@ export function getVisibleNavigation(
           canAccessByPolicy(session, {
             requiredPermissions: sub.requiredPermissions,
             fallbackRoles: sub.fallbackRoles,
-          })
+          }) && (sub.requiredCapabilities?.every(hasCapability) ?? true)
         );
         return { ...item, subItems: visibleSubItems };
       }
@@ -367,7 +418,7 @@ export function getVisibleNavigation(
       return canAccessByPolicy(session, {
         requiredPermissions: item.requiredPermissions,
         fallbackRoles: item.fallbackRoles,
-      });
+      }) && (item.requiredCapabilities?.every(hasCapability) ?? true);
     });
 }
 
@@ -377,7 +428,7 @@ export function getNavigationItem(path: string) {
       return item;
     }
     if (item.subItems) {
-      const foundSub = item.subItems.find((sub) => sub.path === path);
+      const foundSub = item.subItems.find((sub) => sub.path === path || path.startsWith(`${sub.path}/`));
       if (foundSub) {
         return {
           label: foundSub.label,
@@ -385,7 +436,8 @@ export function getNavigationItem(path: string) {
           icon: item.icon,
           status: "active" as MenuStatus,
           requiredPermissions: foundSub.requiredPermissions,
-          fallbackRoles: foundSub.fallbackRoles,
+            fallbackRoles: foundSub.fallbackRoles,
+            requiredCapabilities: foundSub.requiredCapabilities,
         };
       }
     }

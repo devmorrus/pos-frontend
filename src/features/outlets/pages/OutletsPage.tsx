@@ -12,6 +12,7 @@ import {
 } from "../api/outletsApi";
 import OutletFormModal from "../components/OutletFormModal";
 import type { OutletDto, OutletFormValues } from "../types/outlet";
+import { Link } from "react-router";
 
 type ModalState =
   | { open: false; mode: "create"; outlet: null }
@@ -198,13 +199,21 @@ export default function OutletsPage() {
                   </td>
                   <td className="px-6 py-4">
                     {ownerMode ? (
-                      <button
-                        type="button"
-                        onClick={() => openEditModal(outlet)}
-                        className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(outlet)}
+                          className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                        >
+                          Edit
+                        </button>
+                        <Link
+                          to={`/settings/capabilities?outletId=${outlet.id}`}
+                          className="rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
+                        >
+                          Atur fitur
+                        </Link>
+                      </div>
                     ) : (
                       <span className="text-xs text-gray-400">Read-only</span>
                     )}

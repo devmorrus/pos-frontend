@@ -123,6 +123,10 @@ async function executeRequest<T>(
   const payload = await parseResponseByType(response, responseType);
 
   if (!response.ok) {
+    if (payload && typeof payload === "object" &&
+        (payload as Record<string, unknown>).code === "CAPABILITY_DISABLED") {
+      window.dispatchEvent(new Event("morrus:capability-stale"));
+    }
     throw normalizeError(response.status, payload);
   }
 

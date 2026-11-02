@@ -4,6 +4,8 @@ import { registerOwnerRequest } from "../features/auth/api/authApi";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useTheme } from "../context/ThemeContext";
 import AppLoader from "../components/ui/AppLoader";
+import { getIndustryProfiles } from "../features/capabilities/api/capabilityApi";
+import type { IndustryProfile } from "../features/capabilities/types/capability";
 
 export default function OnboardingWizardPage() {
   const { setSession } = useAuth();
@@ -19,6 +21,8 @@ export default function OnboardingWizardPage() {
   const [owner, setOwner] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [selectedPackage, setSelectedPackage] = useState("Free Trial");
   const [business, setBusiness] = useState({ name: "", category: "Food & Beverage", phone: "" });
+  const [industryProfiles, setIndustryProfiles] = useState<IndustryProfile[]>([]);
+  const [industryProfileCode, setIndustryProfileCode] = useState("food-beverage");
   const [outlet, setOutlet] = useState({ name: "", code: "", address: "", phone: "" });
 
   // Read URL query parameter for package selection on mount
@@ -29,6 +33,17 @@ export default function OnboardingWizardPage() {
       setSelectedPackage(pkg);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    getIndustryProfiles()
+      .then((profiles) => {
+        setIndustryProfiles(profiles);
+        if (!profiles.some((profile) => profile.code === industryProfileCode) && profiles[0]) {
+          setIndustryProfileCode(profiles[0].code);
+        }
+      })
+      .catch(() => setError("Gagal memuat profil industri. Silakan muat ulang halaman."));
+  }, []);
 
   // Handle auto-generation of outlet code based on outlet name
   useEffect(() => {
@@ -94,8 +109,9 @@ export default function OnboardingWizardPage() {
         },
         business: {
           name: business.name,
-          category: business.category,
-          phone: business.phone || null
+          category: industryProfiles.find((profile) => profile.code === industryProfileCode)?.name ?? business.category,
+          phone: business.phone || null,
+          industryProfileCode,
         },
         package: selectedPackage,
         outlet: {
@@ -251,7 +267,7 @@ export default function OnboardingWizardPage() {
                   id: "Free Trial",
                   title: "Free Trial 30 Hari",
                   price: "Rp 0",
-                  desc: "Akses seluruh fitur secara gratis selama sebulan tanpa kartu kredit."
+                  desc: "Akses fitur sesuai profil industri selama sebulan tanpa kartu kredit."
                 },
                 {
                   id: "Standard Plan",
@@ -307,16 +323,17 @@ export default function OnboardingWizardPage() {
               <div>
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Kategori / Tipe Usaha</label>
                 <select
-                  value={business.category}
-                  onChange={e => setBusiness({ ...business, category: e.target.value })}
+                  value={industryProfileCode}
+                  onChange={e => setIndustryProfileCode(e.target.value)}
                   className="w-full bg-slate-50 border border-gray-300 dark:bg-[#121824] dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-purple-600 dark:focus:border-purple-500 focus:bg-white outline-none transition"
                 >
-                  <option value="Food & Beverage">F&B / Kafe / Resto</option>
-                  <option value="Retail">Retail / Butik / Toko Kelontong</option>
-                  <option value="Fashion">Fashion / Pakaian</option>
-                  <option value="Services">Jasa / Salon / Laundry</option>
-                  <option value="Grocery">Minimarket / Sembako</option>
+                  {industryProfiles.map((profile) => (
+                    <option key={profile.code} value={profile.code}>{profile.name}</option>
+                  ))}
                 </select>
+                <p className="mt-2 text-[10px] text-gray-500">
+                  {industryProfiles.find((profile) => profile.code === industryProfileCode)?.description}
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Nomor Telepon Bisnis (Opsional)</label>

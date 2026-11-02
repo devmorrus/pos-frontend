@@ -3,14 +3,17 @@ import { RootProviders } from "./AuthProvider";
 import CashierSessionProvider from "./CashierSessionProvider";
 import OutletProvider from "./OutletProvider";
 import RealtimeProvider from "./RealtimeProvider";
+import CapabilityProvider from "./CapabilityProvider";
 
 export default function AppProviders({ children }: { children: ReactNode }) {
   return (
     <RootProviders>
       <OutletProvider>
-        <CashierSessionProvider>
-          <RealtimeProvider>{children}</RealtimeProvider>
-        </CashierSessionProvider>
+        <CapabilityProvider>
+          <CashierSessionProvider>
+            <RealtimeProvider>{children}</RealtimeProvider>
+          </CashierSessionProvider>
+        </CapabilityProvider>
       </OutletProvider>
     </RootProviders>
   );

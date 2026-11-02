@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { getVisibleNavigation, appNavigation } from "../../app/router";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useCapabilities } from "../../features/capabilities/hooks/useCapabilities";
 import MorrusLogo from "./MorrusLogo";
 
 export default function DashboardSidebar({
@@ -13,7 +14,8 @@ export default function DashboardSidebar({
 }) {
   const location = useLocation();
   const { session } = useAuth();
-  const navigation = getVisibleNavigation(session);
+  const { hasCapability } = useCapabilities();
+  const navigation = getVisibleNavigation(session, hasCapability);
 
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 

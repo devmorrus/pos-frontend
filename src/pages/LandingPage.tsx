@@ -22,7 +22,7 @@ const pricingPlans = [
   {
     badge: "Trial Package", name: "Free Trial", desc: "Masa eksplorasi dan uji coba seluruh modul sistem.",
     price: "Rp 0", period: "30 hari",
-    features: ["Akses Semua Modul Kasir & POS","1 Bisnis / 1 Outlet Utama","Maksimal 3 User Staff","Laporan Laba Rugi Dasar"],
+    features: ["Modul sesuai profil industri","1 Bisnis / 1 Outlet Utama","Maksimal 3 User Staff","Laporan operasional dasar"],
     cta: "Mulai Uji Coba Gratis", href: "/signup?package=Free%20Trial", highlight: false,
   },
   {
