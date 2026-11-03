@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { registerOwnerRequest } from "../features/auth/api/authApi";
+import type { RegisterOwnerRequest } from "../features/auth/types/auth";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useTheme } from "../context/ThemeContext";
 import AppLoader from "../components/ui/AppLoader";
@@ -20,10 +21,14 @@ export default function OnboardingWizardPage() {
   // Form states
   const [owner, setOwner] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [selectedPackage, setSelectedPackage] = useState("Free Trial");
-  const [business, setBusiness] = useState({ name: "", category: "Food & Beverage", phone: "" });
+  const [business, setBusiness] = useState({ name: "", phone: "" });
   const [industryProfiles, setIndustryProfiles] = useState<IndustryProfile[]>([]);
-  const [industryProfileCode, setIndustryProfileCode] = useState("food-beverage");
+  const [industryProfileCode, setIndustryProfileCode] = useState("");
+  const [profilesLoading, setProfilesLoading] = useState(true);
+  const [profilesError, setProfilesError] = useState<string | null>(null);
   const [outlet, setOutlet] = useState({ name: "", code: "", address: "", phone: "" });
+  const selectedIndustryProfile = industryProfiles.find((profile) => profile.code === industryProfileCode);
+  const profilesReady = !profilesLoading && !profilesError && industryProfiles.length > 0;
 
   // Read URL query parameter for package selection on mount
   useEffect(() => {
@@ -34,16 +39,27 @@ export default function OnboardingWizardPage() {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    getIndustryProfiles()
-      .then((profiles) => {
-        setIndustryProfiles(profiles);
-        if (!profiles.some((profile) => profile.code === industryProfileCode) && profiles[0]) {
-          setIndustryProfileCode(profiles[0].code);
-        }
-      })
-      .catch(() => setError("Gagal memuat profil industri. Silakan muat ulang halaman."));
+  const loadIndustryProfiles = useCallback(async () => {
+    setProfilesLoading(true);
+    setProfilesError(null);
+    try {
+      const profiles = await getIndustryProfiles();
+      setIndustryProfiles(profiles);
+      setIndustryProfileCode((current) =>
+        profiles.some((profile) => profile.code === current) ? current : (profiles[0]?.code ?? ""),
+      );
+    } catch {
+      setIndustryProfiles([]);
+      setIndustryProfileCode("");
+      setProfilesError("Gagal memuat profil industri.");
+    } finally {
+      setProfilesLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadIndustryProfiles();
+  }, [loadIndustryProfiles]);
 
   // Handle auto-generation of outlet code based on outlet name
   useEffect(() => {
@@ -54,7 +70,7 @@ export default function OnboardingWizardPage() {
         setOutlet(prev => ({ ...prev, code: codeSuggestion }));
       }
     }
-  }, [outlet.name]);
+  }, [outlet.name, outlet.code]);
 
   const handleNext = () => {
     setError(null);
@@ -72,8 +88,12 @@ export default function OnboardingWizardPage() {
         return;
       }
     } else if (step === 3) {
-      if (!business.name || !business.category) {
+      if (!business.name || !industryProfileCode) {
         setError("Nama bisnis dan kategori bisnis wajib diisi.");
+        return;
+      }
+      if (!industryProfiles.some((profile) => profile.code === industryProfileCode)) {
+        setError("Profil industri belum berhasil dimuat. Silakan coba lagi.");
         return;
       }
     } else if (step === 4) {
@@ -98,10 +118,14 @@ export default function OnboardingWizardPage() {
       setError("Nama outlet utama dan kode outlet wajib diisi.");
       return;
     }
+    if (!profilesReady || !selectedIndustryProfile) {
+      setError("Profil industri belum berhasil dimuat. Silakan coba lagi.");
+      return;
+    }
 
     setLoading(true);
     try {
-      const payload = {
+      const payload: RegisterOwnerRequest = {
         owner: {
           name: owner.name,
           email: owner.email,
@@ -109,7 +133,7 @@ export default function OnboardingWizardPage() {
         },
         business: {
           name: business.name,
-          category: industryProfiles.find((profile) => profile.code === industryProfileCode)?.name ?? business.category,
+          category: selectedIndustryProfile.name,
           phone: business.phone || null,
           industryProfileCode,
         },
@@ -125,8 +149,8 @@ export default function OnboardingWizardPage() {
       const sessionResult = await registerOwnerRequest(payload);
       setSession(sessionResult); // Set context session to auto-login
       window.location.replace("/dashboard");
-    } catch (err: any) {
-      setError(err?.message || "Terjadi kesalahan saat memproses pendaftaran. Silakan periksa data Anda.");
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Terjadi kesalahan saat memproses pendaftaran. Silakan periksa data Anda.");
     } finally {
       setLoading(false);
     }
@@ -325,15 +349,32 @@ export default function OnboardingWizardPage() {
                 <select
                   value={industryProfileCode}
                   onChange={e => setIndustryProfileCode(e.target.value)}
-                  className="w-full bg-slate-50 border border-gray-300 dark:bg-[#121824] dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-purple-600 dark:focus:border-purple-500 focus:bg-white outline-none transition"
+                  disabled={!profilesReady}
+                  className="w-full bg-slate-50 border border-gray-300 dark:bg-[#121824] dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-purple-600 dark:focus:border-purple-500 focus:bg-white outline-none transition disabled:opacity-60"
                 >
+                  {!industryProfiles.length && (
+                    <option value="">{profilesLoading ? "Memuat profil..." : "Profil tidak tersedia"}</option>
+                  )}
                   {industryProfiles.map((profile) => (
                     <option key={profile.code} value={profile.code}>{profile.name}</option>
                   ))}
                 </select>
-                <p className="mt-2 text-[10px] text-gray-500">
-                  {industryProfiles.find((profile) => profile.code === industryProfileCode)?.description}
-                </p>
+                {profilesError ? (
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-rose-600 dark:text-rose-400">
+                    <span>{profilesError}</span>
+                    <button
+                      type="button"
+                      onClick={() => void loadIndustryProfiles()}
+                      className="font-semibold underline underline-offset-2"
+                    >
+                      Coba lagi
+                    </button>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-[10px] text-gray-500">
+                    {profilesLoading ? "Memuat profil industri..." : selectedIndustryProfile?.description}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Nomor Telepon Bisnis (Opsional)</label>
@@ -413,7 +454,8 @@ export default function OnboardingWizardPage() {
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-xs font-semibold text-white rounded-xl transition active:scale-95 shadow-md shadow-purple-500/10 cursor-pointer"
+                disabled={step === 3 && !profilesReady}
+                className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-xs font-semibold text-white rounded-xl transition active:scale-95 shadow-md shadow-purple-500/10 cursor-pointer disabled:opacity-50"
               >
                 Lanjutkan
               </button>
@@ -426,7 +468,8 @@ export default function OnboardingWizardPage() {
                 ) : (
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-xs font-semibold text-white rounded-xl transition active:scale-95 shadow-lg shadow-purple-500/20 cursor-pointer"
+                    disabled={!profilesReady}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-xs font-semibold text-white rounded-xl transition active:scale-95 shadow-lg shadow-purple-500/20 cursor-pointer disabled:opacity-50"
                   >
                     Selesaikan Pendaftaran
                   </button>

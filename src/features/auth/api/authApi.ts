@@ -3,6 +3,7 @@ import type {
   AuthSession,
   LoginRequest,
   RefreshTokenRequest,
+  RegisterOwnerRequest,
   RevokeTokenRequest,
 } from "../types/auth";
 
@@ -18,6 +19,6 @@ export async function revokeTokenRequest(payload: RevokeTokenRequest) {
   await publicClient.post<void>("/api/auth/revoke", payload);
 }
 
-export function registerOwnerRequest(payload: any) {
+export function registerOwnerRequest(payload: RegisterOwnerRequest) {
   return publicClient.post<AuthSession>("/api/auth/register-owner", payload);
 }

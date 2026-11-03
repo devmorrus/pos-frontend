@@ -1,5 +1,13 @@
 import type { Page, Route } from "@playwright/test";
 import type { AuthSession } from "../../../src/features/auth/types/auth";
+import type {
+  CapabilityChangeLog,
+  CapabilitySnapshot,
+  EffectiveCapability,
+  IndustryProfile,
+} from "../../../src/features/capabilities/types/capability";
+
+const businessId = "11111111-2222-3333-4444-555555555555";
 
 export const ownerSession: AuthSession = {
   accessToken: "owner-access-token",
@@ -17,6 +25,9 @@ export const ownerSession: AuthSession = {
     "consignment.manage",
     "report.view",
   ],
+  businessId,
+  subscriptionStatus: "Active",
+  trialEndDate: "2027-01-01T00:00:00Z",
 };
 
 export const adminSession: AuthSession = {
@@ -35,7 +46,118 @@ export const adminSession: AuthSession = {
     "consignment.manage",
     "report.view",
   ],
+  businessId,
+  subscriptionStatus: "Active",
+  trialEndDate: "2027-01-01T00:00:00Z",
 };
+
+export const industryProfiles: IndustryProfile[] = [
+  {
+    id: "ca100001-0000-4000-8000-000000000001",
+    code: "general",
+    name: "General",
+    description: "Konfigurasi umum untuk bisnis lintas industri.",
+  },
+  {
+    id: "ca100007-0000-4000-8000-000000000007",
+    code: "electronics",
+    name: "Elektronik",
+    description: "Toko gadget, komputer, aksesori, dan perangkat elektronik.",
+  },
+  {
+    id: "ca100002-0000-4000-8000-000000000002",
+    code: "food-beverage",
+    name: "F&B",
+    description: "Kafe, restoran, bakery, dan usaha kuliner.",
+  },
+  {
+    id: "ca100003-0000-4000-8000-000000000003",
+    code: "retail",
+    name: "Retail Umum",
+    description: "Toko retail dan perdagangan umum.",
+  },
+];
+
+const capabilityCatalog: Array<Pick<EffectiveCapability, "code" | "name" | "module" | "scope">> = [
+  { code: "sales.pos", name: "POS Kasir", module: "Sales", scope: "Outlet" },
+  { code: "sales.transactions", name: "Riwayat Transaksi", module: "Sales", scope: "Outlet" },
+  { code: "customers", name: "Customer & Member", module: "Sales", scope: "Business" },
+  { code: "catalog.products", name: "Produk & Kategori", module: "Catalog", scope: "Business" },
+  { code: "catalog.variants", name: "Varian Produk", module: "Catalog", scope: "Business" },
+  { code: "catalog.modifiers", name: "Modifier Produk", module: "Catalog", scope: "Business" },
+  { code: "catalog.recipes", name: "Resep / BOM", module: "Catalog", scope: "Business" },
+  { code: "catalog.batch_expiry", name: "Batch & Kedaluwarsa", module: "Catalog", scope: "Business" },
+  { code: "inventory.stock", name: "Manajemen Stok", module: "Inventory", scope: "Outlet" },
+  { code: "inventory.buffer_stock", name: "Buffer Stock", module: "Inventory", scope: "Outlet" },
+  { code: "inventory.opname", name: "Stock Opname", module: "Inventory", scope: "Outlet" },
+  { code: "inventory.transfer", name: "Transfer Stok", module: "Inventory", scope: "Outlet" },
+  { code: "procurement.purchasing", name: "Supplier & Pembelian", module: "Procurement", scope: "Outlet" },
+  { code: "procurement.supplier_debt", name: "Utang Supplier", module: "Procurement", scope: "Business" },
+  { code: "procurement.supplier_return", name: "Retur Supplier", module: "Procurement", scope: "Outlet" },
+  { code: "consignment", name: "Konsinyasi", module: "Procurement", scope: "Outlet" },
+  { code: "channels.settlement", name: "Channel Settlement", module: "Channels", scope: "Outlet" },
+  { code: "channels.gobiz", name: "Integrasi GoBiz", module: "Channels", scope: "Outlet" },
+  { code: "pricing.tax_service", name: "Pajak & Service Charge", module: "Pricing", scope: "Outlet" },
+  { code: "pricing.promotions", name: "Promo Campaign", module: "Pricing", scope: "Outlet" },
+  { code: "pricing.vouchers", name: "Voucher", module: "Pricing", scope: "Outlet" },
+  { code: "accounting.core", name: "Akuntansi", module: "Accounting", scope: "Business" },
+  { code: "accounting.cashflow", name: "Arus Kas Manual", module: "Accounting", scope: "Business" },
+  { code: "accounting.integration", name: "Integrasi Akuntansi", module: "Accounting", scope: "Business" },
+  { code: "reports.operational", name: "Laporan Operasional", module: "Reports", scope: "Business" },
+  { code: "reports.accounting", name: "Laporan Akuntansi", module: "Reports", scope: "Business" },
+  { code: "storefront.public", name: "Public Storefront", module: "Channels", scope: "Outlet" },
+];
+
+export const allCapabilityCodes = capabilityCatalog.map((capability) => capability.code);
+
+export function buildCapabilitySnapshot(options?: {
+  enabled?: string[];
+  profile?: IndustryProfile;
+  revision?: number;
+  outletId?: string | null;
+}): CapabilitySnapshot {
+  const enabled = new Set(options?.enabled ?? allCapabilityCodes);
+  const profile = options?.profile ?? industryProfiles[3];
+
+  return {
+    businessId,
+    outletId: options?.outletId ?? null,
+    revision: options?.revision ?? 0,
+    industryProfile: profile,
+    capabilities: capabilityCatalog.map((capability) => ({
+      id: `cap-${capability.code}`,
+      ...capability,
+      enabled: enabled.has(capability.code),
+      businessEnabled: enabled.has(capability.code),
+      profileDefault: enabled.has(capability.code),
+      businessOverride: null,
+      outletOverride: null,
+      source: "IndustryProfile",
+      canOverride: true,
+    })),
+  };
+}
+
+export async function mockCapabilityEndpoints(
+  page: Page,
+  options?: {
+    enabled?: string[];
+    snapshot?: CapabilitySnapshot;
+    history?: CapabilityChangeLog[];
+    profiles?: IndustryProfile[];
+  },
+) {
+  const snapshot = options?.snapshot ?? buildCapabilitySnapshot({ enabled: options?.enabled });
+  await mockJson(page, "**/api/public/industry-profiles", options?.profiles ?? industryProfiles);
+  await mockJson(page, "**/api/capabilities/effective*", snapshot);
+  await mockJson(page, "**/api/capabilities/configuration*", snapshot);
+  await mockJson(page, "**/api/capabilities/history*", options?.history ?? []);
+  return snapshot;
+}
+
+export async function mockIndustryProfileUpdate(page: Page, snapshot: CapabilitySnapshot) {
+  await mockJson(page, "**/api/capabilities/industry-profile", snapshot, { method: "PUT" });
+}
 
 export async function seedAuthSession(page: Page, session: AuthSession) {
   await page.addInitScript(

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  mockCapabilityEndpoints,
   mockLogin,
   mockOutlets,
   mockRefresh,
@@ -13,6 +14,7 @@ test.describe("Sign in flow", () => {
     await mockRefresh(page, ownerSession);
     await mockRevoke(page);
     await mockOutlets(page);
+    await mockCapabilityEndpoints(page);
 
     await page.goto("/signin");
 
@@ -26,7 +28,7 @@ test.describe("Sign in flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Dashboard Bisnis", exact: true })).toBeVisible();
     await expect(page.getByText("Morrus Owner", { exact: true })).toBeVisible();
-    await expect(page.getByText("Owner · Semua outlet", { exact: true })).toBeVisible();
+    await expect(page.getByText("Owner · Outlet Utama", { exact: true })).toBeVisible();
 
     const storedSession = await page.evaluate(() =>
       window.localStorage.getItem("morruspos.auth"),

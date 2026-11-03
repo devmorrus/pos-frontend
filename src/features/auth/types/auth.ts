@@ -26,6 +26,27 @@ export type RevokeTokenRequest = {
 
 export type LoginFormValues = LoginRequest;
 
+export type RegisterOwnerRequest = {
+  owner: {
+    name: string;
+    email: string;
+    password: string;
+  };
+  business: {
+    name: string;
+    category: string;
+    phone: string | null;
+    industryProfileCode: string;
+  };
+  package: string;
+  outlet: {
+    name: string;
+    code: string;
+    address: string | null;
+    phone: string | null;
+  };
+};
+
 export type AuthContextValue = {
   session: AuthSession | null;
   accessToken: string | null;

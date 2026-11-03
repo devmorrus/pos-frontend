@@ -18,6 +18,7 @@ import type {
   IndustryProfile,
 } from "../types/capability";
 import { useSearchParams } from "react-router";
+import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 
 function stateLabel(value: boolean | null) {
   return value === null ? "Inherit" : value ? "Aktif" : "Nonaktif";
@@ -36,7 +37,9 @@ export default function CapabilitySettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingCode, setSavingCode] = useState<string | null>(null);
+  const [pendingProfile, setPendingProfile] = useState<IndustryProfile | null>(null);
   const canEdit = session?.role === "Owner";
+  const selectedProfile = profiles.find((profile) => profile.code === snapshot?.industryProfile.code);
 
   async function load(targetOutletId = outletId) {
     setLoading(true);
@@ -90,8 +93,11 @@ export default function CapabilitySettingsPage() {
       setHistory(await getCapabilityHistory(30));
       await reloadCapabilities();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Gagal menyimpan capability.");
+      const conflict = (err as { status?: number })?.status === 409;
       await load(outletId);
+      setError(conflict
+        ? "Konfigurasi telah diubah oleh pengguna lain. Data terbaru sudah dimuat; silakan ulangi perubahan."
+        : (err as { message?: string })?.message ?? "Gagal menyimpan capability.");
     } finally {
       setSavingCode(null);
     }
@@ -100,16 +106,21 @@ export default function CapabilitySettingsPage() {
   async function changeProfile(profileCode: string) {
     if (!snapshot || !canEdit || profileCode === snapshot.industryProfile.code) return;
     setSavingCode("profile");
+    setError(null);
     try {
       const next = await updateIndustryProfile(profileCode, snapshot.revision, reason);
       setSnapshot(next);
       setHistory(await getCapabilityHistory(30));
       await reloadCapabilities();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Gagal mengubah industry profile.");
+      const conflict = (err as { status?: number })?.status === 409;
       await load(outletId);
+      setError(conflict
+        ? "Konfigurasi telah diubah oleh pengguna lain. Data terbaru sudah dimuat; silakan ulangi perubahan profil."
+        : (err as { message?: string })?.message ?? "Gagal mengubah industry profile.");
     } finally {
       setSavingCode(null);
+      setPendingProfile(null);
     }
   }
 
@@ -126,13 +137,19 @@ export default function CapabilitySettingsPage() {
         <label className="text-sm">
           <span className="mb-2 block font-medium">Industry Profile</span>
           <select
-            value={snapshot?.industryProfile.code ?? ""}
+            value={pendingProfile?.code ?? snapshot?.industryProfile.code ?? ""}
             disabled={!canEdit || savingCode === "profile" || Boolean(outletId)}
-            onChange={(event) => void changeProfile(event.target.value)}
+            onChange={(event) => {
+              const next = profiles.find((profile) => profile.code === event.target.value);
+              if (next && next.code !== snapshot?.industryProfile.code) setPendingProfile(next);
+            }}
             className="h-11 w-full rounded-xl border border-gray-200 bg-transparent px-3 dark:border-gray-700"
           >
             {profiles.map((profile) => <option key={profile.code} value={profile.code}>{profile.name}</option>)}
           </select>
+          {selectedProfile?.description ? (
+            <span className="mt-2 block text-xs text-gray-500">{selectedProfile.description}</span>
+          ) : null}
         </label>
         <label className="text-sm">
           <span className="mb-2 block font-medium">Scope konfigurasi</span>
@@ -205,6 +222,18 @@ export default function CapabilitySettingsPage() {
           {!history.length ? <p className="text-gray-500">Belum ada perubahan.</p> : null}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(pendingProfile)}
+        title={`Ganti profil ke ${pendingProfile?.name ?? ""}?`}
+        description="Menu dan endpoint dapat langsung berubah mengikuti profil baru. Data bisnis tidak dihapus, dan override Business/Outlet yang sudah ada tetap berlaku."
+        confirmLabel="Ya, ganti profil"
+        isBusy={savingCode === "profile"}
+        onCancel={() => setPendingProfile(null)}
+        onConfirm={() => {
+          if (pendingProfile) void changeProfile(pendingProfile.code);
+        }}
+      />
     </div>
   );
 }

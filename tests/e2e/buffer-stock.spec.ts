@@ -1,19 +1,23 @@
 import { expect, test } from "@playwright/test";
 import {
   mockBufferStocks,
+  mockCapabilityEndpoints,
   mockOutlets,
   ownerSession,
   seedAuthSession,
 } from "./fixtures/morrus";
 
 test.describe("Buffer stock flow", () => {
-  test("owner harus memilih outlet sebelum listing buffer dimuat", async ({ page }) => {
+  test("owner diminta memilih outlet setelah cakupan diubah ke semua outlet", async ({ page }) => {
     await seedAuthSession(page, ownerSession);
     await mockOutlets(page);
     await mockBufferStocks(page);
+    await mockCapabilityEndpoints(page);
 
     await page.goto("/buffer-stock");
 
+    await expect(page.getByText("Nasi Goreng").first()).toBeVisible({ timeout: 15000 });
+    await page.locator("header select").selectOption("");
     await expect(page.getByText("Pilih outlet terlebih dahulu")).toBeVisible();
   });
 
@@ -21,6 +25,7 @@ test.describe("Buffer stock flow", () => {
     await seedAuthSession(page, ownerSession);
     await mockOutlets(page);
     await mockBufferStocks(page);
+    await mockCapabilityEndpoints(page);
 
     await page.goto("/buffer-stock");
 

@@ -964,6 +964,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={["customer.manage"]}
                 fallbackRoles={["Owner", "Admin", "Keuangan", "KepalaCabang"]}
+                requiredCapabilities={customersPolicy?.requiredCapabilities}
               >
                 <CustomerCreatePage />
               </PermissionGuard>
@@ -987,6 +988,7 @@ export default function AppRouter() {
               <PermissionGuard
                 requiredPermissions={["customer.manage"]}
                 fallbackRoles={["Owner", "Admin", "Keuangan", "KepalaCabang"]}
+                requiredCapabilities={customersPolicy?.requiredCapabilities}
               >
                 <CustomerEditPage />
               </PermissionGuard>
