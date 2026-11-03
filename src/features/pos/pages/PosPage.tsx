@@ -18,6 +18,7 @@ import type {
   PaymentRequest,
 } from "../../transactions/types/transaction";
 import type { PricingBreakdownDto } from "../../pricing/types/pricing";
+import { useCapabilities } from "../../capabilities/hooks/useCapabilities";
 
 type CartItem = {
   productId: string;
@@ -71,6 +72,7 @@ export default function PosPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { session } = useAuth();
   const { selectedOutletId } = useOutlet();
+  const { hasCapability } = useCapabilities();
   const { currentSession, isLoading: isSessionLoading, refreshCurrentSession } = useCashierSession();
   const { onStockUpdate } = useRealtime();
   const [products, setProducts] = useState<ProductDto[]>([]);
@@ -107,6 +109,7 @@ export default function PosPage() {
 
   const ownerMode = isOwner(session?.role);
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
+  const canUseVoucher = hasCapability("pricing.vouchers");
 
   useEffect(() => {
     searchInputRef.current?.focus();
@@ -268,7 +271,7 @@ export default function PosPage() {
         const result = await previewTransactionPricing({
           outletId: effectiveOutletId,
           channel: "pos",
-          voucherCode: voucherCode.trim() || null,
+          voucherCode: canUseVoucher ? voucherCode.trim() || null : null,
           items: cart.map((item) => ({
             productId: item.productId,
             qty: Number(item.qty) || 0,
@@ -286,7 +289,7 @@ export default function PosPage() {
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [cart, effectiveOutletId, voucherCode]);
+  }, [cart, effectiveOutletId, voucherCode, canUseVoucher]);
 
   useEffect(() => {
     if (!customerQuery.trim() || selectedCustomer?.phone === customerQuery.trim()) {
@@ -522,7 +525,7 @@ export default function PosPage() {
           })
           .filter((p) => p.amount > 0);
       })(),
-      voucherCode: voucherCode.trim() || null,
+      voucherCode: canUseVoucher ? voucherCode.trim() || null : null,
       appliedPromoCode: pricing?.appliedPromo?.code ?? null,
       customerId: selectedCustomer?.id ?? null,
       customerPhone: selectedCustomer?.phone ?? null,
@@ -999,16 +1002,18 @@ export default function PosPage() {
                 </div>
 
                 {/* Voucher */}
-                <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Kode Voucher</p>
-                  <input
-                    value={voucherCode}
-                    onChange={(event) => setVoucherCode(event.target.value)}
-                    placeholder="Masukkan kode voucher (opsional)"
-                    className="h-11 w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 text-sm text-gray-900 dark:text-white outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
-                  />
-                  {isPricingLoading && <p className="text-xs text-brand-500 animate-pulse">Menghitung harga...</p>}
-                </div>
+                {canUseVoucher ? (
+                  <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Kode Voucher</p>
+                    <input
+                      value={voucherCode}
+                      onChange={(event) => setVoucherCode(event.target.value)}
+                      placeholder="Masukkan kode voucher (opsional)"
+                      className="h-11 w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 text-sm text-gray-900 dark:text-white outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
+                    />
+                    {isPricingLoading && <p className="text-xs text-brand-500 animate-pulse">Menghitung harga...</p>}
+                  </div>
+                ) : null}
 
                 {/* Price Summary */}
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-2.5">
@@ -1337,5 +1342,4 @@ export default function PosPage() {
     </div>
   );
 }
-
 

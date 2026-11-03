@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useOutlet } from "../../features/outlets/hooks/useOutlet";
 import { getEffectiveCapabilities } from "../../features/capabilities/api/capabilityApi";
@@ -11,32 +11,42 @@ export default function CapabilityProvider({ children }: { children: React.React
   const [snapshot, setSnapshot] = useState<CapabilitySnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
 
   const reloadCapabilities = useCallback(async () => {
+    const currentRequestId = ++requestId.current;
     if (!isAuthenticated) {
       setSnapshot(null);
       setError(null);
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      setSnapshot(await getEffectiveCapabilities(selectedOutletId));
+      const nextSnapshot = await getEffectiveCapabilities(selectedOutletId);
+      if (requestId.current === currentRequestId) setSnapshot(nextSnapshot);
     } catch (err) {
-      setSnapshot(null);
-      setError((err as { message?: string })?.message ?? "Gagal memuat capability.");
+      if (requestId.current === currentRequestId) {
+        setSnapshot(null);
+        setError((err as { message?: string })?.message ?? "Gagal memuat capability.");
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId.current === currentRequestId) setIsLoading(false);
     }
   }, [isAuthenticated, selectedOutletId]);
 
   useEffect(() => {
+    setSnapshot(null);
     void reloadCapabilities();
   }, [reloadCapabilities, session?.userId]);
 
   useEffect(() => {
     const onFocus = () => void reloadCapabilities();
-    const onStale = () => void reloadCapabilities();
+    const onStale = () => {
+      setSnapshot(null);
+      void reloadCapabilities();
+    };
     window.addEventListener("focus", onFocus);
     window.addEventListener("morrus:capability-stale", onStale);
     return () => {

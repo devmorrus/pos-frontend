@@ -447,9 +447,9 @@ export default function AppRouter() {
             path="inventory"
             element={
               <PermissionGuard
-                requiredPermissions={stockOpnamesPolicy?.requiredPermissions}
-                fallbackRoles={stockOpnamesPolicy?.fallbackRoles}
-                requiredCapabilities={stockOpnamesPolicy?.requiredCapabilities}
+                requiredPermissions={inventoryPolicy?.requiredPermissions}
+                fallbackRoles={inventoryPolicy?.fallbackRoles}
+                requiredCapabilities={inventoryPolicy?.requiredCapabilities}
               >
                 <InventoryPage />
               </PermissionGuard>
@@ -501,9 +501,9 @@ export default function AppRouter() {
             path="stock-opnames/:id"
             element={
               <PermissionGuard
-                requiredPermissions={inventoryPolicy?.requiredPermissions}
-                fallbackRoles={inventoryPolicy?.fallbackRoles}
-                requiredCapabilities={inventoryPolicy?.requiredCapabilities}
+                requiredPermissions={stockOpnamesPolicy?.requiredPermissions}
+                fallbackRoles={stockOpnamesPolicy?.fallbackRoles}
+                requiredCapabilities={stockOpnamesPolicy?.requiredCapabilities}
               >
                 <StockOpnameDetailPage />
               </PermissionGuard>

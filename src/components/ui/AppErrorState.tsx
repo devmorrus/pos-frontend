@@ -5,12 +5,14 @@ export default function AppErrorState({
   description,
   actionLabel,
   actionHref,
+  onAction,
   fullScreen = true,
 }: {
   title: string;
   description: string;
   actionLabel?: string;
   actionHref?: string;
+  onAction?: () => void;
   fullScreen?: boolean;
 }) {
   return (
@@ -25,7 +27,15 @@ export default function AppErrorState({
         </span>
         <h1 className="mt-5 text-3xl font-semibold text-gray-900 dark:text-white">{title}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">{description}</p>
-        {actionHref && actionLabel ? (
+        {onAction && actionLabel ? (
+          <button
+            type="button"
+            onClick={onAction}
+            className="mt-6 inline-flex items-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+          >
+            {actionLabel}
+          </button>
+        ) : actionHref && actionLabel ? (
           <Link
             to={actionHref}
             className="mt-6 inline-flex items-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"

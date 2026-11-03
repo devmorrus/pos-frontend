@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { getVisibleNavigation, appNavigation } from "../../app/router";
+import type { NavItem } from "../../app/router/navigation";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useCapabilities } from "../../features/capabilities/hooks/useCapabilities";
 import MorrusLogo from "./MorrusLogo";
@@ -51,9 +52,9 @@ export default function DashboardSidebar({
     }));
   };
 
-  const isGroupActive = (item: any) => {
+  const isGroupActive = (item: NavItem) => {
     if (!item.subItems) return false;
-    return item.subItems.some((sub: any) => {
+    return item.subItems.some((sub) => {
       return (
         location.pathname === sub.path ||
         (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||

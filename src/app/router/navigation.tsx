@@ -106,7 +106,7 @@ export const appNavigation: NavItem[] = [
         path: "/pos",
         requiredPermissions: ["transaction.create"],
         fallbackRoles: transactionCreateRoles,
-        requiredCapabilities: ["sales.pos"],
+        requiredCapabilities: ["sales.pos", "catalog.products"],
       },
       {
         label: "Transaksi",

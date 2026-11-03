@@ -23,20 +23,45 @@ export default function PermissionGuard({
 }: PermissionGuardProps) {
   const { session } = useAuth();
   const location = useLocation();
-  const { hasCapability, isLoading, error } = useCapabilities();
+  const { snapshot, hasCapability, isLoading, error, reloadCapabilities } = useCapabilities();
   const routePolicy = getNavigationItem(location.pathname);
   const capabilityRequirements = requiredCapabilities ?? routePolicy?.requiredCapabilities ?? [];
 
-  if (capabilityRequirements.length && isLoading) {
+  if (requiredPermissions.length || fallbackRoles.length) {
+    if (!canAccessByPolicy(session, { requiredPermissions, fallbackRoles })) {
+      return (
+        <AppErrorState
+          title="Akses dibatasi"
+          description="Role atau permission akun Anda belum memenuhi policy akses untuk halaman ini."
+          actionLabel="Kembali ke dashboard"
+          actionHref="/dashboard"
+          fullScreen={false}
+        />
+      );
+    }
+  }
+
+  if (capabilityRequirements.length && (isLoading || (!snapshot && !error))) {
     return <AppLoader label="Memeriksa capability..." />;
   }
 
-  if (capabilityRequirements.length &&
-      (error || !capabilityRequirements.every(hasCapability))) {
+  if (capabilityRequirements.length && error) {
+    return (
+      <AppErrorState
+        title="Gagal memuat akses fitur"
+        description={error}
+        actionLabel="Coba lagi"
+        onAction={() => void reloadCapabilities()}
+        fullScreen={false}
+      />
+    );
+  }
+
+  if (capabilityRequirements.length && !capabilityRequirements.every(hasCapability)) {
     return (
       <AppErrorState
         title="Fitur belum aktif"
-        description={error ?? "Fitur ini belum diaktifkan untuk Business atau Outlet yang dipilih."}
+        description="Fitur ini belum diaktifkan untuk Business atau Outlet yang dipilih."
         actionLabel="Kembali ke dashboard"
         actionHref="/dashboard"
         fullScreen={false}
@@ -44,26 +69,5 @@ export default function PermissionGuard({
     );
   }
 
-  if (!requiredPermissions.length && !fallbackRoles.length) {
-    return <>{children}</>;
-  }
-
-  if (
-    canAccessByPolicy(session, {
-      requiredPermissions,
-      fallbackRoles,
-    })
-  ) {
-    return <>{children}</>;
-  }
-
-  return (
-    <AppErrorState
-      title="Akses dibatasi"
-      description="Role atau permission akun Anda belum memenuhi policy akses untuk halaman ini."
-      actionLabel="Kembali ke dashboard"
-      actionHref="/dashboard"
-      fullScreen={false}
-    />
-  );
+  return <>{children}</>;
 }

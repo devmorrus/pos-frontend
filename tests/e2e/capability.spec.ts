@@ -5,7 +5,9 @@ import {
   buildCapabilitySnapshot,
   industryProfiles,
   mockCapabilityEndpoints,
+  mockBufferStocks,
   mockIndustryProfileUpdate,
+  mockJson,
   mockOutlets,
   ownerSession,
   seedAuthSession,
@@ -67,6 +69,65 @@ test.describe("Capability & industry profile", () => {
 
     await expect(page.getByRole("link", { name: "Buffer Stock" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Stok", exact: true })).toBeVisible();
+  });
+
+  test("gagal memuat capability menampilkan retry dan tetap fail closed", async ({ page }) => {
+    await seedAuthSession(page, ownerSession);
+    await mockOutlets(page);
+    await mockBufferStocks(page);
+    const snapshot = buildCapabilitySnapshot();
+    await mockCapabilityEndpoints(page, { snapshot });
+    let shouldFail = true;
+    await page.route("**/api/capabilities/effective*", async (route) => {
+      await route.fulfill({
+        status: shouldFail ? 500 : 200,
+        contentType: "application/json",
+        body: JSON.stringify(shouldFail
+          ? { message: "Capability sementara tidak tersedia" }
+          : snapshot),
+      });
+    });
+
+    await page.goto("/buffer-stock");
+    await expect(page.getByText("Gagal memuat akses fitur")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Buffer Stock" })).toHaveCount(0);
+
+    shouldFail = false;
+    await page.getByRole("button", { name: "Coba lagi" }).click();
+    await expect(page.getByRole("heading", { name: "Buffer Stock", exact: true })).toBeVisible();
+  });
+
+  test("route inventory memakai inventory.stock, bukan inventory.opname", async ({ page }) => {
+    await seedAuthSession(page, ownerSession);
+    await mockOutlets(page);
+    await mockCapabilityEndpoints(page, { enabled: ["inventory.stock"] });
+    await mockJson(page, /\/api\/inventory(\?.*)?$/, []);
+
+    await page.goto("/inventory");
+    await expect(page.getByRole("heading", { name: "Stok", exact: true })).toBeVisible();
+    await expect(page.getByText("Fitur belum aktif")).toHaveCount(0);
+  });
+
+  test("detail stock opname memakai inventory.opname", async ({ page }) => {
+    await seedAuthSession(page, ownerSession);
+    await mockOutlets(page);
+    await mockCapabilityEndpoints(page, { enabled: ["inventory.opname"] });
+    await mockJson(page, "**/api/stockopnames/*", { message: "not found" }, { status: 404 });
+
+    await page.goto("/stock-opnames/00000000-0000-4000-8000-000000000001");
+    await expect(page.getByRole("heading", { name: "Detail Stock Opname" })).toBeVisible();
+    await expect(page.getByText("Fitur belum aktif")).toHaveCount(0);
+  });
+
+  test("POS membutuhkan sales.pos dan catalog.products", async ({ page }) => {
+    await seedAuthSession(page, ownerSession);
+    await mockOutlets(page);
+    await mockCapabilityEndpoints(page, { enabled: ["sales.pos"] });
+
+    await page.goto("/pos");
+    await expect(page.getByText("Fitur belum aktif")).toBeVisible();
+    await expect(page.getByRole("link", { name: "POS Kasir" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Sesi Kasir" })).toBeVisible();
   });
 
   test("owner dapat mengganti profil setelah konfirmasi", async ({ page }) => {
