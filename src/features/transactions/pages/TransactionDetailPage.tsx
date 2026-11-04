@@ -126,7 +126,7 @@ export default function TransactionDetailPage() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                 <thead className="bg-gray-50 dark:bg-gray-950">
                   <tr>
-                    {["Produk", "SKU", "Qty", "Refunded", "Sisa", "Harga", "Diskon", "Line Total"].map((column) => (
+                    {["Produk", "SKU", "Tracking", "Qty", "Refunded", "Sisa", "Harga", "Diskon", "Line Total"].map((column) => (
                       <th
                         key={column}
                         className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -143,6 +143,13 @@ export default function TransactionDetailPage() {
                         {item.productName}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.sku}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {item.trackingMode === "batch"
+                          ? (item.batches ?? []).map((batch) => `${batch.batchNumber} (${batch.remainingQty ?? batch.qty}/${batch.qty} belum refund)`).join(", ") || "-"
+                          : item.trackingMode === "serial"
+                            ? (item.serials ?? []).map((serial) => `${serial.serialNumber}${serial.isReturned ? " (returned)" : ""}`).join(", ") || "-"
+                            : item.trackingMode === "none" ? "Non-stok" : "Qty"}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.qty}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.returnedQty}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.remainingQty}</td>

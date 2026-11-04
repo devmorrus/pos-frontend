@@ -1,3 +1,5 @@
+export type ProductTrackingMode = "none" | "quantity" | "batch" | "serial";
+
 export type ProductDto = {
   id: string;
   categoryId: string;
@@ -17,6 +19,7 @@ export type ProductDto = {
   variants?: ProductVariantDto[];
   modifierGroups?: ModifierGroupDto[];
   recipes?: ProductRecipeDto[];
+  trackingMode: ProductTrackingMode;
 };
 
 export type ProductAttributeValueDto = {
@@ -40,6 +43,7 @@ export type ProductVariantDto = {
   costPrice: number;
   imageUrl?: string | null;
   isActive: boolean;
+  qtyOnHand?: number;
   attributeValues: ProductAttributeValueDto[];
 };
 
@@ -76,6 +80,21 @@ export type ProductBatchDto = {
   qtyRemaining: number;
 };
 
+export type ProductTrackingOptionsDto = {
+  trackingMode: ProductTrackingMode;
+  qtyOnHand: number;
+  batches: {
+    id: string;
+    batchNumber: string;
+    expiryDate: string | null;
+    qtyRemaining: number;
+  }[];
+  serials: {
+    id: string;
+    serialNumber: string;
+  }[];
+};
+
 export type ProductRecipeRequest = {
   rawMaterialProductId: string;
   quantityRequired: number;
@@ -99,6 +118,7 @@ export type CreateProductRequest = {
   variants?: Omit<ProductVariantDto, "id" | "productId">[];
   modifierGroups?: Omit<ModifierGroupDto, "id">[];
   recipes?: ProductRecipeRequest[];
+  trackingMode: ProductTrackingMode;
 };
 
 export type UpdateProductRequest = CreateProductRequest & {
@@ -125,7 +145,7 @@ export type ProductFormValues = {
   isServiceChargeable: "inherit" | "true" | "false";
   hasVariants: boolean;
   isRawMaterial: boolean;
-  variants?: any[];
+  variants?: ProductVariantDto[];
   recipes?: ProductRecipeRequest[];
+  trackingMode: ProductTrackingMode;
 };
-

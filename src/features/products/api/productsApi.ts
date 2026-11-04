@@ -3,6 +3,7 @@ import type {
   CreateProductRequest,
   ProductDto,
   ProductFilters,
+  ProductTrackingOptionsDto,
   UpdateProductRequest,
 } from "../types/product";
 
@@ -23,6 +24,20 @@ export function getProducts(filters: ProductFilters = {}) {
 
 export function getProductById(id: string) {
   return apiClient.get<ProductDto>(`/api/products/${id}`);
+}
+
+export function getProductTrackingOptions(
+  id: string,
+  outletId: string,
+  productVariantId?: string | null,
+  search?: string,
+  includeUnavailable = false,
+) {
+  const params = new URLSearchParams({ outletId });
+  if (productVariantId) params.set("productVariantId", productVariantId);
+  if (search?.trim()) params.set("search", search.trim());
+  if (includeUnavailable) params.set("includeUnavailable", "true");
+  return apiClient.get<ProductTrackingOptionsDto>(`/api/products/${id}/stock-tracking?${params}`);
 }
 
 export function createProduct(payload: CreateProductRequest) {

@@ -81,7 +81,7 @@ export default function StockOpnameDetailPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-950">
                 <tr>
-                  {["SKU", "Produk", "System qty", "Physical qty", "Variance"].map((column) => (
+                  {["SKU", "Produk", "Batch / Serial", "System qty", "Physical qty", "Variance"].map((column) => (
                     <th
                       key={column}
                       className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -92,10 +92,11 @@ export default function StockOpnameDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {item.items.map((row) => (
-                  <tr key={`${row.productId}-${row.sku}`}>
+                {item.items.map((row, index) => (
+                  <tr key={`${row.productId}-${row.productBatchId ?? row.productSerialId ?? index}`}>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{row.sku}</td>
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{row.productName}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{row.batchNumber ?? row.serialNumber ?? "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatQuantity(row.systemQty)}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatQuantity(row.physicalQty)}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{formatQuantity(row.variance)}</td>

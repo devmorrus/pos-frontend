@@ -26,6 +26,7 @@ const initialValues: ProductFormValues = {
   hasVariants: false,
   isRawMaterial: false,
   variants: [],
+  trackingMode: "quantity",
 };
 
 export default function ProductEditPage() {
@@ -84,6 +85,7 @@ export default function ProductEditPage() {
             quantityRequired: r.quantityRequired,
             productVariantSku: null,
           })),
+          trackingMode: productResult.trackingMode ?? "quantity",
         });
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat detail produk."));
@@ -99,6 +101,7 @@ export default function ProductEditPage() {
     setValues((current) => ({
       ...current,
       [key]: value,
+      ...(key === "trackingMode" && value === "none" ? { isConsignment: false, isRawMaterial: false } : {}),
     }));
   }
 
@@ -137,6 +140,7 @@ export default function ProductEditPage() {
         isRawMaterial: false,
         variants: [],
         recipes: [],
+        trackingMode: values.trackingMode,
       });
 
       navigate("/products", {

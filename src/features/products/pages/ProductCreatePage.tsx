@@ -31,6 +31,7 @@ const initialValues: ProductFormValues = {
   hasVariants: false,
   isRawMaterial: false,
   variants: [],
+  trackingMode: "quantity",
 };
 
 export default function ProductCreatePage() {
@@ -66,6 +67,7 @@ export default function ProductCreatePage() {
     setValues((current) => ({
       ...current,
       [key]: value,
+      ...(key === "trackingMode" && value === "none" ? { isConsignment: false, isRawMaterial: false } : {}),
     }));
   }
 
@@ -99,6 +101,7 @@ export default function ProductCreatePage() {
         isRawMaterial: false,
         variants: [],
         recipes: [],
+        trackingMode: values.trackingMode,
       });
 
       navigate("/products", {

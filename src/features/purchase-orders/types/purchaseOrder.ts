@@ -8,6 +8,7 @@ export type PurchaseOrderItemDto = {
   unitCost: number;
   totalCost: number;
   sellingPrice: number;
+  trackingMode: "none" | "quantity" | "batch" | "serial";
 };
 
 export type PurchaseOrderDto = {

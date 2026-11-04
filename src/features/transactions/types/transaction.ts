@@ -29,6 +29,23 @@ export type TransactionItemDto = {
   unitCost: number;
   discountAmount: number;
   lineTotal: number;
+  productVariantId: string | null;
+  trackingMode: "none" | "quantity" | "batch" | "serial";
+  batches: TransactionBatchAllocationDto[];
+  serials: TransactionSerialAllocationDto[];
+};
+
+export type TransactionBatchAllocationDto = {
+  productBatchId: string;
+  batchNumber: string;
+  qty: number;
+  remainingQty: number;
+};
+
+export type TransactionSerialAllocationDto = {
+  productSerialId: string;
+  serialNumber: string;
+  isReturned: boolean;
 };
 
 export type PaymentDto = {
@@ -93,9 +110,12 @@ export type TransactionDto = {
 
 export type CheckoutItemRequest = {
   productId: string;
+  productVariantId?: string | null;
   qty: number;
   unitPrice: number;
   discountAmount: number;
+  batchAllocations?: { productBatchId: string; qty: number }[] | null;
+  serialIds?: string[] | null;
 };
 
 export type PaymentRequest = {
@@ -128,7 +148,11 @@ export type VoidTransactionRequest = {
 
 export type RefundTransactionItemRequest = {
   productId: string;
+  productVariantId?: string | null;
+  transactionItemId?: string | null;
   qty: number;
+  batchAllocations?: { productBatchId: string; qty: number }[] | null;
+  serialIds?: string[] | null;
 };
 
 export type RefundTransactionRequest = {

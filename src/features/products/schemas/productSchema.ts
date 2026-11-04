@@ -77,5 +77,9 @@ export function validateProductForm(values: ProductFormValues) {
     errors.unit = "Satuan maksimal 20 karakter.";
   }
 
+  if (values.trackingMode === "none" && (values.isConsignment || values.isRawMaterial)) {
+    errors.trackingMode = "Produk konsinyasi atau bahan baku harus menggunakan pelacakan stok.";
+  }
+
   return errors;
 }

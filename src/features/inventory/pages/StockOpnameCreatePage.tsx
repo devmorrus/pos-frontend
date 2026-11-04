@@ -10,12 +10,24 @@ import OpnameItemsEditor, { type OpnameDraftItem } from "../components/OpnameIte
 import type { InventoryListItem } from "../types/inventory";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 
+function createOpnameDraftItem(): OpnameDraftItem {
+  return {
+    id: crypto.randomUUID(),
+    productId: "",
+    productVariantId: null,
+    productBatchId: "",
+    productSerialIds: [],
+    serials: [],
+    physicalQty: "",
+  };
+}
+
 export default function StockOpnameCreatePage() {
   const navigate = useNavigate();
   const { effectiveOutletId, ownerMode } = useStockOutletScope();
   const { onStockUpdate } = useRealtime();
   const [inventoryItems, setInventoryItems] = useState<InventoryListItem[]>([]);
-  const [items, setItems] = useState<OpnameDraftItem[]>([{ productId: "", physicalQty: "" }]);
+  const [items, setItems] = useState<OpnameDraftItem[]>([createOpnameDraftItem()]);
   const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,14 +71,14 @@ export default function StockOpnameCreatePage() {
     return unsubscribe;
   }, [effectiveOutletId, onStockUpdate]);
 
-  function updateItem(index: number, key: keyof OpnameDraftItem, value: string) {
+  function updateItem(index: number, patch: Partial<OpnameDraftItem>) {
     setItems((current) =>
-      current.map((item, itemIndex) => (itemIndex === index ? { ...item, [key]: value } : item)),
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
     );
   }
 
   function addItem() {
-    setItems((current) => [...current, { productId: "", physicalQty: "" }]);
+    setItems((current) => [...current, createOpnameDraftItem()]);
   }
 
   function removeItem(index: number) {
@@ -96,9 +108,16 @@ export default function StockOpnameCreatePage() {
       setError("Physical Qty harus berupa angka 0 atau lebih untuk semua item.");
       return;
     }
+    if (items.some((item) => item.trackingMode === "batch" && !item.productBatchId)) {
+      setError("Batch wajib dipilih untuk setiap produk batch.");
+      return;
+    }
 
     const normalizedItems = items.map((item) => ({
       productId: item.productId,
+      productVariantId: item.productVariantId,
+      productBatchId: item.productBatchId || null,
+      productSerialIds: item.trackingMode === "serial" ? item.productSerialIds : null,
       physicalQty: Number(item.physicalQty),
     }));
 
@@ -107,9 +126,14 @@ export default function StockOpnameCreatePage() {
       return;
     }
 
-    const uniqueIds = new Set(normalizedItems.map((item) => item.productId));
+    const uniqueIds = new Set(normalizedItems.map((item) => `${item.productId}:${item.productVariantId ?? ""}:${item.productBatchId ?? ""}`));
     if (uniqueIds.size !== normalizedItems.length) {
-      setError("Produk opname tidak boleh duplikat.");
+      setError("Produk dan batch opname tidak boleh duplikat.");
+      return;
+    }
+
+    if (items.some((item) => item.trackingMode === "serial") &&
+        !window.confirm("Serial tersedia yang tidak dipilih akan ditandai written off. Lanjutkan stock opname?")) {
       return;
     }
 
@@ -153,6 +177,7 @@ export default function StockOpnameCreatePage() {
             description="Setiap item akan membandingkan system qty dengan physical qty, lalu backend menghitung variance dan ledger penyesuaiannya."
           >
             <OpnameItemsEditor
+              outletId={effectiveOutletId!}
               inventoryItems={inventoryItems}
               items={items}
               onChange={updateItem}

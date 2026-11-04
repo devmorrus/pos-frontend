@@ -16,6 +16,8 @@ interface ReceiveRow {
   qtyToReceive: string; // string for input state
   batchNumber: string;
   expiryDate: string;
+  trackingMode: "none" | "quantity" | "batch" | "serial";
+  serialNumbers: string;
 }
 
 export default function PurchaseOrderReceivePage() {
@@ -54,6 +56,8 @@ export default function PurchaseOrderReceivePage() {
             qtyToReceive: remaining > 0 ? remaining.toString() : "0",
             batchNumber: "",
             expiryDate: "",
+            trackingMode: item.trackingMode ?? "quantity",
+            serialNumbers: "",
           };
         });
         setRows(initialRows);
@@ -98,6 +102,24 @@ export default function PurchaseOrderReceivePage() {
       return;
     }
 
+    const invalidBatch = rows.some((row) =>
+      row.trackingMode === "batch" && Number(row.qtyToReceive) > 0 && !row.batchNumber.trim());
+    if (invalidBatch) {
+      setError("Nomor batch wajib diisi untuk produk dengan pelacakan batch.");
+      return;
+    }
+
+    const invalidSerial = rows.some((row) => {
+      if (row.trackingMode !== "serial" || Number(row.qtyToReceive) <= 0) return false;
+      const serials = parseSerialNumbers(row.serialNumbers);
+      return !Number.isInteger(Number(row.qtyToReceive)) ||
+        serials.length !== Number(row.qtyToReceive) || new Set(serials.map((x) => x.toUpperCase())).size !== serials.length;
+    });
+    if (invalidSerial) {
+      setError("Jumlah serial unik harus sama dengan kuantitas masuk.");
+      return;
+    }
+
     const itemsPayload = rows
       .map((row) => ({
         productId: row.productId,
@@ -105,6 +127,12 @@ export default function PurchaseOrderReceivePage() {
         qtyReceived: parseFloat(row.qtyToReceive) || 0,
         batchNumber: row.batchNumber.trim() || null,
         expiryDate: row.expiryDate ? new Date(row.expiryDate).toISOString() : null,
+        batches: row.trackingMode === "batch" ? [{
+          batchNumber: row.batchNumber.trim(),
+          expiryDate: row.expiryDate ? new Date(row.expiryDate).toISOString() : null,
+          qty: parseFloat(row.qtyToReceive) || 0,
+        }] : undefined,
+        serialNumbers: row.trackingMode === "serial" ? parseSerialNumbers(row.serialNumbers) : undefined,
       }))
       .filter((item) => item.qtyReceived > 0);
 
@@ -138,6 +166,10 @@ export default function PurchaseOrderReceivePage() {
     const mm = String(today.getMonth() + 1).padStart(2, "0");
     const dd = String(today.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function parseSerialNumbers(value: string) {
+    return value.split(/[\n,]/).map((serial) => serial.trim()).filter(Boolean);
   }
 
   const todayStr = getTodayString();
@@ -200,7 +232,7 @@ export default function PurchaseOrderReceivePage() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                 <thead className="bg-gray-50 dark:bg-gray-950">
                   <tr>
-                    {["Produk / SKU", "Pesan", "Diterima", "Kuantitas Masuk", "No. Batch (Opsional)", "Exp. Date (Opsional)"].map((column) => (
+                    {["Produk / SKU", "Pesan", "Diterima", "Kuantitas Masuk", "Batch / Serial", "Exp. Date"].map((column) => (
                       <th
                         key={column}
                         className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -244,16 +276,28 @@ export default function PurchaseOrderReceivePage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <input
-                          type="text"
-                          placeholder="BATCH-123"
-                          value={row.batchNumber}
-                          onChange={(e) => handleRowChange(index, "batchNumber", e.target.value)}
-                          className="w-full min-w-[120px] rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-955 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                        />
+                        {row.trackingMode === "batch" ? (
+                          <input
+                            type="text"
+                            placeholder="BATCH-123"
+                            value={row.batchNumber}
+                            onChange={(e) => handleRowChange(index, "batchNumber", e.target.value)}
+                            className="w-full min-w-[120px] rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-955 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                            required={Number(row.qtyToReceive) > 0}
+                          />
+                        ) : row.trackingMode === "serial" ? (
+                          <textarea
+                            placeholder="Satu serial per baris"
+                            value={row.serialNumbers}
+                            onChange={(e) => handleRowChange(index, "serialNumbers", e.target.value)}
+                            className="min-h-20 w-full min-w-[180px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-955 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                          />
+                        ) : (
+                          <span className="text-sm text-gray-400">{row.trackingMode === "none" ? "Tanpa stok" : "Kuantitas"}</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="relative flex flex-col min-w-[150px]">
+                        {row.trackingMode === "batch" ? <div className="relative flex flex-col min-w-[150px]">
                           <div className="relative flex items-center w-full">
                             <input
                               type="date"
@@ -289,7 +333,7 @@ export default function PurchaseOrderReceivePage() {
                               Harus hari ini atau setelahnya
                             </span>
                           )}
-                        </div>
+                        </div> : <span className="text-sm text-gray-400">—</span>}
                       </td>
                     </tr>
                   ))}

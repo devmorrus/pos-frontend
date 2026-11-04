@@ -35,6 +35,8 @@ export interface ReceivingItemRequest {
   qtyReceived: number;
   batchNumber?: string | null;
   expiryDate?: string | null;
+  batches?: { batchNumber: string; expiryDate?: string | null; qty: number }[];
+  serialNumbers?: string[];
 }
 
 export interface ReceiveGoodsRequest {

@@ -15,7 +15,7 @@ import { getCategories } from "../../categories/api/categoriesApi";
 import type { CategoryDto } from "../../categories/types/category";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { deleteProduct, getProducts } from "../api/productsApi";
-import type { ProductDto } from "../types/product";
+import type { ProductDto, ProductTrackingMode } from "../types/product";
 import {
   formatRupiah,
   formatStockQuantity,
@@ -42,6 +42,7 @@ export default function ProductsPage() {
   );
   const [deleteTarget, setDeleteTarget] = useState<ProductDto | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [trackingFilter, setTrackingFilter] = useState<"all" | ProductTrackingMode>("all");
 
   const ownerMode = isOwner(session?.role);
 
@@ -115,6 +116,10 @@ export default function ProductsPage() {
   }
 
   const shouldShowOutletPrompt = ownerMode && !selectedOutletId;
+  const filteredProducts = useMemo(
+    () => trackingFilter === "all" ? products : products.filter((product) => product.trackingMode === trackingFilter),
+    [products, trackingFilter],
+  );
 
   return (
     <ProtectedPageShell
@@ -136,6 +141,19 @@ export default function ProductsPage() {
           </Link>
         }
       >
+        <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+          <select
+            value={trackingFilter}
+            onChange={(event) => setTrackingFilter(event.target.value as "all" | ProductTrackingMode)}
+            className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+          >
+            <option value="all">Semua tracking</option>
+            <option value="none">Non-stok</option>
+            <option value="quantity">Quantity</option>
+            <option value="batch">Batch</option>
+            <option value="serial">Serial / IMEI</option>
+          </select>
+        </div>
         {isLoading ? (
           <AppLoader label="Memuat daftar produk..." />
         ) : shouldShowOutletPrompt ? (
@@ -146,7 +164,7 @@ export default function ProductsPage() {
               status="Outlet required"
             />
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="p-6">
             <PagePlaceholder
               title="Belum ada produk"
@@ -167,6 +185,7 @@ export default function ProductsPage() {
                   "Harga Jual",
                   "Unit",
                   "Tipe",
+                  "Tracking",
                   "Stok Saat Ini",
                   "Aksi",
                 ].map((column) => (
@@ -180,7 +199,7 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.id} className="align-top">
                   <td className="px-6 py-4">
                     {product.imageUrl ? (
@@ -240,10 +259,15 @@ export default function ProductsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                      {product.trackingMode === "none" ? "Non-stok" : product.trackingMode}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${getStockBadgeClasses(product.qtyOnHand)}`}
                     >
-                      {formatStockQuantity(product.qtyOnHand)}
+                      {product.trackingMode === "none" ? "Selalu tersedia" : formatStockQuantity(product.qtyOnHand)}
                     </span>
                   </td>
                   <td className="px-6 py-4">

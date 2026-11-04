@@ -6,8 +6,12 @@ import { isOwner } from "../../auth/utils/access";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
 import { useRealtime } from "../../../lib/realtime/hooks";
 import { getErrorMessage } from "../../../utils/errors";
-import { getProducts } from "../../products/api/productsApi";
-import type { ProductDto } from "../../products/types/product";
+import { getProductTrackingOptions, getProducts } from "../../products/api/productsApi";
+import type {
+  ProductDto,
+  ProductTrackingMode,
+  ProductTrackingOptionsDto,
+} from "../../products/types/product";
 import { lookupCustomers, updateCustomer } from "../../customers/api/customersApi";
 import type { CustomerListItemDto } from "../../customers/types/customer";
 import { API_BASE_URL } from "../../../api/client/config";
@@ -21,6 +25,7 @@ import type { PricingBreakdownDto } from "../../pricing/types/pricing";
 import { useCapabilities } from "../../capabilities/hooks/useCapabilities";
 
 type CartItem = {
+  lineId: string;
   productId: string;
   productVariantId?: string | null;
   productName: string;
@@ -30,6 +35,15 @@ type CartItem = {
   unitPrice: number;
   discountAmount: number | "";
   availableStock: number;
+  trackingMode: ProductTrackingMode;
+  batchAllocations: {
+    productBatchId: string;
+    batchNumber: string;
+    expiryDate: string | null;
+    availableQty: number;
+    qty: number;
+  }[];
+  serials: { productSerialId: string; serialNumber: string }[];
   selectedModifiers?: string[] | null;
   selectedModifiersJson?: string | null;
 };
@@ -63,6 +77,14 @@ function createPaymentRow(): PaymentRow {
     amount: "",
     referenceNumber: "",
   };
+}
+
+function quantitiesMatch(left: number, right: number) {
+  return Math.abs(left - right) < 0.000001;
+}
+
+function isKnownTrackingMode(mode: string): mode is ProductTrackingMode {
+  return ["none", "quantity", "batch", "serial"].includes(mode);
 }
 
 
@@ -107,9 +129,21 @@ export default function PosPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
 
+  // States for batch/serial allocation
+  const [trackingLineId, setTrackingLineId] = useState<string | null>(null);
+  const [trackingOptions, setTrackingOptions] = useState<ProductTrackingOptionsDto | null>(null);
+  const [isLoadingTracking, setIsLoadingTracking] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [batchDraft, setBatchDraft] = useState<Record<string, string>>({});
+  const [serialDraft, setSerialDraft] = useState<CartItem["serials"]>([]);
+  const [serialSearch, setSerialSearch] = useState("");
+
   const ownerMode = isOwner(session?.role);
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
   const canUseVoucher = hasCapability("pricing.vouchers");
+  const trackingItem = trackingLineId
+    ? cart.find((item) => item.lineId === trackingLineId) ?? null
+    : null;
 
   useEffect(() => {
     searchInputRef.current?.focus();
@@ -137,11 +171,15 @@ export default function PosPage() {
       setCart((current) =>
         current.map((item) => {
           const matched = result.find((product) => product.id === item.productId);
+          const matchedVariant = matched?.variants?.find((variant) => variant.id === item.productVariantId);
           return matched
             ? {
                 ...item,
-                unitPrice: matched.basePrice,
-                availableStock: matched.qtyOnHand,
+                unitPrice: item.productVariantId ? item.unitPrice : matched.basePrice,
+                availableStock: matched.trackingMode === "none"
+                  ? item.availableStock
+                  : matchedVariant?.qtyOnHand ?? matched.qtyOnHand,
+                trackingMode: matched.trackingMode ?? "quantity",
               }
             : item;
         }),
@@ -173,7 +211,7 @@ export default function PosPage() {
     const normalized = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
-      if (product.qtyOnHand <= 0) {
+      if (product.trackingMode !== "none" && product.qtyOnHand <= 0) {
         return false;
       }
 
@@ -245,8 +283,23 @@ export default function PosPage() {
     return !selectedCustomer.ktpNumber?.trim() || !selectedCustomer.address?.trim();
   }, [isTempo, selectedCustomer]);
 
+  const trackingComplete = useMemo(
+    () => cart.every((item) => {
+      const qty = Number(item.qty) || 0;
+      if (!isKnownTrackingMode(item.trackingMode)) return false;
+      if (item.trackingMode === "batch") {
+        return quantitiesMatch(item.batchAllocations.reduce((sum, batch) => sum + batch.qty, 0), qty);
+      }
+      if (item.trackingMode === "serial") {
+        return Number.isInteger(qty) && item.serials.length === qty;
+      }
+      return true;
+    }),
+    [cart],
+  );
+
   const canCheckout = useMemo(() => {
-    if (isSubmitting || isPricingLoading || cart.length === 0) return false;
+    if (isSubmitting || isPricingLoading || cart.length === 0 || !trackingComplete) return false;
     if (isTempo) {
       return selectedCustomer !== null &&
              totalPayment < grandTotal &&
@@ -254,7 +307,7 @@ export default function PosPage() {
              !customerProfileIncomplete;
     }
     return paymentBalanced;
-  }, [isSubmitting, isPricingLoading, cart.length, isTempo, selectedCustomer, totalPayment, grandTotal, creditLimitExceeded, customerProfileIncomplete, paymentBalanced]);
+  }, [isSubmitting, isPricingLoading, cart.length, trackingComplete, isTempo, selectedCustomer, totalPayment, grandTotal, creditLimitExceeded, customerProfileIncomplete, paymentBalanced]);
 
   useEffect(() => {
     if (!effectiveOutletId || cart.length === 0) {
@@ -274,6 +327,7 @@ export default function PosPage() {
           voucherCode: canUseVoucher ? voucherCode.trim() || null : null,
           items: cart.map((item) => ({
             productId: item.productId,
+            productVariantId: item.productVariantId,
             qty: Number(item.qty) || 0,
             unitPrice: item.unitPrice,
             discountAmount: Number(item.discountAmount) || 0,
@@ -313,7 +367,95 @@ export default function PosPage() {
     return () => window.clearTimeout(timeoutId);
   }, [customerQuery, selectedCustomer?.phone]);
 
+  async function loadTrackingOptions(item: CartItem, search = "") {
+    if (!effectiveOutletId) return;
+    setIsLoadingTracking(true);
+    setTrackingError(null);
+    try {
+      const options = await getProductTrackingOptions(
+        item.productId,
+        effectiveOutletId,
+        item.productVariantId,
+        search,
+      );
+      if (options.trackingMode !== item.trackingMode) {
+        throw new Error("Mode tracking produk telah berubah. Muat ulang katalog sebelum melanjutkan.");
+      }
+      setTrackingOptions(options);
+
+      if (item.trackingMode === "batch" && item.batchAllocations.length === 0 && !search) {
+        let remaining = Number(item.qty) || 0;
+        const allocation: Record<string, string> = {};
+        for (const batch of options.batches) {
+          const qty = Math.min(remaining, batch.qtyRemaining);
+          if (qty > 0) allocation[batch.id] = String(qty);
+          remaining -= qty;
+          if (remaining <= 0) break;
+        }
+        setBatchDraft(allocation);
+      }
+    } catch (requestError) {
+      setTrackingOptions(null);
+      setTrackingError(getErrorMessage(requestError, "Gagal memuat batch/serial tersedia."));
+    } finally {
+      setIsLoadingTracking(false);
+    }
+  }
+
+  function openTracking(item: CartItem) {
+    setTrackingLineId(item.lineId);
+    setTrackingOptions(null);
+    setTrackingError(null);
+    setSerialSearch("");
+    setBatchDraft(Object.fromEntries(item.batchAllocations.map((batch) => [batch.productBatchId, String(batch.qty)])));
+    setSerialDraft(item.serials);
+    void loadTrackingOptions(item);
+  }
+
+  function saveTracking() {
+    if (!trackingItem || !trackingOptions) return;
+    const requiredQty = Number(trackingItem.qty) || 0;
+
+    if (trackingItem.trackingMode === "batch") {
+      const allocations = trackingOptions.batches.flatMap((batch) => {
+        const qty = Number(batchDraft[batch.id]) || 0;
+        return qty > 0
+          ? [{
+              productBatchId: batch.id,
+              batchNumber: batch.batchNumber,
+              expiryDate: batch.expiryDate,
+              availableQty: batch.qtyRemaining,
+              qty,
+            }]
+          : [];
+      });
+      if (allocations.some((batch) => batch.qty > batch.availableQty)) {
+        setTrackingError("Qty alokasi batch melebihi stok batch tersedia.");
+        return;
+      }
+      if (!quantitiesMatch(allocations.reduce((sum, batch) => sum + batch.qty, 0), requiredQty)) {
+        setTrackingError(`Total alokasi batch harus tepat ${requiredQty}.`);
+        return;
+      }
+      setCart((current) => current.map((item) =>
+        item.lineId === trackingItem.lineId ? { ...item, batchAllocations: allocations } : item));
+    } else if (trackingItem.trackingMode === "serial") {
+      if (!Number.isInteger(requiredQty) || serialDraft.length !== requiredQty) {
+        setTrackingError(`Pilih tepat ${requiredQty} serial/IMEI.`);
+        return;
+      }
+      setCart((current) => current.map((item) =>
+        item.lineId === trackingItem.lineId ? { ...item, serials: serialDraft } : item));
+    }
+
+    setTrackingLineId(null);
+  }
+
   function addToCart(product: ProductDto) {
+    if (!isKnownTrackingMode(product.trackingMode)) {
+      setWarning(`Mode tracking ${product.name} tidak dikenali. Produk tidak dapat dijual.`);
+      return;
+    }
     if (product.hasVariants) {
       setSelectedVariantProduct(product);
       setSelectedVariantId(null);
@@ -322,7 +464,7 @@ export default function PosPage() {
       return;
     }
 
-    if (product.qtyOnHand <= 0) {
+    if (product.trackingMode !== "none" && product.qtyOnHand <= 0) {
       return;
     }
 
@@ -331,19 +473,22 @@ export default function PosPage() {
       const existing = current.find((item) => item.productId === product.id && !item.productVariantId);
       if (existing) {
         const nextQty = (Number(existing.qty) || 0) + 1;
-        if (nextQty > product.qtyOnHand) {
+        if (product.trackingMode !== "none" && nextQty > product.qtyOnHand) {
           setWarning(`Stok ${product.name} tidak cukup untuk menambah qty lagi.`);
           return current;
         }
 
         return current.map((item) =>
-          item.productId === product.id && !item.productVariantId ? { ...item, qty: nextQty, availableStock: product.qtyOnHand } : item,
+          item.productId === product.id && !item.productVariantId
+            ? { ...item, qty: nextQty, availableStock: product.qtyOnHand, batchAllocations: [], serials: [] }
+            : item,
         );
       }
 
       return [
         ...current,
         {
+          lineId: crypto.randomUUID(),
           productId: product.id,
           productVariantId: null,
           productName: product.name,
@@ -353,16 +498,19 @@ export default function PosPage() {
           unitPrice: product.basePrice,
           discountAmount: 0,
           availableStock: product.qtyOnHand,
+          trackingMode: product.trackingMode ?? "quantity",
+          batchAllocations: [],
+          serials: [],
         },
       ];
     });
   }
 
-  function updateCartItem(productId: string, key: "qty" | "discountAmount", value: string) {
+  function updateCartItem(lineId: string, key: "qty" | "discountAmount", value: string) {
     setWarning(null);
     setCart((current) =>
       current.map((item) => {
-        if (item.productId !== productId) {
+        if (item.lineId !== lineId) {
           return item;
         }
 
@@ -379,12 +527,21 @@ export default function PosPage() {
           if (numericValue < 0) {
             return item;
           }
-          if (numericValue > item.availableStock) {
+          if (item.trackingMode === "serial" && !Number.isInteger(numericValue)) {
+            setWarning(`Qty ${item.productName} harus bilangan bulat untuk produk serial.`);
+            return item;
+          }
+          if (item.trackingMode !== "none" && numericValue > item.availableStock) {
             setWarning(`Qty ${item.productName} melebihi stok tersedia.`);
             return item;
           }
 
-          return { ...item, qty: numericValue };
+          return {
+            ...item,
+            qty: numericValue,
+            batchAllocations: item.trackingMode === "batch" ? [] : item.batchAllocations,
+            serials: item.trackingMode === "serial" ? item.serials.slice(0, numericValue) : item.serials,
+          };
         }
 
         const lineSubtotal = item.unitPrice * (Number(item.qty) || 0);
@@ -398,8 +555,8 @@ export default function PosPage() {
     );
   }
 
-  function removeCartItem(productId: string) {
-    setCart((current) => current.filter((item) => item.productId !== productId));
+  function removeCartItem(lineId: string) {
+    setCart((current) => current.filter((item) => item.lineId !== lineId));
   }
 
   function clearCart() {
@@ -437,6 +594,11 @@ export default function PosPage() {
 
     if (cart.some((item) => (Number(item.qty) || 0) <= 0)) {
       setError("Jumlah item (Qty) harus minimal 1.");
+      return;
+    }
+
+    if (!trackingComplete) {
+      setError("Lengkapi alokasi batch atau serial untuk semua produk terlacak.");
       return;
     }
 
@@ -479,9 +641,19 @@ export default function PosPage() {
       grandTotal,
       items: cart.map((item) => ({
         productId: item.productId,
+        productVariantId: item.productVariantId,
         qty: Number(item.qty) || 0,
         unitPrice: item.unitPrice,
         discountAmount: Number(item.discountAmount) || 0,
+        batchAllocations: item.trackingMode === "batch"
+          ? item.batchAllocations.map((batch) => ({
+              productBatchId: batch.productBatchId,
+              qty: batch.qty,
+            }))
+          : null,
+        serialIds: item.trackingMode === "serial"
+          ? item.serials.map((serial) => serial.productSerialId)
+          : null,
       })),
       payments: (() => {
         if (isTempo && totalPayment === 0) {
@@ -676,7 +848,8 @@ export default function PosPage() {
               ) : (
                 <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {filteredProducts.map((product) => {
-                    const outOfStock = product.qtyOnHand <= 0;
+                    const invalidTracking = !isKnownTrackingMode(product.trackingMode);
+                    const outOfStock = invalidTracking || (product.trackingMode !== "none" && product.qtyOnHand <= 0);
                     const cartItem = cart.find((item) => item.productId === product.id && !item.productVariantId);
                     const cartQty = cartItem ? Number(cartItem.qty) : 0;
                     return (
@@ -740,7 +913,7 @@ export default function PosPage() {
                                   : "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"
                               }`}
                             >
-                              Stok {product.qtyOnHand}
+                              {invalidTracking ? "Mode invalid" : product.trackingMode === "none" ? "Non-stok" : `Stok ${product.qtyOnHand}`}
                             </span>
                             <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal uppercase">{product.unit}</span>
                           </div>
@@ -814,13 +987,16 @@ export default function PosPage() {
               {/* Left Column: Cart Items */}
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Keranjang</h3>
+                {!trackingComplete && (
+                  <InlineAlert tone="info" message="Pilih batch atau serial/IMEI pada item terlacak sebelum checkout." />
+                )}
                 {cart.length === 0 ? (
                   <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400 text-center">
                     Belum ada item di keranjang.
                   </p>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.productId} className="flex items-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+                    <div key={item.lineId} className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
                       {/* Avatar */}
                       <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/30 border border-brand-100 dark:border-brand-900/50 flex items-center justify-center text-lg font-bold text-brand-500 flex-shrink-0">
                         {item.productName.substring(0, 1).toUpperCase()}
@@ -829,7 +1005,9 @@ export default function PosPage() {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.productName}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{item.sku} · stok {item.availableStock}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {item.sku} · {item.trackingMode === "none" ? "non-stok" : `stok ${item.availableStock}`}
+                        </p>
                         {Number(item.discountAmount) > 0 && (
                           <p className="text-xs text-success-600 dark:text-success-400 font-medium">Diskon −{formatCurrency(Number(item.discountAmount))}</p>
                         )}
@@ -842,9 +1020,9 @@ export default function PosPage() {
                           onClick={() => {
                             const current = Number(item.qty) || 0;
                             if (current <= 1) {
-                              removeCartItem(item.productId);
+                              removeCartItem(item.lineId);
                             } else {
-                              updateCartItem(item.productId, "qty", String(current - 1));
+                              updateCartItem(item.lineId, "qty", String(current - 1));
                             }
                           }}
                           className="w-8 h-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-error-300 hover:text-error-500 transition-all active:scale-90"
@@ -856,17 +1034,17 @@ export default function PosPage() {
                           min="1"
                           step="1"
                           value={item.qty}
-                          onChange={(event) => updateCartItem(item.productId, "qty", event.target.value)}
+                          onChange={(event) => updateCartItem(item.lineId, "qty", event.target.value)}
                           onBlur={() => {
                             if (!item.qty || Number(item.qty) < 1) {
-                              updateCartItem(item.productId, "qty", "1");
+                              updateCartItem(item.lineId, "qty", "1");
                             }
                           }}
                           className="w-12 h-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-center text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-brand-400"
                         />
                         <button
                           type="button"
-                          onClick={() => updateCartItem(item.productId, "qty", String((Number(item.qty) || 0) + 1))}
+                          onClick={() => updateCartItem(item.lineId, "qty", String((Number(item.qty) || 0) + 1))}
                           className="w-8 h-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-brand-300 hover:text-brand-500 transition-all active:scale-90"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
@@ -884,11 +1062,35 @@ export default function PosPage() {
                       {/* Remove */}
                       <button
                         type="button"
-                        onClick={() => removeCartItem(item.productId)}
+                        onClick={() => removeCartItem(item.lineId)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-950/20 transition-all flex-shrink-0"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
+
+                      {(item.trackingMode === "batch" || item.trackingMode === "serial") && (
+                        <div className="basis-full pl-[60px]">
+                          <button
+                            type="button"
+                            onClick={() => openTracking(item)}
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${
+                              (item.trackingMode === "batch"
+                                ? quantitiesMatch(item.batchAllocations.reduce((sum, batch) => sum + batch.qty, 0), Number(item.qty))
+                                : item.serials.length === Number(item.qty))
+                                ? "border-success-200 bg-success-50 text-success-700 dark:border-success-800 dark:bg-success-950/20 dark:text-success-300"
+                                : "border-warning-200 bg-warning-50 text-warning-700 dark:border-warning-800 dark:bg-warning-950/20 dark:text-warning-300"
+                            }`}
+                          >
+                            {item.trackingMode === "batch"
+                              ? item.batchAllocations.length > 0
+                                ? `Batch: ${item.batchAllocations.map((batch) => `${batch.batchNumber} (${batch.qty})`).join(", ")}`
+                                : "Pilih batch"
+                              : item.serials.length > 0
+                                ? `Serial: ${item.serials.map((serial) => serial.serialNumber).join(", ")}`
+                                : "Pilih serial / IMEI"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
@@ -902,7 +1104,7 @@ export default function PosPage() {
                     </summary>
                     <div className="mt-2 space-y-2">
                       {cart.map((item) => (
-                        <div key={item.productId} className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 p-3">
+                        <div key={item.lineId} className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 p-3">
                           <p className="flex-1 text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{item.productName}</p>
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs text-gray-400">Diskon Rp</span>
@@ -911,10 +1113,10 @@ export default function PosPage() {
                               min="0"
                               step="0.01"
                               value={item.discountAmount}
-                              onChange={(event) => updateCartItem(item.productId, "discountAmount", event.target.value)}
+                              onChange={(event) => updateCartItem(item.lineId, "discountAmount", event.target.value)}
                               onBlur={() => {
                                 if (item.discountAmount === "" || Number(item.discountAmount) < 0) {
-                                  updateCartItem(item.productId, "discountAmount", "0");
+                                  updateCartItem(item.lineId, "discountAmount", "0");
                                 }
                               }}
                               className="h-8 w-24 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 text-xs text-right text-gray-900 dark:text-white outline-none"
@@ -1159,6 +1361,149 @@ export default function PosPage() {
         )}
       </section>
 
+      {/* Batch / serial allocation modal */}
+      {trackingItem && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl dark:border-gray-900 dark:bg-gray-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  {trackingItem.trackingMode === "batch" ? "Alokasi Batch" : "Pilih Serial / IMEI"}
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {trackingItem.productName} · dibutuhkan {Number(trackingItem.qty) || 0}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrackingLineId(null)}
+                className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <InlineAlert tone="error" message={trackingError} />
+              {isLoadingTracking ? (
+                <AppLoader label="Memuat stok terlacak..." />
+              ) : trackingOptions && trackingItem.trackingMode === "batch" ? (
+                trackingOptions.batches.length === 0 ? (
+                  <InlineAlert tone="info" message="Tidak ada batch aktif yang belum kedaluwarsa." />
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Urutan default mengikuti FEFO (kedaluwarsa terdekat lebih dulu).
+                    </p>
+                    {trackingOptions.batches.map((batch) => (
+                      <label key={batch.id} className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-gray-200 p-3 dark:border-gray-800">
+                        <span>
+                          <span className="block text-sm font-semibold text-gray-900 dark:text-white">{batch.batchNumber}</span>
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">
+                            {batch.expiryDate ? `Kedaluwarsa ${new Date(batch.expiryDate).toLocaleDateString("id-ID")}` : "Tanpa tanggal kedaluwarsa"}
+                            {` · tersedia ${batch.qtyRemaining}`}
+                          </span>
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={batch.qtyRemaining}
+                          step="0.01"
+                          value={batchDraft[batch.id] ?? ""}
+                          onChange={(event) => setBatchDraft((current) => ({ ...current, [batch.id]: event.target.value }))}
+                          aria-label={`Qty batch ${batch.batchNumber}`}
+                          className="h-10 w-28 rounded-xl border border-gray-200 bg-white px-3 text-right text-sm text-gray-900 outline-none focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                        />
+                      </label>
+                    ))}
+                    <p className="text-right text-sm font-semibold text-gray-700 dark:text-gray-200">
+                      Dialokasikan {Object.values(batchDraft).reduce((sum, value) => sum + (Number(value) || 0), 0)} / {Number(trackingItem.qty) || 0}
+                    </p>
+                  </div>
+                )
+              ) : trackingOptions && trackingItem.trackingMode === "serial" ? (
+                <div className="space-y-3">
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void loadTrackingOptions(trackingItem, serialSearch);
+                    }}
+                  >
+                    <input
+                      value={serialSearch}
+                      onChange={(event) => setSerialSearch(event.target.value)}
+                      placeholder="Ketik atau scan serial / IMEI"
+                      className="h-11 flex-1 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                    />
+                    <button type="submit" className="rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white">
+                      Cari
+                    </button>
+                  </form>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Dipilih {serialDraft.length} / {Number(trackingItem.qty) || 0}
+                  </p>
+                  {serialDraft.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {serialDraft.map((serial) => (
+                        <button
+                          key={serial.productSerialId}
+                          type="button"
+                          onClick={() => setSerialDraft((current) => current.filter((item) => item.productSerialId !== serial.productSerialId))}
+                          className="rounded-lg bg-brand-50 px-2 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/30 dark:text-brand-300"
+                        >
+                          {serial.serialNumber} ×
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="max-h-72 space-y-2 overflow-y-auto">
+                    {trackingOptions.serials.length === 0 ? (
+                      <InlineAlert tone="info" message="Serial/IMEI tersedia tidak ditemukan." />
+                    ) : trackingOptions.serials.map((serial) => {
+                      const checked = serialDraft.some((item) => item.productSerialId === serial.id);
+                      const full = !checked && serialDraft.length >= (Number(trackingItem.qty) || 0);
+                      return (
+                        <label key={serial.id} className="flex items-center gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={full}
+                            onChange={(event) => setSerialDraft((current) => event.target.checked
+                              ? [...current, { productSerialId: serial.id, serialNumber: serial.serialNumber }]
+                              : current.filter((item) => item.productSerialId !== serial.id))}
+                            className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                          />
+                          <span className="font-mono text-sm text-gray-900 dark:text-white">{serial.serialNumber}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setTrackingLineId(null)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={saveTracking}
+                disabled={!trackingOptions || isLoadingTracking}
+                className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Simpan alokasi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Variant Selection Modal */}
       {showVariantModal && selectedVariantProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1203,22 +1548,25 @@ export default function PosPage() {
               <div className="space-y-2.5">
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pilihan Varian</span>
                 <div className="grid gap-2 grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedVariantId("var-kecil")}
-                    className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${selectedVariantId === "var-kecil" ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/10" : "border-gray-200 dark:border-gray-800"}`}
-                  >
-                    <span className="text-xs font-bold text-gray-900 dark:text-white">Kecil</span>
-                    <span className="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-1">Rp8.000</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedVariantId("var-besar")}
-                    className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${selectedVariantId === "var-besar" ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/10" : "border-gray-200 dark:border-gray-800"}`}
-                  >
-                    <span className="text-xs font-bold text-gray-900 dark:text-white">Besar</span>
-                    <span className="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-1">Rp15.000</span>
-                  </button>
+                  {selectedVariantProduct.variants?.filter((variant) => variant.isActive).map((variant) => (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() => setSelectedVariantId(variant.id)}
+                      disabled={selectedVariantProduct.trackingMode !== "none" && (variant.qtyOnHand ?? 0) <= 0}
+                      className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${selectedVariantId === variant.id ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/10" : "border-gray-200 dark:border-gray-800"}`}
+                    >
+                      <span className="text-xs font-bold text-gray-900 dark:text-white">
+                        {variant.attributeValues.map((value) => value.value).join(" / ") || variant.sku}
+                      </span>
+                      <span className="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-1">
+                        {formatCurrency(variant.basePrice)}
+                      </span>
+                      <span className="mt-1 text-[10px] text-gray-400">
+                        {selectedVariantProduct.trackingMode === "none" ? "Non-stok" : `Stok ${variant.qtyOnHand ?? 0}`}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1248,8 +1596,8 @@ export default function PosPage() {
               type="button"
               disabled={!selectedVariantId}
               onClick={() => {
-                const isBesar = selectedVariantId === "var-besar";
-                const basePrice = isBesar ? 15000 : 8000;
+                const variant = selectedVariantProduct.variants?.find((entry) => entry.id === selectedVariantId);
+                if (!variant) return;
                 let extraPrice = 0;
                 if (selectedModifiers.includes("top-keju")) extraPrice += 2000;
                 if (selectedModifiers.includes("top-meses")) extraPrice += 1000;
@@ -1257,15 +1605,19 @@ export default function PosPage() {
                 setCart((current) => [
                   ...current,
                   {
+                    lineId: crypto.randomUUID(),
                     productId: selectedVariantProduct.id,
-                    productVariantId: selectedVariantId,
-                    productName: `${selectedVariantProduct.name} (${isBesar ? "Besar" : "Kecil"})`,
-                    sku: isBesar ? "ROT-BESAR" : "ROTI-KECIL",
+                    productVariantId: variant.id,
+                    productName: `${selectedVariantProduct.name} (${variant.attributeValues.map((value) => value.value).join(" / ") || variant.sku})`,
+                    sku: variant.sku,
                     unit: selectedVariantProduct.unit,
                     qty: 1,
-                    unitPrice: basePrice + extraPrice,
+                    unitPrice: variant.basePrice + extraPrice,
                     discountAmount: 0,
-                    availableStock: selectedVariantProduct.qtyOnHand,
+                    availableStock: selectedVariantProduct.trackingMode === "none" ? Number.POSITIVE_INFINITY : variant.qtyOnHand ?? 0,
+                    trackingMode: selectedVariantProduct.trackingMode ?? "quantity",
+                    batchAllocations: [],
+                    serials: [],
                     selectedModifiers,
                     selectedModifiersJson: JSON.stringify(selectedModifiers),
                   }
@@ -1342,4 +1694,3 @@ export default function PosPage() {
     </div>
   );
 }
-

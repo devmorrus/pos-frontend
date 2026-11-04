@@ -87,6 +87,7 @@ const capabilityCatalog: Array<Pick<EffectiveCapability, "code" | "name" | "modu
   { code: "catalog.modifiers", name: "Modifier Produk", module: "Catalog", scope: "Business" },
   { code: "catalog.recipes", name: "Resep / BOM", module: "Catalog", scope: "Business" },
   { code: "catalog.batch_expiry", name: "Batch & Kedaluwarsa", module: "Catalog", scope: "Business" },
+  { code: "catalog.serial_tracking", name: "Serial / IMEI Produk", module: "Catalog", scope: "Business" },
   { code: "inventory.stock", name: "Manajemen Stok", module: "Inventory", scope: "Outlet" },
   { code: "inventory.buffer_stock", name: "Buffer Stock", module: "Inventory", scope: "Outlet" },
   { code: "inventory.opname", name: "Stock Opname", module: "Inventory", scope: "Outlet" },
@@ -256,6 +257,7 @@ export async function mockProducts(page: Page) {
       isConsignment: false,
       qtyOnHand: 12,
       isActive: true,
+      trackingMode: "quantity",
     },
   ]);
 }

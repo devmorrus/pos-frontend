@@ -10,6 +10,7 @@ import type { ProductFormValues } from "../types/product";
 import { uploadProductImage } from "../api/productsApi";
 import { API_BASE_URL } from "../../../api/client/config";
 import { getErrorMessage } from "../../../utils/errors";
+import { useCapabilities } from "../../capabilities/hooks/useCapabilities";
 
 type ProductFormProps = {
   mode: "create" | "edit";
@@ -35,6 +36,7 @@ export default function ProductForm({
   const isEditMode = mode === "edit";
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const { hasCapability } = useCapabilities();
 
 
 
@@ -156,6 +158,26 @@ export default function ProductForm({
               <FieldErrorText message={errors.unit} />
             </label>
 
+            <label className="block md:col-span-2">
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Pelacakan stok <span className="text-error-500">*</span>
+              </span>
+              <select
+                value={values.trackingMode}
+                onChange={(event) => onChange("trackingMode", event.target.value)}
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              >
+                <option value="quantity">Kuantitas</option>
+                <option value="none">Tanpa stok</option>
+                {hasCapability("catalog.batch_expiry") && <option value="batch">Batch / kedaluwarsa</option>}
+                {hasCapability("catalog.serial_tracking") && <option value="serial">Serial / IMEI</option>}
+              </select>
+              <p className="mt-1 text-xs text-gray-400">
+                Mode hanya dapat diubah ketika produk tidak memiliki stok aktif.
+              </p>
+              <FieldErrorText message={errors.trackingMode} />
+            </label>
+
             {!values.hasVariants && (
               <>
                 <label className="block">
@@ -197,6 +219,7 @@ export default function ProductForm({
                 <input
                   type="checkbox"
                   checked={values.isConsignment}
+                  disabled={values.trackingMode === "none"}
                   onChange={(event) => onChange("isConsignment", event.target.checked)}
                   className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
                 />

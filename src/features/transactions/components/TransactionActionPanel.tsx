@@ -21,7 +21,9 @@ export default function TransactionActionPanel({
   const [voidReason, setVoidReason] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundMethod, setRefundMethod] = useState<"refund" | "exchange">("refund");
-  const [refundQtyByProductId, setRefundQtyByProductId] = useState<Record<string, string>>({});
+  const [refundQtyByItemId, setRefundQtyByItemId] = useState<Record<string, string>>({});
+  const [refundBatchQty, setRefundBatchQty] = useState<Record<string, Record<string, string>>>({});
+  const [refundSerialIds, setRefundSerialIds] = useState<Record<string, string[]>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -88,7 +90,16 @@ export default function TransactionActionPanel({
     const items = transaction.items
       .map((item) => ({
         productId: item.productId,
-        qty: Number(refundQtyByProductId[item.productId] || 0),
+        productVariantId: item.productVariantId,
+        transactionItemId: item.id,
+        qty: Number(refundQtyByItemId[item.id] || 0),
+        batchAllocations: item.trackingMode === "batch"
+          ? (item.batches ?? []).flatMap((batch) => {
+              const qty = Number(refundBatchQty[item.id]?.[batch.productBatchId]) || 0;
+              return qty > 0 ? [{ productBatchId: batch.productBatchId, qty }] : [];
+            })
+          : null,
+        serialIds: item.trackingMode === "serial" ? refundSerialIds[item.id] ?? [] : null,
       }))
       .filter((item) => item.qty > 0);
 
@@ -98,9 +109,25 @@ export default function TransactionActionPanel({
     }
 
     for (const rItem of items) {
-      const trxItem = transaction.items.find((item) => item.productId === rItem.productId);
+      const trxItem = transaction.items.find((item) => item.id === rItem.transactionItemId);
       if (trxItem && rItem.qty > trxItem.remainingQty) {
         setError(`Jumlah refund untuk ${trxItem.productName} tidak boleh melebihi sisa Qty (${trxItem.remainingQty}).`);
+        return;
+      }
+      if (trxItem?.trackingMode === "batch" &&
+          Math.abs((rItem.batchAllocations?.reduce((sum, batch) => sum + batch.qty, 0) ?? 0) - rItem.qty) >= 0.000001) {
+        setError(`Total batch refund untuk ${trxItem.productName} harus tepat ${rItem.qty}.`);
+        return;
+      }
+      if (trxItem?.trackingMode === "batch" && rItem.batchAllocations?.some((allocation) => {
+        const batch = trxItem.batches.find((entry) => entry.productBatchId === allocation.productBatchId);
+        return !batch || allocation.qty > (batch.remainingQty ?? batch.qty);
+      })) {
+        setError(`Qty batch refund untuk ${trxItem.productName} melebihi sisa yang dapat direfund.`);
+        return;
+      }
+      if (trxItem?.trackingMode === "serial" && rItem.serialIds?.length !== rItem.qty) {
+        setError(`Pilih tepat ${rItem.qty} serial/IMEI untuk refund ${trxItem.productName}.`);
         return;
       }
     }
@@ -118,7 +145,9 @@ export default function TransactionActionPanel({
     try {
       const updated = await refundTransaction(transaction.id, payload);
       onUpdated(updated);
-      setRefundQtyByProductId({});
+      setRefundQtyByItemId({});
+      setRefundBatchQty({});
+      setRefundSerialIds({});
       setRefundReason("");
       setRefundMethod("refund");
       setFeedback("Refund berhasil diproses dan stok sudah dikembalikan.");
@@ -237,17 +266,68 @@ export default function TransactionActionPanel({
                     min="0"
                     max={item.remainingQty}
                     step="1"
-                    value={refundQtyByProductId[item.productId] ?? ""}
+                    value={refundQtyByItemId[item.id] ?? ""}
                     onChange={(event) =>
-                      setRefundQtyByProductId((current) => ({
+                      setRefundQtyByItemId((current) => ({
                         ...current,
-                        [item.productId]: event.target.value,
+                        [item.id]: event.target.value,
                       }))
                     }
                     disabled={item.remainingQty <= 0}
                     className="h-11 w-28 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none disabled:opacity-60 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
+                {item.trackingMode === "batch" && Number(refundQtyByItemId[item.id] || 0) > 0 && (
+                  <div className="space-y-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+                    <p className="text-xs font-semibold text-gray-500">Pilih batch yang dikembalikan</p>
+                    {(item.batches ?? []).filter((batch) => (batch.remainingQty ?? batch.qty) > 0).map((batch) => (
+                      <label key={batch.productBatchId} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-gray-700 dark:text-gray-200">{batch.batchNumber} · dapat direfund {batch.remainingQty ?? batch.qty}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={batch.remainingQty ?? batch.qty}
+                          step="0.01"
+                          value={refundBatchQty[item.id]?.[batch.productBatchId] ?? ""}
+                          onChange={(event) => setRefundBatchQty((current) => ({
+                            ...current,
+                            [item.id]: { ...current[item.id], [batch.productBatchId]: event.target.value },
+                          }))}
+                          className="h-9 w-24 rounded-xl border border-gray-200 bg-white px-2 text-right dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {item.trackingMode === "serial" && Number(refundQtyByItemId[item.id] || 0) > 0 && (
+                  <div className="space-y-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+                    <p className="text-xs font-semibold text-gray-500">
+                      Pilih serial/IMEI ({refundSerialIds[item.id]?.length ?? 0}/{Number(refundQtyByItemId[item.id] || 0)})
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {(item.serials ?? []).map((serial) => {
+                        const checked = refundSerialIds[item.id]?.includes(serial.productSerialId) ?? false;
+                        const full = serial.isReturned || (!checked && (refundSerialIds[item.id]?.length ?? 0) >= Number(refundQtyByItemId[item.id] || 0));
+                        return (
+                          <label key={serial.productSerialId} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs dark:border-gray-800">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={full}
+                              onChange={(event) => setRefundSerialIds((current) => ({
+                                ...current,
+                                [item.id]: event.target.checked
+                                  ? [...(current[item.id] ?? []), serial.productSerialId]
+                                  : (current[item.id] ?? []).filter((id) => id !== serial.productSerialId),
+                              }))}
+                            />
+                            <span className="font-mono text-gray-700 dark:text-gray-200">{serial.serialNumber}{serial.isReturned ? " · returned" : ""}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

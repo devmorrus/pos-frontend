@@ -14,6 +14,8 @@ export type InventoryListItem = {
   costPrice: number;
   basePrice: number;
   updatedAt: string;
+  trackingMode: "quantity" | "batch" | "serial";
+  trackedItemCount: number;
 };
 
 export type InventoryFilters = {
@@ -31,6 +33,10 @@ export type StockOpnameItemDto = {
   systemQty: number;
   physicalQty: number;
   variance: number;
+  productBatchId?: string | null;
+  batchNumber?: string | null;
+  productSerialId?: string | null;
+  serialNumber?: string | null;
 };
 
 export type StockOpnameDto = {
@@ -48,6 +54,8 @@ export type StockOpnameItemRequest = {
   productId: string;
   productVariantId?: string | null;
   physicalQty: number;
+  productBatchId?: string | null;
+  productSerialIds?: string[] | null;
 };
 
 export type CreateStockOpnameRequest = {
@@ -61,6 +69,11 @@ export type StockTransferItemDto = {
   productName: string;
   sku: string;
   qty: number;
+  productBatchId?: string | null;
+  batchNumber?: string | null;
+  expiryDate?: string | null;
+  productSerialId?: string | null;
+  serialNumber?: string | null;
 };
 
 export type StockTransferDto = {
@@ -83,6 +96,8 @@ export type StockTransferItemRequest = {
   productId: string;
   productVariantId?: string | null;
   qty: number;
+  productBatchId?: string | null;
+  productSerialIds?: string[] | null;
 };
 
 export type CreateStockTransferRequest = {

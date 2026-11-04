@@ -7,6 +7,8 @@ import { getErrorMessage } from "../../../utils/errors";
 import { getConsignmentLabel, getConsignmentTone } from "../../products/utils/presentation";
 import { useRealtime } from "../../../lib/realtime/hooks";
 import { getInventory } from "../api/inventoryApi";
+import { getProductTrackingOptions } from "../../products/api/productsApi";
+import type { ProductTrackingOptionsDto } from "../../products/types/product";
 import StockStatusBadge from "../components/StockStatusBadge";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 import type { InventoryListItem } from "../types/inventory";
@@ -23,6 +25,28 @@ export default function InventoryPage() {
   const [includeZeroStock, setIncludeZeroStock] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trackingDetail, setTrackingDetail] = useState<{ item: InventoryListItem; options: ProductTrackingOptionsDto } | null>(null);
+  const [isLoadingTracking, setIsLoadingTracking] = useState(false);
+
+  async function openTrackingDetail(item: InventoryListItem) {
+    if (!effectiveOutletId) return;
+    setIsLoadingTracking(true);
+    setError(null);
+    try {
+      const options = await getProductTrackingOptions(
+        item.productId,
+        effectiveOutletId,
+        item.productVariantId,
+        undefined,
+        true,
+      );
+      setTrackingDetail({ item, options });
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Gagal memuat detail batch/serial."));
+    } finally {
+      setIsLoadingTracking(false);
+    }
+  }
 
   async function loadInventory() {
     if (!effectiveOutletId) {
@@ -165,7 +189,7 @@ export default function InventoryPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-950">
               <tr>
-                {["SKU", "Nama Produk", "Kategori", "Unit", "Tipe", "Qty On Hand", "Min Alert", "Status", "Updated", "Aksi"].map((column) => (
+                {["SKU", "Nama Produk", "Kategori", "Unit", "Tipe", "Tracking", "Qty On Hand", "Min Alert", "Status", "Updated", "Aksi"].map((column) => (
                   <th
                     key={column}
                     className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -202,6 +226,14 @@ export default function InventoryPage() {
                       {getConsignmentLabel(item.isConsignment)}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+                    <span className="rounded-full bg-gray-100 px-2 py-1 font-semibold uppercase dark:bg-gray-800">
+                      {item.trackingMode}
+                    </span>
+                    {(item.trackingMode === "batch" || item.trackingMode === "serial") && (
+                      <span className="ml-2">{item.trackedItemCount} {item.trackingMode === "batch" ? "batch" : "serial"}</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{formatQuantity(item.qtyOnHand)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatQuantity(item.minStockAlert)}</td>
                   <td className="px-6 py-4">
@@ -232,6 +264,16 @@ export default function InventoryPage() {
                       >
                         Transfer
                       </Link>
+                      {(item.trackingMode === "batch" || item.trackingMode === "serial") && (
+                        <button
+                          type="button"
+                          disabled={isLoadingTracking}
+                          onClick={() => void openTrackingDetail(item)}
+                          className="rounded-xl border border-brand-200 px-3 py-2 text-xs font-semibold text-brand-700 disabled:opacity-50 dark:border-brand-800 dark:text-brand-300"
+                        >
+                          Detail tracking
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -240,6 +282,45 @@ export default function InventoryPage() {
           </table>
         )}
       </AppTableShell>
+
+      {trackingDetail && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Detail tracking</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{trackingDetail.item.productName} · {trackingDetail.item.sku}</p>
+              </div>
+              <button type="button" onClick={() => setTrackingDetail(null)} className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900">✕</button>
+            </div>
+            <div className="mt-5 space-y-2">
+              {trackingDetail.item.trackingMode === "batch" ? (
+                trackingDetail.options.batches.length === 0 ? <p className="text-sm text-gray-500">Belum ada batch.</p> :
+                  trackingDetail.options.batches.map((batch) => {
+                    const expired = batch.expiryDate !== null && new Date(batch.expiryDate).getTime() < new Date().setHours(0, 0, 0, 0);
+                    return (
+                      <div key={batch.id} className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 p-3 dark:border-gray-800">
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">{batch.batchNumber}</p>
+                          <p className={`text-xs ${expired ? "text-error-600" : "text-gray-500"}`}>
+                            {batch.expiryDate ? `Exp ${new Date(batch.expiryDate).toLocaleDateString("id-ID")}` : "Tanpa kedaluwarsa"}{expired ? " · kedaluwarsa" : ""}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">{formatQuantity(batch.qtyRemaining)}</span>
+                      </div>
+                    );
+                  })
+              ) : trackingDetail.options.serials.length === 0 ? (
+                <p className="text-sm text-gray-500">Tidak ada serial tersedia.</p>
+              ) : trackingDetail.options.serials.map((serial) => (
+                <div key={serial.id} className="rounded-2xl border border-gray-200 p-3 font-mono text-sm text-gray-900 dark:border-gray-800 dark:text-white">
+                  {serial.serialNumber}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedPageShell>
   );
 }
