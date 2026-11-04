@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
@@ -26,6 +26,8 @@ export default function SupplierDebtsPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const paymentAttemptRef = useRef<{ fingerprint: string; id: string } | null>(null);
+  const paymentInFlightRef = useRef(false);
 
   async function loadDebts() {
     if (!effectiveOutletId) {
@@ -79,11 +81,22 @@ export default function SupplierDebtsPage() {
       return;
     }
 
+    const fingerprint = JSON.stringify({
+      purchaseOrderId: payTarget.purchaseOrderId,
+      amount: Number(values.amount),
+      paymentMethod: values.paymentMethod.trim(),
+      referenceNumber: values.referenceNumber.trim() || null,
+    });
+    if (!paymentAttemptRef.current || paymentAttemptRef.current.fingerprint !== fingerprint)
+      paymentAttemptRef.current = { fingerprint, id: crypto.randomUUID() };
+    if (paymentInFlightRef.current) return;
+    paymentInFlightRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
       await paySupplierDebt({
+        id: paymentAttemptRef.current.id,
         purchaseOrderId: payTarget.purchaseOrderId,
         amount: Number(values.amount),
         paymentMethod: values.paymentMethod.trim(),
@@ -91,6 +104,7 @@ export default function SupplierDebtsPage() {
       });
       setSuccessMessage(`Pembayaran utang untuk PO ${payTarget.poNumber} berhasil dicatat.`);
       setPayTarget(null);
+      paymentAttemptRef.current = null;
       await loadDebts();
 
       if (detailPoId === payTarget.purchaseOrderId) {
@@ -99,6 +113,7 @@ export default function SupplierDebtsPage() {
     } catch (requestError) {
       setSubmitError(getErrorMessage(requestError, "Gagal menyimpan pembayaran utang supplier."));
     } finally {
+      paymentInFlightRef.current = false;
       setIsSubmitting(false);
     }
   }

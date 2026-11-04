@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ConfirmDialog, InlineAlert } from "../../../components/ui";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { refundTransaction, voidTransaction } from "../api/transactionsApi";
@@ -28,6 +28,8 @@ export default function TransactionActionPanel({
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [confirmVoidOpen, setConfirmVoidOpen] = useState(false);
+  const refundAttemptRef = useRef<{ fingerprint: string; id: string } | null>(null);
+  const refundInFlightRef = useRef(false);
 
   const canVoid = session?.role === "Owner" || session?.role === "Admin";
   const canRefund =
@@ -132,11 +134,19 @@ export default function TransactionActionPanel({
       }
     }
 
+    const fingerprint = JSON.stringify({ transactionId: transaction.id, refundMethod, reason: trimmedReason, items });
+    if (!refundAttemptRef.current || refundAttemptRef.current.fingerprint !== fingerprint)
+      refundAttemptRef.current = { fingerprint, id: crypto.randomUUID() };
+    if (refundInFlightRef.current) return;
+    refundInFlightRef.current = true;
+    const refundRequestId = refundAttemptRef.current.id;
+
     setIsBusy(true);
     setError(null);
     setFeedback(null);
 
     const payload: RefundTransactionRequest = {
+      id: refundRequestId,
       refundMethod,
       reason: trimmedReason,
       items,
@@ -150,10 +160,12 @@ export default function TransactionActionPanel({
       setRefundSerialIds({});
       setRefundReason("");
       setRefundMethod("refund");
+      refundAttemptRef.current = null;
       setFeedback("Refund berhasil diproses dan stok sudah dikembalikan.");
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Gagal memproses refund transaksi."));
     } finally {
+      refundInFlightRef.current = false;
       setIsBusy(false);
     }
   }

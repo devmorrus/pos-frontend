@@ -92,6 +92,8 @@ function isKnownTrackingMode(mode: string): mode is ProductTrackingMode {
 export default function PosPage() {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const checkoutAttemptRef = useRef<{ fingerprint: string; id: string } | null>(null);
+  const checkoutInFlightRef = useRef(false);
   const { session } = useAuth();
   const { selectedOutletId } = useOutlet();
   const { hasCapability } = useCapabilities();
@@ -114,6 +116,7 @@ export default function PosPage() {
   const [customerResults, setCustomerResults] = useState<CustomerListItemDto[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerListItemDto | null>(null);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState<CheckoutRequest | null>(null);
 
   // States for Tempo (Kasbon) & Profile Completion
   const [isTempo, setIsTempo] = useState(false);
@@ -141,6 +144,7 @@ export default function PosPage() {
   const ownerMode = isOwner(session?.role);
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
   const canUseVoucher = hasCapability("pricing.vouchers");
+  const pendingCheckoutStorageKey = `morruspos.pending-checkout:${session?.businessId ?? "unknown"}:${effectiveOutletId ?? "none"}:${currentSession?.id ?? "none"}`;
   const trackingItem = trackingLineId
     ? cart.find((item) => item.lineId === trackingLineId) ?? null
     : null;
@@ -194,6 +198,19 @@ export default function PosPage() {
   useEffect(() => {
     void loadProducts();
   }, [effectiveOutletId, currentSession?.id]);
+
+  useEffect(() => {
+    if (!effectiveOutletId || !currentSession) return;
+    try {
+      const raw = window.sessionStorage.getItem(pendingCheckoutStorageKey);
+      if (!raw) return;
+      const payload = JSON.parse(raw) as CheckoutRequest;
+      if (payload.outletId === effectiveOutletId && payload.cashierSessionId === currentSession.id)
+        setPendingCheckout(payload);
+    } catch {
+      window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+    }
+  }, [effectiveOutletId, currentSession, pendingCheckoutStorageKey]);
 
   useEffect(() => {
     const unsubscribe = onStockUpdate((event) => {
@@ -630,8 +647,26 @@ export default function PosPage() {
       return;
     }
 
+    if (pendingCheckout && checkoutAttemptRef.current?.id !== pendingCheckout.id) {
+      setError("Selesaikan checkout tertunda melalui tombol Retry checkout sebelum membuat transaksi baru.");
+      return;
+    }
+
+    const fingerprint = JSON.stringify({
+      outletId: effectiveOutletId,
+      cashierSessionId: currentSession.id,
+      cart,
+      payments,
+      voucherCode,
+      selectedCustomerId: selectedCustomer?.id ?? null,
+      isTempo,
+      tempoDays,
+    });
+    if (!checkoutAttemptRef.current || checkoutAttemptRef.current.fingerprint !== fingerprint)
+      checkoutAttemptRef.current = { fingerprint, id: crypto.randomUUID() };
+
     const payload: CheckoutRequest = {
-      id: crypto.randomUUID(),
+      id: checkoutAttemptRef.current.id,
       outletId: effectiveOutletId,
       cashierSessionId: currentSession.id,
       channel: "pos",
@@ -667,6 +702,7 @@ export default function PosPage() {
         if (isTempo) {
           return payments
             .map<PaymentRequest>((payment) => ({
+              id: payment.id,
               method: payment.method,
               amount: Number(payment.amount) || 0,
               referenceNumber: payment.referenceNumber || null,
@@ -681,6 +717,7 @@ export default function PosPage() {
           .map<PaymentRequest>((payment) => {
             if (payment.method !== "cash") {
               return {
+                id: payment.id,
                 method: payment.method,
                 amount: Number(payment.amount) || 0,
                 referenceNumber: payment.referenceNumber || null,
@@ -689,6 +726,7 @@ export default function PosPage() {
               const amount = cashApplied ? 0 : requiredCash;
               cashApplied = true;
               return {
+                id: payment.id,
                 method: payment.method,
                 amount: amount,
                 referenceNumber: payment.referenceNumber || null,
@@ -706,11 +744,18 @@ export default function PosPage() {
         : null
     };
 
+    if (checkoutInFlightRef.current) return;
+    checkoutInFlightRef.current = true;
     setIsSubmitting(true);
     setError(null);
+    window.sessionStorage.setItem(pendingCheckoutStorageKey, JSON.stringify(payload));
+    setPendingCheckout(payload);
 
     try {
       const result = await checkoutTransaction(payload);
+      window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+      setPendingCheckout(null);
+      checkoutAttemptRef.current = null;
       setCart([]);
       setPayments([createPaymentRow()]);
       setVoucherCode("");
@@ -731,6 +776,26 @@ export default function PosPage() {
         navigate("/cashier/session", { replace: true });
       }
     } finally {
+      checkoutInFlightRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  async function retryPendingCheckout() {
+    if (!pendingCheckout || checkoutInFlightRef.current) return;
+    checkoutInFlightRef.current = true;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const result = await checkoutTransaction(pendingCheckout);
+      window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+      setPendingCheckout(null);
+      checkoutAttemptRef.current = null;
+      navigate(`/transactions/${result.id}`);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Retry checkout tertunda gagal."));
+    } finally {
+      checkoutInFlightRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -812,6 +877,16 @@ export default function PosPage() {
       <InlineAlert tone="error" message={error} />
       <InlineAlert tone="info" message={warning} />
       <InlineAlert tone="error" message={pricingError} />
+      {pendingCheckout && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-warning-200 bg-warning-50 px-4 py-3 dark:border-warning-800 dark:bg-warning-950/20">
+          <p className="text-sm text-warning-800 dark:text-warning-200">
+            Ada checkout tertunda. Retry akan memakai request ID yang sama agar transaksi tidak dobel.
+          </p>
+          <button type="button" onClick={() => void retryPendingCheckout()} disabled={isSubmitting} className="rounded-xl bg-warning-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+            Retry checkout
+          </button>
+        </div>
+      )}
 
       <section className="w-full">
         {step === "catalog" ? (

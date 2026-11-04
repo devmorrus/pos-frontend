@@ -27,6 +27,7 @@ export type SupplierPaymentDto = {
 };
 
 export type CreateSupplierPaymentRequest = {
+  id: string;
   purchaseOrderId: string;
   amount: number;
   paymentMethod: string;

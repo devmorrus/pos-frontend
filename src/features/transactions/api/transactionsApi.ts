@@ -22,7 +22,9 @@ export function getTransactionById(id: string) {
 }
 
 export function checkoutTransaction(payload: CheckoutRequest) {
-  return apiClient.post<TransactionDto>("/api/transactions/checkout", payload);
+  return apiClient.post<TransactionDto>("/api/transactions/checkout", payload, {
+    headers: { "Idempotency-Key": payload.id },
+  });
 }
 
 export function previewTransactionPricing(payload: PricingPreviewRequest) {
@@ -34,5 +36,7 @@ export function voidTransaction(id: string, payload: VoidTransactionRequest) {
 }
 
 export function refundTransaction(id: string, payload: RefundTransactionRequest) {
-  return apiClient.post<TransactionDto>(`/api/transactions/${id}/refund`, payload);
+  return apiClient.post<TransactionDto>(`/api/transactions/${id}/refund`, payload, {
+    headers: { "Idempotency-Key": payload.id },
+  });
 }

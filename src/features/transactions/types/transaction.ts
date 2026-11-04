@@ -119,6 +119,7 @@ export type CheckoutItemRequest = {
 };
 
 export type PaymentRequest = {
+  id: string;
   method: string;
   amount: number;
   referenceNumber?: string | null;
@@ -156,6 +157,7 @@ export type RefundTransactionItemRequest = {
 };
 
 export type RefundTransactionRequest = {
+  id: string;
   refundMethod: "refund" | "exchange";
   reason?: string | null;
   items: RefundTransactionItemRequest[];

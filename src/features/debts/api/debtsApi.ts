@@ -38,5 +38,7 @@ export function getSupplierPayments(filters: SupplierPaymentFilters) {
 }
 
 export function paySupplierDebt(payload: CreateSupplierPaymentRequest) {
-  return apiClient.post<SupplierPaymentDto>("/api/supplierdebts/pay", payload);
+  return apiClient.post<SupplierPaymentDto>("/api/supplierdebts/pay", payload, {
+    headers: { "Idempotency-Key": payload.id },
+  });
 }

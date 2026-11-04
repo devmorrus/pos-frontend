@@ -8,6 +8,8 @@ import {
 
 const outletId = adminSession.outletId!;
 type CapturedCheckout = {
+  id: string;
+  payments: Array<{ id: string; method: string; amount: number }>;
   items: Array<{
     productId: string;
     qty: number;
@@ -112,8 +114,12 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
   }, { method: "POST" });
 
   let checkoutPayload: CapturedCheckout | null = null;
+  let idempotencyHeader: string | undefined;
+  let checkoutRequests = 0;
   await page.route("**/api/transactions/checkout", async (route) => {
+    checkoutRequests += 1;
     checkoutPayload = route.request().postDataJSON() as CapturedCheckout;
+    idempotencyHeader = route.request().headers()["idempotency-key"];
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -139,10 +145,16 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
   await page.getByRole("button", { name: "Simpan alokasi" }).click();
 
   await page.locator('input[placeholder="0"]').fill("40000");
-  await page.getByRole("button", { name: /Checkout Sekarang/ }).click();
+  await page.getByRole("button", { name: /Checkout Sekarang/ }).evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
   await expect.poll(() => checkoutPayload).not.toBeNull();
+  expect(checkoutRequests).toBe(1);
 
   const items = checkoutPayload!.items;
+  expect(idempotencyHeader).toBe(checkoutPayload!.id);
+  expect(checkoutPayload!.payments[0].id).toMatch(/^[0-9a-f-]{36}$/);
   expect(items.find((item) => item.productId.endsWith("0001"))?.batchAllocations).toEqual([
     { productBatchId: "30000000-0000-4000-8000-000000000001", qty: 1 },
   ]);
