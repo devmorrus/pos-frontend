@@ -25,6 +25,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
 
     async function syncConnection() {
       if (!isAuthenticated || !selectedOutletId) {
+        realtimeClient.clearStockLocationGroup();
         await realtimeClient.disconnect();
         if (!isCancelled) {
           setIsConnected(false);
@@ -58,6 +59,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       connect: realtimeClient.connect,
       disconnect: realtimeClient.disconnect,
       joinOutletGroup: realtimeClient.joinOutletGroup,
+      joinStockLocationGroup: realtimeClient.joinStockLocationGroup,
       onStockUpdate: realtimeClient.onStockUpdate,
     }),
     [isConnected, lastStockUpdate]

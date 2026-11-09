@@ -36,7 +36,7 @@ export default function StockTransfersOutgoingPage() {
     try {
       const [transfersResult, inventoryResult] = await Promise.all([
         getOutgoingStockTransfers(effectiveOutletId),
-        getInventory({ outletId: effectiveOutletId, includeZeroStock: false }),
+        getInventory({ stockLocationId: effectiveOutletId, includeZeroStock: false }),
       ]);
 
       setItems(transfersResult);
@@ -150,7 +150,7 @@ export default function StockTransfersOutgoingPage() {
                       <div className="text-xs text-gray-500 dark:text-gray-400">{formatDateTime(item.createdAt ?? new Date().toISOString())}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{item.toOutletName}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{item.toStockLocationName}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.requestedByName}</td>
                   <td className="px-6 py-4">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getTransferStatusTone(item.status)}`}>

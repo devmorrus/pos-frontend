@@ -86,8 +86,8 @@ export default function StockTransferDetailPage() {
           <section className="grid gap-6 lg:grid-cols-4">
             {[
               ["Nomor", item.transferNumber],
-              ["Asal", item.fromOutletName],
-              ["Tujuan", item.toOutletName],
+              ["Asal", item.fromStockLocationName],
+              ["Tujuan", item.toStockLocationName],
               ["Peminta", item.requestedByName],
             ].map(([label, value]) => (
               <div

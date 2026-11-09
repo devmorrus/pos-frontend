@@ -61,7 +61,7 @@ export default function InventoryPage() {
 
     try {
       const result = await getInventory({
-        outletId: effectiveOutletId,
+        stockLocationId: effectiveOutletId,
         search: appliedSearch,
         lowStockOnly: stockMode === "low",
         includeZeroStock,
@@ -80,7 +80,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     const unsubscribe = onStockUpdate((event) => {
-      if (event.outletId === effectiveOutletId) {
+      if ((event.stockLocationId ?? event.outletId) === effectiveOutletId) {
         void loadInventory();
       }
     });

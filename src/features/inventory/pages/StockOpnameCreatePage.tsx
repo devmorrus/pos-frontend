@@ -45,7 +45,7 @@ export default function StockOpnameCreatePage() {
     try {
       setInventoryItems(
         await getInventory({
-          outletId: effectiveOutletId,
+          stockLocationId: effectiveOutletId,
           includeZeroStock: true,
         }),
       );
@@ -62,7 +62,7 @@ export default function StockOpnameCreatePage() {
 
   useEffect(() => {
     const unsubscribe = onStockUpdate((event) => {
-      if (event.outletId === effectiveOutletId) {
+      if ((event.stockLocationId ?? event.outletId) === effectiveOutletId) {
         setWarning("Stok sistem baru saja berubah oleh transaksi lain. Periksa kembali angka system qty sebelum submit opname.");
         void loadInventoryLookup();
       }
@@ -141,7 +141,7 @@ export default function StockOpnameCreatePage() {
 
     try {
       const result = await createStockOpname({
-        outletId: effectiveOutletId,
+        stockLocationId: effectiveOutletId,
         items: normalizedItems,
       });
       navigate(`/stock-opnames/${result.id}`, {

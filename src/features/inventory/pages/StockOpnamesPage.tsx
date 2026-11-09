@@ -96,7 +96,7 @@ export default function StockOpnamesPage() {
                 return (
                   <tr key={item.id}>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatDateTime(item.createdAt)}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.outletName}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.stockLocationName}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.performedByName}</td>
                     <td className="px-6 py-4 text-sm text-success-700 dark:text-success-300">{item.status}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.items.length}</td>

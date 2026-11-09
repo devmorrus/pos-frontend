@@ -200,8 +200,8 @@ export default function TransferCreateModal({
     }
 
     await onSubmit({
-      fromOutletId,
-      toOutletId,
+      fromStockLocationId: fromOutletId,
+      toStockLocationId: toOutletId,
       items: normalizedItems,
     });
   }

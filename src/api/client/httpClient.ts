@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "./config";
 import type { AppApiError, RequestOptions, SessionBridge } from "./types";
+import { getPosDeviceBinding } from "../../lib/posDevice";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -95,6 +96,12 @@ async function executeRequest<T>(
     const accessToken = sessionBridge.getAccessToken();
     if (accessToken) {
       mergedHeaders.set("Authorization", `Bearer ${accessToken}`);
+    }
+
+    const device = getPosDeviceBinding();
+    if (device) {
+      mergedHeaders.set("X-POS-Device-ID", device.deviceId);
+      mergedHeaders.set("X-POS-Device-Token", device.token);
     }
   }
 

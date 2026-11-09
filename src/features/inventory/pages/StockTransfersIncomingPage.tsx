@@ -136,7 +136,7 @@ export default function StockTransfersIncomingPage() {
                 return (
                   <tr key={item.id}>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.transferNumber}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{item.fromOutletName}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{item.fromStockLocationName}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.requestedByName}</td>
                     <td className="px-6 py-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getTransferStatusTone(item.status)}`}>

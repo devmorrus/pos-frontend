@@ -14,6 +14,8 @@ import type { SupplierDto } from "../../suppliers/types/supplier";
 import { createPurchaseOrder } from "../api/purchaseOrdersApi";
 import { validatePurchaseOrderForm } from "../schemas/purchaseOrderSchema";
 import type { PurchaseOrderFormRow, PurchaseOrderFormValues } from "../types/purchaseOrder";
+import { getStockLocations } from "../../stock-locations/api";
+import type { StockLocationDto } from "../../stock-locations/types";
 
 const initialRow: PurchaseOrderFormRow = {
   productId: "",
@@ -41,6 +43,8 @@ export default function PurchaseOrderCreatePage() {
   const [values, setValues] = useState<PurchaseOrderFormValues>(initialValues);
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [stockLocations, setStockLocations] = useState<StockLocationDto[]>([]);
+  const [destinationStockLocationId, setDestinationStockLocationId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,12 +64,15 @@ export default function PurchaseOrderCreatePage() {
       setSubmitError(null);
 
       try {
-        const [suppliersResult, productsResult] = await Promise.all([
+        const [suppliersResult, productsResult, locationsResult] = await Promise.all([
           getSuppliers(),
           getProducts({ outletId: effectiveOutletId }),
+          getStockLocations(),
         ]);
         setSuppliers(suppliersResult);
         setProducts(productsResult.filter((product) => !product.isConsignment));
+        setStockLocations(locationsResult.filter((location) => location.isActive));
+        setDestinationStockLocationId((current) => current || effectiveOutletId);
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat lookup purchase order."));
       } finally {
@@ -184,6 +191,7 @@ export default function PurchaseOrderCreatePage() {
       const result = await createPurchaseOrder({
         supplierId: values.supplierId,
         outletId: effectiveOutletId,
+        destinationStockLocationId: destinationStockLocationId || effectiveOutletId,
         paymentType: values.paymentType,
         dueDate: values.paymentType === "tempo" ? new Date(values.dueDate).toISOString() : null,
         items: values.items.map((item) => ({
@@ -267,7 +275,7 @@ export default function PurchaseOrderCreatePage() {
           description="Tentukan supplier, tipe pembayaran, dan daftar item pembelian."
         >
           <form className="space-y-6" onSubmit={(event) => void handleSubmit(event)}>
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-3">
               <label className="block">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Supplier</span>
                 <select
@@ -283,6 +291,20 @@ export default function PurchaseOrderCreatePage() {
                   ))}
                 </select>
                 <FieldErrorText message={errors.supplierId} />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Lokasi penerimaan stok</span>
+                <select
+                  value={destinationStockLocationId}
+                  onChange={(event) => setDestinationStockLocationId(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                >
+                  {stockLocations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.type === "warehouse" ? "Gudang" : "Outlet"})
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Tipe pembayaran</span>

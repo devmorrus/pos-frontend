@@ -19,7 +19,7 @@ export default function BufferStockPage() {
     selectedOutletId,
     setSelectedOutletId,
     effectiveOutletId,
-  } = useStockOutletScope();
+  } = useStockOutletScope(true);
   const { onStockUpdate } = useRealtime();
 
   const [items, setItems] = useState<BufferStockItem[]>([]);

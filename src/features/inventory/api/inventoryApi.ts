@@ -11,8 +11,8 @@ import type {
 export function getInventory(filters: InventoryFilters) {
   const params = new URLSearchParams();
 
-  if (filters.outletId) {
-    params.set("outletId", filters.outletId);
+  if (filters.stockLocationId) {
+    params.set("stockLocationId", filters.stockLocationId);
   }
 
   if (filters.search?.trim()) {
@@ -31,8 +31,8 @@ export function getInventory(filters: InventoryFilters) {
   return apiClient.get<InventoryListItem[]>(`/api/inventory${query ? `?${query}` : ""}`);
 }
 
-export function getStockOpnames(outletId?: string | null) {
-  const query = outletId ? `?outletId=${encodeURIComponent(outletId)}` : "";
+export function getStockOpnames(stockLocationId?: string | null) {
+  const query = stockLocationId ? `?stockLocationId=${encodeURIComponent(stockLocationId)}` : "";
   return apiClient.get<StockOpnameDto[]>(`/api/stockopnames${query}`);
 }
 
@@ -44,13 +44,13 @@ export function createStockOpname(payload: CreateStockOpnameRequest) {
   return apiClient.post<StockOpnameDto>("/api/stockopnames", payload);
 }
 
-export function getOutgoingStockTransfers(outletId?: string | null) {
-  const query = outletId ? `?outletId=${encodeURIComponent(outletId)}` : "";
+export function getOutgoingStockTransfers(stockLocationId?: string | null) {
+  const query = stockLocationId ? `?stockLocationId=${encodeURIComponent(stockLocationId)}` : "";
   return apiClient.get<StockTransferDto[]>(`/api/stocktransfers/outgoing${query}`);
 }
 
-export function getIncomingStockTransfers(outletId?: string | null) {
-  const query = outletId ? `?outletId=${encodeURIComponent(outletId)}` : "";
+export function getIncomingStockTransfers(stockLocationId?: string | null) {
+  const query = stockLocationId ? `?stockLocationId=${encodeURIComponent(stockLocationId)}` : "";
   return apiClient.get<StockTransferDto[]>(`/api/stocktransfers/incoming${query}`);
 }
 

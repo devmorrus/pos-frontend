@@ -28,12 +28,12 @@ export function getProductById(id: string) {
 
 export function getProductTrackingOptions(
   id: string,
-  outletId: string,
+  stockLocationId: string,
   productVariantId?: string | null,
   search?: string,
   includeUnavailable = false,
 ) {
-  const params = new URLSearchParams({ outletId });
+  const params = new URLSearchParams({ stockLocationId });
   if (productVariantId) params.set("productVariantId", productVariantId);
   if (search?.trim()) params.set("search", search.trim());
   if (includeUnavailable) params.set("includeUnavailable", "true");

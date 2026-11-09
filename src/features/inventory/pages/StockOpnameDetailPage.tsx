@@ -59,7 +59,7 @@ export default function StockOpnameDetailPage() {
         <>
           <section className="grid gap-6 lg:grid-cols-4">
             {[
-              ["Outlet", item.outletName],
+              ["Outlet", item.stockLocationName],
               ["Performed by", item.performedByName],
               ["Status", item.status],
               ["Waktu", formatDateTime(item.createdAt)],

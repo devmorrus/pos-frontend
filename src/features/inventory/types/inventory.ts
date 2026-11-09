@@ -19,7 +19,7 @@ export type InventoryListItem = {
 };
 
 export type InventoryFilters = {
-  outletId?: string;
+  stockLocationId?: string;
   search?: string;
   lowStockOnly?: boolean;
   includeZeroStock?: boolean;
@@ -41,8 +41,9 @@ export type StockOpnameItemDto = {
 
 export type StockOpnameDto = {
   id: string;
-  outletId: string;
-  outletName: string;
+  stockLocationId: string;
+  stockLocationName: string;
+  stockLocationType: "outlet" | "warehouse";
   performedBy: string;
   performedByName: string;
   status: string;
@@ -59,7 +60,7 @@ export type StockOpnameItemRequest = {
 };
 
 export type CreateStockOpnameRequest = {
-  outletId: string;
+  stockLocationId: string;
   items: StockOpnameItemRequest[];
 };
 
@@ -78,10 +79,14 @@ export type StockTransferItemDto = {
 
 export type StockTransferDto = {
   id: string;
-  fromOutletId: string;
-  fromOutletName: string;
-  toOutletId: string;
-  toOutletName: string;
+  fromStockLocationId: string;
+  fromStockLocationName: string;
+  fromStockLocationType: "outlet" | "warehouse";
+  fromOutletId: string | null;
+  toStockLocationId: string;
+  toStockLocationName: string;
+  toStockLocationType: "outlet" | "warehouse";
+  toOutletId: string | null;
   transferNumber: string;
   status: string;
   requestedBy: string;
@@ -101,7 +106,7 @@ export type StockTransferItemRequest = {
 };
 
 export type CreateStockTransferRequest = {
-  fromOutletId: string;
-  toOutletId: string;
+  fromStockLocationId: string;
+  toStockLocationId: string;
   items: StockTransferItemRequest[];
 };

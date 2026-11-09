@@ -7,6 +7,7 @@ export type RealtimeContextValue = {
   connect: (outletId: string, accessToken?: string) => Promise<void>;
   disconnect: () => Promise<void>;
   joinOutletGroup: (outletId: string) => Promise<void>;
+  joinStockLocationGroup: (stockLocationId: string) => Promise<void>;
   onStockUpdate: (handler: (event: StockUpdateEvent) => void) => () => void;
 };
 

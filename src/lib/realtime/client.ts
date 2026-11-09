@@ -2,9 +2,16 @@ import * as signalR from "@microsoft/signalr";
 import { SIGNALR_URL } from "../../api/client";
 
 export type StockUpdateEvent = {
-  outletId: string;
+  eventId?: string;
+  sequence?: number;
+  occurredAtUtc?: string;
+  stockLocationId?: string;
+  outletId: string | null;
+  locationType?: "outlet" | "warehouse";
+  isAbsolute?: boolean;
   updates: {
     productId: string;
+    productVariantId?: string | null;
     qty: number;
   }[];
 };
@@ -14,9 +21,17 @@ type StockUpdateHandler = (event: StockUpdateEvent) => void;
 export function createRealtimeClient() {
   let connection: signalR.HubConnection | null = null;
   let currentOutletId: string | null = null;
+  let currentStockLocationId: string | null = null;
   const handlers = new Set<StockUpdateHandler>();
+  const lastSequenceByLocation = new Map<string, number>();
 
   function emitStockUpdate(event: StockUpdateEvent) {
+    const locationId = event.stockLocationId ?? event.outletId;
+    if (locationId && event.sequence !== undefined) {
+      const lastSequence = lastSequenceByLocation.get(locationId) ?? 0;
+      if (event.sequence <= lastSequence) return;
+      lastSequenceByLocation.set(locationId, event.sequence);
+    }
     handlers.forEach((handler) => handler(event));
   }
 
@@ -31,6 +46,15 @@ export function createRealtimeClient() {
 
       connection.on("ReceiveStockUpdate", (event: StockUpdateEvent) => {
         emitStockUpdate(event);
+      });
+      connection.on("ReceiveStockUpdateV2", (event: StockUpdateEvent) => {
+        emitStockUpdate(event);
+      });
+      connection.onreconnected(async () => {
+        if (currentOutletId) await joinOutletGroup(currentOutletId);
+        if (currentStockLocationId) {
+          await connection?.invoke("JoinStockLocationGroup", currentStockLocationId);
+        }
       });
     }
 
@@ -56,6 +80,23 @@ export function createRealtimeClient() {
     }
 
     await joinOutletGroup(outletId);
+    if (currentStockLocationId) {
+      await connection?.invoke("JoinStockLocationGroup", currentStockLocationId);
+    }
+  }
+
+  async function joinStockLocationGroup(stockLocationId: string) {
+    if (connection && currentStockLocationId && currentStockLocationId !== stockLocationId) {
+      await connection.invoke("LeaveStockLocationGroup", currentStockLocationId);
+    }
+    currentStockLocationId = stockLocationId;
+    if (connection?.state === signalR.HubConnectionState.Connected) {
+      await connection.invoke("JoinStockLocationGroup", stockLocationId);
+    }
+  }
+
+  function clearStockLocationGroup() {
+    currentStockLocationId = null;
   }
 
   async function disconnect() {
@@ -88,6 +129,8 @@ export function createRealtimeClient() {
     connect,
     disconnect,
     joinOutletGroup,
+    joinStockLocationGroup,
+    clearStockLocationGroup,
     onStockUpdate,
   };
 }

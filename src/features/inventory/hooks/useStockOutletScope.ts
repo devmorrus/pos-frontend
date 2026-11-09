@@ -1,36 +1,63 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { isOwner } from "../../auth/utils/access";
-import { getOutlets } from "../../outlets/api/outletsApi";
 import { useOutlet } from "../../outlets/hooks/useOutlet";
-import type { OutletLookupDto } from "../../outlets/types/outlet";
+import { getStockLocations } from "../../stock-locations/api";
+import type { StockLocationDto } from "../../stock-locations/types";
+import { useRealtime } from "../../../lib/realtime/hooks";
 
-export function useStockOutletScope() {
+const storageKey = "morrus:selected-stock-location";
+
+export function useStockOutletScope(outletOnly = false) {
   const { session } = useAuth();
-  const { selectedOutletId, setSelectedOutletId } = useOutlet();
-  const [outlets, setOutlets] = useState<OutletLookupDto[]>([]);
+  const { joinStockLocationGroup } = useRealtime();
+  const { selectedOutletId: salesOutletId, setSelectedOutletId: setSalesOutletId } = useOutlet();
+  const [stockLocationId, setStockLocationId] = useState<string | null>(
+    () => localStorage.getItem(storageKey),
+  );
+  const [outlets, setOutlets] = useState<StockLocationDto[]>([]);
   const [isLoadingOutlets, setIsLoadingOutlets] = useState(false);
 
-  const ownerMode = isOwner(session?.role);
-  const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
+  const ownerMode = isOwner(session?.role) || session?.role === "Admin" || session?.role === "Gudang";
+  const selectedOutletId = outletOnly ? salesOutletId : stockLocationId;
+  const effectiveOutletId = selectedOutletId ?? session?.outletId ?? null;
+
+  useEffect(() => {
+    if (effectiveOutletId) void joinStockLocationGroup(effectiveOutletId);
+  }, [effectiveOutletId, joinStockLocationGroup]);
+
+  const setSelectedOutletId = useCallback((id: string | null) => {
+    if (outletOnly) {
+      setSalesOutletId(id);
+      return;
+    }
+    setStockLocationId(id);
+    if (id) localStorage.setItem(storageKey, id);
+    else localStorage.removeItem(storageKey);
+  }, [outletOnly, setSalesOutletId]);
 
   useEffect(() => {
     async function loadOutlets() {
-      if (!(ownerMode || session?.role === "Admin")) {
-        return;
-      }
-
       setIsLoadingOutlets(true);
 
       try {
-        setOutlets(await getOutlets());
+        const loaded = await getStockLocations();
+        const locations = outletOnly ? loaded.filter((location) => location.type === "outlet") : loaded;
+        setOutlets(locations);
+        const current = selectedOutletId;
+        const fallback = locations.find((location) => location.id === session?.outletId)
+          ?? locations.find((location) => location.isActive);
+        if (!current || !locations.some((location) => location.id === current && location.isActive)) {
+          const next = fallback?.id ?? null;
+          setSelectedOutletId(next);
+        }
       } finally {
         setIsLoadingOutlets(false);
       }
     }
 
     void loadOutlets();
-  }, [ownerMode, session?.role]);
+  }, [session?.role, session?.outletId, outletOnly, selectedOutletId, setSelectedOutletId]);
 
   const activeOutlets = useMemo(
     () => outlets.filter((outlet) => outlet.isActive),

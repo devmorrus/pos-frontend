@@ -109,6 +109,13 @@ export const appNavigation: NavItem[] = [
         requiredCapabilities: ["sales.pos", "catalog.products"],
       },
       {
+        label: "Aktivasi Perangkat",
+        path: "/device-activation",
+        requiredPermissions: ["transaction.create"],
+        fallbackRoles: transactionCreateRoles,
+        requiredCapabilities: ["sales.pos"],
+      },
+      {
         label: "Transaksi",
         path: "/transactions",
         fallbackRoles: transactionReadRoles,
@@ -378,6 +385,11 @@ export const appNavigation: NavItem[] = [
       {
         label: "Kelola Cabang",
         path: "/outlets",
+        fallbackRoles: ownerAdminRoles,
+      },
+      {
+        label: "Lokasi & Register",
+        path: "/settings/locations-registers",
         fallbackRoles: ownerAdminRoles,
       },
       {

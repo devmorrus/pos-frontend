@@ -17,6 +17,8 @@ export type PurchaseOrderDto = {
   supplierName: string;
   outletId: string;
   outletName: string;
+  destinationStockLocationId: string | null;
+  destinationStockLocationName: string | null;
   poNumber: string;
   poDate: string;
   paymentType: string;
@@ -36,6 +38,7 @@ export type PurchaseOrderItemRequest = {
 export type CreatePurchaseOrderRequest = {
   supplierId: string;
   outletId: string;
+  destinationStockLocationId?: string | null;
   paymentType: string;
   dueDate: string | null;
   items: PurchaseOrderItemRequest[];

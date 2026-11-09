@@ -147,6 +147,7 @@ export default function PurchaseOrderDetailPage() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Outlet</p>
                   <p className="mt-2 text-base text-gray-700 dark:text-gray-200">{order.outletName}</p>
+                  <p className="mt-1 text-sm text-gray-500">Penerimaan stok: {order.destinationStockLocationName ?? order.outletName}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Tanggal PO</p>

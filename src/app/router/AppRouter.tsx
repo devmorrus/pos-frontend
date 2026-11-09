@@ -95,6 +95,8 @@ import CustomersPage from "../../features/customers/pages/CustomersPage";
 import TransactionDetailPage from "../../features/transactions/pages/TransactionDetailPage";
 import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
 import CapabilitySettingsPage from "../../features/capabilities/pages/CapabilitySettingsPage";
+import DeviceActivationPage from "../../features/stock-locations/DeviceActivationPage";
+import LocationsRegistersPage from "../../features/stock-locations/LocationsRegistersPage";
 import { getNavigationItem } from "./navigation";
 
 const cashierSessionPolicy = getNavigationItem("/cashier/session");
@@ -133,6 +135,8 @@ const salesRecapPolicy = getNavigationItem("/reports/sales");
 const supplierReportPolicy = getNavigationItem("/reports/suppliers");
 const stockCardReportPolicy = getNavigationItem("/reports/stock-card");
 const capabilitySettingsPolicy = getNavigationItem("/settings/capabilities");
+const deviceActivationPolicy = getNavigationItem("/device-activation");
+const locationsRegistersPolicy = getNavigationItem("/settings/locations-registers");
 
 export default function AppRouter() {
   return (
@@ -899,6 +903,18 @@ export default function AppRouter() {
           />
           <Route path="profile/change-password" element={<ChangePasswordPage />} />
           <Route
+            path="device-activation"
+            element={
+              <PermissionGuard
+                requiredPermissions={deviceActivationPolicy?.requiredPermissions}
+                fallbackRoles={deviceActivationPolicy?.fallbackRoles}
+                requiredCapabilities={deviceActivationPolicy?.requiredCapabilities}
+              >
+                <DeviceActivationPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
             path="outlets"
             element={
               <PermissionGuard
@@ -907,6 +923,18 @@ export default function AppRouter() {
                 requiredCapabilities={outletsPolicy?.requiredCapabilities}
               >
                 <OutletsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="settings/locations-registers"
+            element={
+              <PermissionGuard
+                requiredPermissions={locationsRegistersPolicy?.requiredPermissions}
+                fallbackRoles={locationsRegistersPolicy?.fallbackRoles}
+                requiredCapabilities={locationsRegistersPolicy?.requiredCapabilities}
+              >
+                <LocationsRegistersPage />
               </PermissionGuard>
             }
           />
