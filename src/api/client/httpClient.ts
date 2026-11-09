@@ -34,7 +34,9 @@ function normalizeError(status: number, payload: unknown): AppApiError {
 
   return {
     status,
-    message: "Terjadi kesalahan saat memproses permintaan.",
+    message: typeof payload === "string" && payload.trim()
+      ? payload
+      : "Terjadi kesalahan saat memproses permintaan.",
     details: payload,
   };
 }
