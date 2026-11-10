@@ -40,6 +40,44 @@ export function getInventoryStatusTone(
   return "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300";
 }
 
+export function getTransferStatusBucket(
+  status: string,
+): "pending" | "approved" | "rejected" {
+  const normalized = status.toLowerCase();
+
+  if (normalized === "approved") {
+    return "approved";
+  }
+
+  if (normalized === "rejected" || normalized === "cancelled") {
+    return "rejected";
+  }
+
+  return "pending";
+}
+
+export function getTransferStatusLabel(status: string) {
+  const normalized = status.toLowerCase();
+
+  if (normalized === "approved") {
+    return "Disetujui";
+  }
+
+  if (normalized === "rejected") {
+    return "Ditolak";
+  }
+
+  if (normalized === "cancelled") {
+    return "Dibatalkan";
+  }
+
+  if (normalized === "pending") {
+    return "Menunggu";
+  }
+
+  return status;
+}
+
 export function getTransferStatusTone(status: string) {
   const normalized = status.toLowerCase();
 

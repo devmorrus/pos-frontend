@@ -2,17 +2,29 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
-import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui";
+import { AppLoader, InlineAlert } from "../../../components/ui";
+import { ArrowUpIcon, EyeIcon, PlusIcon } from "../../../icons";
 import { getErrorMessage } from "../../../utils/errors";
 import { getInventory, createStockTransfer, getOutgoingStockTransfers } from "../api/inventoryApi";
 import TransferCreateModal from "../components/TransferCreateModal";
+import {
+  StockTransfersSummary,
+  StockTransfersTabs,
+  StockTransfersToolbar,
+  TransferEmptyState,
+  type TransferStatusFilter,
+} from "../components/StockTransfersUi";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
 import type { InventoryListItem, StockTransferDto } from "../types/inventory";
-import { formatDateTime, getTransferStatusTone } from "../utils/presentation";
+import {
+  formatDateTime,
+  getTransferStatusBucket,
+  getTransferStatusLabel,
+  getTransferStatusTone,
+} from "../utils/presentation";
 
 export default function StockTransfersOutgoingPage() {
-  const { ownerMode, activeOutlets, effectiveOutletId } =
-    useStockOutletScope();
+  const { ownerMode, activeOutlets, effectiveOutletId } = useStockOutletScope();
   const [items, setItems] = useState<StockTransferDto[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,6 +33,8 @@ export default function StockTransfersOutgoingPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TransferStatusFilter>("all");
 
   async function loadPage() {
     if (!effectiveOutletId) {
@@ -68,43 +82,76 @@ export default function StockTransfersOutgoingPage() {
     }
   }
 
-  const pendingCount = useMemo(
-    () => items.filter((item) => item.status.toLowerCase() === "pending").length,
-    [items],
+  const statusCounts = useMemo(() => {
+    const counts: Record<TransferStatusFilter, number> = {
+      all: items.length,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+    };
+
+    for (const item of items) {
+      counts[getTransferStatusBucket(item.status)] += 1;
+    }
+
+    return counts;
+  }, [items]);
+
+  const normalizedQuery = search.trim().toLowerCase();
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        if (
+          statusFilter !== "all" &&
+          getTransferStatusBucket(item.status) !== statusFilter
+        ) {
+          return false;
+        }
+
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        return (
+          item.transferNumber.toLowerCase().includes(normalizedQuery) ||
+          item.toStockLocationName.toLowerCase().includes(normalizedQuery) ||
+          item.requestedByName.toLowerCase().includes(normalizedQuery)
+        );
+      }),
+    [items, statusFilter, normalizedQuery],
   );
+
+  function resetFilters() {
+    setSearch("");
+    setStatusFilter("all");
+  }
 
   return (
     <ProtectedPageShell
       title="Transfer Stok"
       description="Kelola perpindahan stok antar cabang/outlet (Transfer Keluar dan Transfer Masuk)."
     >
-      <div className="mb-6 flex border-b border-gray-200 dark:border-gray-800">
-        <Link
-          to="/stock-transfers/outgoing"
-          className="pb-3 px-4 text-sm font-semibold border-b-2 border-brand-500 text-brand-600 dark:text-brand-400"
-        >
-          Transfer Keluar
-        </Link>
-        <Link
-          to="/stock-transfers/incoming"
-          className="pb-3 px-4 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          Transfer Masuk
-        </Link>
-      </div>
+      <StockTransfersTabs active="outgoing" />
 
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={error} />
 
+      <StockTransfersSummary
+        pending={statusCounts.pending}
+        approved={statusCounts.approved}
+        rejected={statusCounts.rejected}
+      />
+
       <AppTableShell
-        title="Outgoing transfer"
-        description={`Total transfer: ${items.length} · Pending: ${pendingCount}`}
+        title="Transfer keluar"
+        description="Permintaan transfer stok yang diajukan dari outlet aktif."
         actions={
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20"
           >
+            <PlusIcon className="h-4 w-4" />
             Buat transfer
           </button>
         }
@@ -112,64 +159,108 @@ export default function StockTransfersOutgoingPage() {
         {isLoading ? (
           <AppLoader label="Memuat transfer stok keluar..." />
         ) : ownerMode && !effectiveOutletId ? (
-          <div className="p-6">
-            <PagePlaceholder
-              title="Pilih outlet terlebih dahulu"
-              description="Owner perlu memilih outlet asal sebelum melihat atau membuat transfer stok keluar."
-              status="Outlet required"
-            />
-          </div>
+          <TransferEmptyState
+            title="Pilih outlet terlebih dahulu"
+            description="Owner perlu memilih outlet asal sebelum melihat atau membuat transfer stok keluar."
+            tone="muted"
+          />
         ) : items.length === 0 ? (
-          <div className="p-6">
-            <PagePlaceholder
-              title="Belum ada transfer keluar"
-              description="Belum ada transfer stok yang diajukan dari outlet aktif."
-              status="Empty"
-            />
-          </div>
+          <TransferEmptyState
+            title="Belum ada transfer keluar"
+            description="Belum ada transfer stok yang diajukan dari outlet aktif. Buat transfer pertama untuk memindahkan stok ke outlet lain."
+            action={
+              <button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Buat transfer pertama
+              </button>
+            }
+          />
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-950">
-              <tr>
-                {["Nomor transfer", "Outlet tujuan", "Peminta", "Status", "Total item", "Aksi"].map((column) => (
-                  <th
-                    key={column}
-                    className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+          <>
+            <StockTransfersToolbar
+              search={search}
+              onSearchChange={setSearch}
+              status={statusFilter}
+              onStatusChange={setStatusFilter}
+              counts={statusCounts}
+              visibleCount={filteredItems.length}
+              totalCount={items.length}
+            />
+
+            {filteredItems.length === 0 ? (
+              <TransferEmptyState
+                title="Transfer tidak ditemukan"
+                description="Tidak ada transfer keluar yang cocok dengan pencarian atau filter status saat ini."
+                action={
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{item.transferNumber}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{formatDateTime(item.createdAt ?? new Date().toISOString())}</div>
+                    Reset filter
+                  </button>
+                }
+              />
+            ) : (
+              <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredItems.map((item) => (
+                  <li
+                    key={item.id}
+                    className="group flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.02] sm:px-6 lg:flex-row lg:items-center"
+                  >
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+                        <ArrowUpIcon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                            {item.transferNumber}
+                          </p>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${getTransferStatusTone(
+                              item.status,
+                            )}`}
+                          >
+                            {getTransferStatusLabel(item.status)}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-gray-700 dark:text-gray-200">
+                            {item.toStockLocationName}
+                          </span>
+                          <span className="text-gray-300 dark:text-gray-700">&bull;</span>
+                          <span>Oleh {item.requestedByName}</span>
+                          <span className="text-gray-300 dark:text-gray-700">&bull;</span>
+                          <span>{formatDateTime(item.createdAt)}</span>
+                        </div>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{item.toStockLocationName}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.requestedByName}</td>
-                  <td className="px-6 py-4">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getTransferStatusTone(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.items.length}</td>
-                  <td className="px-6 py-4">
-                    <Link
-                      to={`/stock-transfers/${item.id}`}
-                      className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
-                    >
-                      Detail
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+                    <div className="flex items-center justify-between gap-4 pl-14 lg:justify-end lg:pl-0">
+                      <div className="text-right">
+                        <p className="text-base font-semibold text-gray-900 dark:text-white">
+                          {item.items.length}
+                        </p>
+                        <p className="whitespace-nowrap text-[11px] text-gray-400">jenis item</p>
+                      </div>
+                      <Link
+                        to={`/stock-transfers/${item.id}`}
+                        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                        Detail
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </AppTableShell>
 

@@ -106,9 +106,21 @@ const customersPolicy = getNavigationItem("/customers");
 const productsPolicy = getNavigationItem("/products");
 const categoriesPolicy = getNavigationItem("/categories");
 const inventoryPolicy = getNavigationItem("/inventory");
-const bufferStockPolicy = getNavigationItem("/buffer-stock");
-const stockOpnamesPolicy = getNavigationItem("/stock-opnames");
-const stockTransfersPolicy = getNavigationItem("/stock-transfers/outgoing");
+const bufferStockPolicy = {
+  requiredPermissions: inventoryPolicy?.requiredPermissions,
+  fallbackRoles: inventoryPolicy?.fallbackRoles,
+  requiredCapabilities: ["inventory.buffer_stock"],
+};
+const stockOpnamesPolicy = {
+  requiredPermissions: inventoryPolicy?.requiredPermissions,
+  fallbackRoles: inventoryPolicy?.fallbackRoles,
+  requiredCapabilities: ["inventory.opname"],
+};
+const stockTransfersPolicy = {
+  requiredPermissions: inventoryPolicy?.requiredPermissions,
+  fallbackRoles: inventoryPolicy?.fallbackRoles,
+  requiredCapabilities: ["inventory.transfer"],
+};
 const suppliersPolicy = getNavigationItem("/suppliers");
 const purchaseOrdersPolicy = getNavigationItem("/purchase-orders");
 const supplierDebtsPolicy = getNavigationItem("/supplier-debts");

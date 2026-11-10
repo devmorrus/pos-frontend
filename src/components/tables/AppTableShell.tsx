@@ -20,7 +20,7 @@ export default function AppTableShell({
             <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
           ) : null}
         </div>
-        {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
       </div>
       <div className="overflow-x-auto">{children}</div>
     </section>

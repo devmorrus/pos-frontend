@@ -156,27 +156,6 @@ export const appNavigation: NavItem[] = [
         fallbackRoles: stockRoles,
         requiredCapabilities: ["inventory.stock"],
       },
-      {
-        label: "Buffer Stock",
-        path: "/buffer-stock",
-        requiredPermissions: ["stock.manage"],
-        fallbackRoles: stockRoles,
-        requiredCapabilities: ["inventory.buffer_stock"],
-      },
-      {
-        label: "Stock Opname",
-        path: "/stock-opnames",
-        requiredPermissions: ["stock.manage"],
-        fallbackRoles: stockRoles,
-        requiredCapabilities: ["inventory.opname"],
-      },
-      {
-        label: "Transfer Stok",
-        path: "/stock-transfers/outgoing",
-        requiredPermissions: ["stock.manage"],
-        fallbackRoles: stockRoles,
-        requiredCapabilities: ["inventory.transfer"],
-      },
     ],
   },
   {

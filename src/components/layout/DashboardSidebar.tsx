@@ -6,6 +6,16 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useCapabilities } from "../../features/capabilities/hooks/useCapabilities";
 import MorrusLogo from "./MorrusLogo";
 
+const stockSubpaths = ["/buffer-stock", "/stock-opnames", "/stock-transfers"];
+
+function isSubItemActive(pathname: string, path: string) {
+  return (
+    pathname === path ||
+    (path !== "/dashboard" && pathname.startsWith(path)) ||
+    (path === "/inventory" && stockSubpaths.some((prefix) => pathname.startsWith(prefix)))
+  );
+}
+
 export default function DashboardSidebar({
   isOpen,
   onNavigate,
@@ -25,13 +35,7 @@ export default function DashboardSidebar({
     appNavigation.forEach((item) => {
       if (item.subItems) {
         const hasActiveSub = item.subItems.some((sub) => {
-          return (
-            location.pathname === sub.path ||
-            (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||
-            (sub.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
-            (sub.path === "/stock-transfers/outgoing" &&
-              location.pathname.startsWith("/stock-transfers"))
-          );
+          return isSubItemActive(location.pathname, sub.path);
         });
         if (hasActiveSub) {
           activeGroupLabel = item.label;
@@ -55,13 +59,7 @@ export default function DashboardSidebar({
   const isGroupActive = (item: NavItem) => {
     if (!item.subItems) return false;
     return item.subItems.some((sub) => {
-      return (
-        location.pathname === sub.path ||
-        (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||
-        (sub.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
-        (sub.path === "/stock-transfers/outgoing" &&
-          location.pathname.startsWith("/stock-transfers"))
-      );
+      return isSubItemActive(location.pathname, sub.path);
     });
   };
 
@@ -115,12 +113,7 @@ export default function DashboardSidebar({
                   {isExpanded && (
                     <div className="pl-9 space-y-1">
                       {item.subItems.map((sub) => {
-                        const isSubActive =
-                          location.pathname === sub.path ||
-                          (sub.path !== "/dashboard" && location.pathname.startsWith(sub.path)) ||
-                          (sub.path === "/inventory" && location.pathname.startsWith("/stock-opnames")) ||
-                          (sub.path === "/stock-transfers/outgoing" &&
-                            location.pathname.startsWith("/stock-transfers"));
+                        const isSubActive = isSubItemActive(location.pathname, sub.path);
 
                         return (
                           <Link

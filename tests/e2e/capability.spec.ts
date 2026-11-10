@@ -108,6 +108,34 @@ test.describe("Capability & industry profile", () => {
     await expect(page.getByText("Fitur belum aktif")).toHaveCount(0);
   });
 
+  test("menu stok tunggal membuka buffer, opname, dan transfer lewat tombol inventory", async ({ page }) => {
+    await seedAuthSession(page, ownerSession);
+    await mockOutlets(page);
+    await mockCapabilityEndpoints(page);
+    await mockJson(page, /\/api\/inventory(\?.*)?$/, []);
+    await mockJson(page, /\/api\/stockopnames(\?.*)?$/, []);
+    await mockBufferStocks(page);
+
+    await page.goto("/inventory");
+
+    await expect(page.getByRole("link", { name: "Buffer Stock", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Stock Opname", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Transfer Stok", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Atur buffer stock" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Buat stock opname" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Transfer stok keluar" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Riwayat opname" })).toBeVisible();
+
+    await page.getByRole("link", { name: "Atur buffer stock" }).click();
+    await expect(page).toHaveURL(/\/buffer-stock$/);
+    await expect(page.getByRole("heading", { name: "Buffer Stock", exact: true })).toBeVisible();
+
+    await page.goto("/inventory");
+    await page.getByRole("link", { name: "Riwayat opname" }).click();
+    await expect(page).toHaveURL(/\/stock-opnames$/);
+    await expect(page.getByRole("heading", { name: "Stock Opname", exact: true })).toBeVisible();
+  });
+
   test("detail stock opname memakai inventory.opname", async ({ page }) => {
     await seedAuthSession(page, ownerSession);
     await mockOutlets(page);
