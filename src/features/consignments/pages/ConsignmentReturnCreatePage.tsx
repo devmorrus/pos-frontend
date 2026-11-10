@@ -12,6 +12,7 @@ import { getSuppliers } from "../../suppliers/api/suppliersApi";
 import type { SupplierDto } from "../../suppliers/types/supplier";
 import { createConsignmentReturn } from "../api/consignmentsApi";
 import type { ConsignmentReturnFormRow, ConsignmentReturnFormValues } from "../types/consignment";
+import { BoxCubeIcon, PlusIcon } from "../../../icons";
 
 const initialRow: ConsignmentReturnFormRow = {
   productId: "",
@@ -179,8 +180,12 @@ export default function ConsignmentReturnCreatePage() {
     >
       <InlineAlert tone="error" message={submitError} />
 
+      <div className="flex items-start gap-4 rounded-3xl border border-brand-200 bg-brand-50 p-6 dark:border-[#293b58] dark:bg-[#172554]">
+        <BoxCubeIcon className="h-8 w-8 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" /><div><h2 className="font-semibold text-gray-900 dark:text-white">Pengembalian barang lebih tertata</h2><p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">Tentukan outlet dan supplier, pilih produk konsinyasi, lalu isi jumlah yang dikembalikan. Dokumen disimpan sebagai draft untuk diproses selanjutnya.</p></div>
+      </div>
+
       <FormCard
-        title="Konteks outlet retur"
+        title="1. Tentukan outlet"
         description="Owner dapat mengganti outlet aktif. Admin dan Keuangan mengikuti outlet pada akun."
       >
         <ProcurementOutletSelector
@@ -201,7 +206,7 @@ export default function ConsignmentReturnCreatePage() {
         />
       ) : (
         <FormCard
-          title="Form retur konsinyasi"
+          title="2. Lengkapi barang retur"
           description="Tentukan supplier lalu masukkan produk konsinyasi beserta qty yang dikembalikan."
         >
           <form className="space-y-6" onSubmit={(event) => void handleSubmit(event)}>
@@ -210,7 +215,7 @@ export default function ConsignmentReturnCreatePage() {
               <select
                 value={values.supplierId}
                 onChange={(event) => updateValue("supplierId", event.target.value)}
-                className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
               >
                 <option value="">Pilih supplier</option>
                 {suppliers.map((supplier) => (
@@ -223,7 +228,7 @@ export default function ConsignmentReturnCreatePage() {
             </label>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h4 className="text-base font-semibold text-gray-900 dark:text-white">Item retur</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -233,20 +238,21 @@ export default function ConsignmentReturnCreatePage() {
                 <button
                   type="button"
                   onClick={addRow}
-                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                  className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300"
                 >
-                  Tambah baris
+                  <PlusIcon className="h-4 w-4" aria-hidden="true" />Tambah item
                 </button>
               </div>
 
               <div className="space-y-3">
                 {values.items.map((row, index) => (
-                  <div key={index} className="flex gap-4 items-start">
-                    <div className="flex-1">
+                  <div key={index} className="grid items-start gap-4 rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-[#293b58] dark:bg-[#111b2c] sm:grid-cols-[minmax(0,1fr)_140px_auto]">
+                    <label className="min-w-0">
+                      <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Produk retur {index + 1}</span>
                       <select
                         value={row.productId}
                         onChange={(e) => updateItem(index, "productId", e.target.value)}
-                        className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                       >
                         <option value="">Pilih produk konsinyasi</option>
                         {consignmentProducts.map((p) => (
@@ -256,24 +262,25 @@ export default function ConsignmentReturnCreatePage() {
                         ))}
                       </select>
                       <FieldErrorText message={errors[`items.${index}.productId`]} />
-                    </div>
+                    </label>
 
-                    <div className="w-32">
+                    <label>
+                      <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Jumlah retur</span>
                       <input
                         type="number"
                         step="any"
                         placeholder="Qty"
                         value={row.qty}
                         onChange={(e) => updateItem(index, "qty", e.target.value)}
-                        className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                       />
                       <FieldErrorText message={errors[`items.${index}.qty`]} />
-                    </div>
+                    </label>
 
                     <button
                       type="button"
                       onClick={() => removeRow(index)}
-                      className="mt-2 text-sm font-medium text-red-500 hover:text-red-700 disabled:opacity-50"
+                      className="h-11 self-end rounded-xl border border-error-200 px-4 text-sm font-semibold text-error-700 transition hover:bg-error-50 disabled:opacity-50 dark:border-error-500/20 dark:text-error-300 dark:hover:bg-error-500/10"
                       disabled={values.items.length === 1}
                     >
                       Hapus

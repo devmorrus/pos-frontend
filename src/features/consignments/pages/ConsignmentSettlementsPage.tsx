@@ -19,6 +19,7 @@ import {
   formatDateTime,
   getSettlementStatusClasses,
 } from "../utils/formatters";
+import { DollarLineIcon } from "../../../icons";
 
 export default function ConsignmentSettlementsPage() {
   const navigate = useNavigate();
@@ -133,9 +134,13 @@ export default function ConsignmentSettlementsPage() {
       <InlineAlert tone="error" message={error} />
       <InlineAlert tone="error" message={submitError} />
 
+      <section className="rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#111b2c] sm:p-8">
+        <div className="flex items-start gap-4"><div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white"><DollarLineIcon className="h-7 w-7" aria-hidden="true" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Hak supplier</p><h2 className="mt-1 text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Settlement jelas, kemitraan terjaga</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">Periksa penjualan yang belum masuk settlement dan nilai hak supplier sebelum membuat dokumen penyelesaian.</p></div></div>
+      </section>
+
       <AppTableShell
         title="Draft settlement supplier"
-        description="Pilih supplier untuk melihat penjualan konsinyasi yang masih unpaid lalu buat settlement baru."
+        description="Pilih supplier untuk memeriksa penjualan yang belum masuk settlement, lalu buat dokumen baru."
         actions={
           <ProcurementOutletSelector
             ownerMode={ownerMode}
@@ -149,19 +154,19 @@ export default function ConsignmentSettlementsPage() {
           <div className="p-6">
             <PagePlaceholder
               title="Pilih outlet konsinyasi terlebih dahulu"
-              description="Owner perlu memilih outlet aktif sebelum melihat unpaid sales dan settlement supplier."
+              description="Owner perlu memilih outlet aktif sebelum melihat penjualan dan settlement supplier."
               status="Outlet required"
             />
           </div>
         ) : (
-          <div className="grid gap-6 p-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-            <div className="space-y-4 rounded-2xl border border-gray-200 p-5 dark:border-gray-800">
+          <div className="grid items-start gap-6 p-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="space-y-5 rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-[#293b58] dark:bg-[#111b2c]">
               <label className="block">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Supplier</span>
                 <select
                   value={selectedSupplierId}
                   onChange={(event) => setSelectedSupplierId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                 >
                   <option value="">Pilih supplier</option>
                   {suppliers.map((supplier) => (
@@ -172,13 +177,13 @@ export default function ConsignmentSettlementsPage() {
                 </select>
               </label>
 
-              <div className="rounded-2xl border border-dashed border-gray-300 p-4 text-sm dark:border-gray-700">
-                <p className="text-gray-600 dark:text-gray-300">Jumlah unpaid sales</p>
+              <div className="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm dark:border-[#293b58] dark:bg-[#172554]">
+                <p className="text-gray-600 dark:text-gray-300">Penjualan belum disettlement</p>
                 <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
                   {unpaidSales.length}
                 </p>
                 <p className="mt-3 text-gray-600 dark:text-gray-300">Total hak supplier</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+                <p className="mt-1 text-2xl font-bold text-brand-700 dark:text-brand-200">
                   {formatCurrency(draftSalesTotal)}
                 </p>
               </div>
@@ -187,29 +192,30 @@ export default function ConsignmentSettlementsPage() {
                 type="button"
                 onClick={() => void handleCreateSettlement()}
                 disabled={!selectedSupplierId || unpaidSales.length === 0 || isSubmitting}
-                className="w-full rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="min-h-12 w-full rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? "Membuat settlement..." : "Buat settlement"}
               </button>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 p-5 dark:border-gray-800">
+            <div className="min-w-0 overflow-x-auto rounded-2xl border border-gray-200 p-5 dark:border-[#293b58]">
               {isLoadingPreview ? (
-                <AppLoader label="Memuat unpaid sales..." />
+                <AppLoader label="Memuat penjualan konsinyasi..." />
               ) : unpaidSales.length === 0 ? (
                 <PagePlaceholder
-                  title="Belum ada unpaid sales"
+                  title="Belum ada penjualan untuk settlement"
                   description="Pilih supplier untuk memeriksa penjualan konsinyasi yang belum masuk settlement."
-                  status={selectedSupplierId ? "No unpaid sales" : "Select supplier"}
+                  status={selectedSupplierId ? "Tidak ada tagihan" : "Pilih supplier"}
                 />
               ) : (
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                  <thead className="bg-gray-50 dark:bg-gray-950">
+                  <thead className="bg-gray-50 dark:bg-[#111b2c]">
                     <tr>
-                      {["Transaksi", "Produk", "Qty", "Unit Cost", "Total", "Tanggal"].map((column) => (
+                      {["Transaksi", "Produk", "Jumlah", "Hak supplier/unit", "Total", "Tanggal"].map((column) => (
                         <th
                           key={column}
-                          className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+                          scope="col"
+                          className="whitespace-nowrap px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                         >
                           {column}
                         </th>
@@ -218,7 +224,7 @@ export default function ConsignmentSettlementsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                     {unpaidSales.map((sale) => (
-                      <tr key={sale.id}>
+                      <tr key={sale.id} className="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                           {sale.transactionNumber}
                         </td>
@@ -271,18 +277,19 @@ export default function ConsignmentSettlementsPage() {
           <div className="p-6">
             <PagePlaceholder
               title="Belum ada settlement"
-              description="Settlement supplier akan muncul setelah Anda membuat draft settlement dari unpaid sales."
-              status="Empty"
+              description="Riwayat akan muncul setelah Anda membuat draft settlement dari penjualan konsinyasi."
+              status="Belum ada settlement"
             />
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-950">
+            <thead className="bg-gray-50 dark:bg-[#111b2c]">
               <tr>
                 {["No. Settlement", "Supplier", "Outlet", "Tanggal", "Total", "Status", "Aksi"].map((column) => (
                   <th
                     key={column}
-                    className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+                    scope="col"
+                    className="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                   >
                     {column}
                   </th>
@@ -291,7 +298,7 @@ export default function ConsignmentSettlementsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {settlements.map((settlement) => (
-                <tr key={settlement.id}>
+                <tr key={settlement.id} className="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                     {settlement.settlementNumber}
                   </td>

@@ -10,6 +10,7 @@ import { getConsignments, getConsignmentReturns } from "../api/consignmentsApi";
 import type { ConsignmentDto, ConsignmentReturnDto } from "../types/consignment";
 import { formatDateTime, getConsignmentStatusClasses } from "../utils/formatters";
 import { getConsignmentReturnStatusClasses } from "./ConsignmentReturnsPage";
+import { BoxCubeIcon, DollarLineIcon, PlusIcon } from "../../../icons";
 
 type ConsignmentsLocationState = {
   successMessage?: string;
@@ -81,12 +82,16 @@ export default function ConsignmentsPage() {
   return (
     <ProtectedPageShell
       title="Konsinyasi"
-      description="Kelola ambil dan return barang titipan supplier serta settlement hak supplier per outlet aktif dalam satu jalur."
+      description="Kelola penerimaan, retur barang titipan, dan penyelesaian hak supplier per outlet."
     >
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={error} />
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
+      <section className="rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#111b2c] sm:p-8">
+        <div className="flex items-start gap-4"><div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/20"><BoxCubeIcon className="h-7 w-7" aria-hidden="true" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Barang titipan supplier</p><h2 className="mt-1 text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Titipan tercatat, kerja sama terjaga</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">Pantau tanda terima dan pengembalian barang, lalu kelola settlement berdasarkan penjualan konsinyasi.</p></div></div>
+      </section>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
         <ProcurementOutletSelector
           ownerMode={ownerMode}
           value={selectedOutletId}
@@ -96,28 +101,29 @@ export default function ConsignmentsPage() {
         <div className="ml-auto flex flex-wrap gap-2">
           <Link
             to="/consignment-settlements"
-            className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
           >
-            Settlement
+            <DollarLineIcon className="h-5 w-5" aria-hidden="true" />Settlement
           </Link>
           <Link
             to="/consignments/returns/create"
             className="inline-flex items-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
           >
-            Return Barang Konsinyasi
+            Retur barang
           </Link>
           <Link
             to="/consignments/create"
-            className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
           >
-            Ambil Barang Konsinyasi
+            <PlusIcon className="h-5 w-5" aria-hidden="true" />Ambil barang konsinyasi
           </Link>
         </div>
       </div>
 
-      <div className="mb-6 inline-flex rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
+      <div role="group" aria-label="Jenis dokumen konsinyasi" className="inline-flex max-w-full flex-wrap gap-1 rounded-2xl border border-gray-200 bg-gray-100 p-1 dark:border-[#293b58] dark:bg-[#111b2c]">
         <button
           type="button"
+          aria-pressed={activeTab === "ambil"}
           onClick={() => setActiveTab("ambil")}
           className={`rounded-xl px-5 py-2 text-sm font-semibold transition-colors ${
             activeTab === "ambil"
@@ -129,6 +135,7 @@ export default function ConsignmentsPage() {
         </button>
         <button
           type="button"
+          aria-pressed={activeTab === "returns"}
           onClick={() => setActiveTab("returns")}
           className={`rounded-xl px-5 py-2 text-sm font-semibold transition-colors ${
             activeTab === "returns"
@@ -136,7 +143,7 @@ export default function ConsignmentsPage() {
               : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
           }`}
         >
-          Return Barang ({returns.length})
+          Retur Barang ({returns.length})
         </button>
       </div>
 
@@ -160,17 +167,18 @@ export default function ConsignmentsPage() {
               <PagePlaceholder
                 title="Belum ada tanda terima konsinyasi"
                 description="Buat tanda terima pertama agar barang titipan supplier bisa diproses menjadi stok konsinyasi."
-                status="Empty"
+                status="Mulai di sini"
               />
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-              <thead className="bg-gray-50 dark:bg-gray-950">
+              <thead className="bg-gray-50 dark:bg-[#111b2c]">
                 <tr>
                   {["No. Konsinyasi", "Supplier", "Outlet", "Tanggal", "Status", "Jumlah item", "Aksi"].map((column) => (
                     <th
                       key={column}
-                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+                      scope="col"
+                      className="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >
                       {column}
                     </th>
@@ -179,7 +187,7 @@ export default function ConsignmentsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {consignments.map((consignment) => (
-                  <tr key={consignment.id}>
+                  <tr key={consignment.id} className="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                       {consignment.consignmentNumber}
                     </td>
@@ -220,7 +228,7 @@ export default function ConsignmentsPage() {
         </AppTableShell>
       ) : (
         <AppTableShell
-          title="Daftar return konsinyasi"
+          title="Daftar retur konsinyasi"
           description={`Total dokumen retur: ${returns.length}`}
         >
           {returns.length === 0 ? (
@@ -228,17 +236,18 @@ export default function ConsignmentsPage() {
               <PagePlaceholder
                 title="Belum ada retur konsinyasi"
                 description="Buat retur konsinyasi pertama jika ada barang titipan supplier yang ingin ditarik kembali."
-                status="Empty"
+                status="Belum ada retur"
               />
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-              <thead className="bg-gray-50 dark:bg-gray-950">
+              <thead className="bg-gray-50 dark:bg-[#111b2c]">
                 <tr>
                   {["No. Retur", "Supplier", "Outlet", "Tanggal", "Status", "Jumlah item", "Aksi"].map((column) => (
                     <th
                       key={column}
-                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+                      scope="col"
+                      className="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >
                       {column}
                     </th>
@@ -247,7 +256,7 @@ export default function ConsignmentsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {returns.map((ret) => (
-                  <tr key={ret.id}>
+                  <tr key={ret.id} className="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                       {ret.returnNumber}
                     </td>

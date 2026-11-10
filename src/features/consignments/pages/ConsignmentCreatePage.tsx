@@ -13,6 +13,7 @@ import type { SupplierDto } from "../../suppliers/types/supplier";
 import { createConsignment } from "../api/consignmentsApi";
 import { formatCurrency } from "../utils/formatters";
 import type { ConsignmentFormRow, ConsignmentFormValues } from "../types/consignment";
+import { BoxCubeIcon, PlusIcon } from "../../../icons";
 
 const initialRow: ConsignmentFormRow = {
   productId: "",
@@ -218,8 +219,12 @@ export default function ConsignmentCreatePage() {
     >
       <InlineAlert tone="error" message={submitError} />
 
+      <div className="flex items-start gap-4 rounded-3xl border border-brand-200 bg-brand-50 p-6 dark:border-[#293b58] dark:bg-[#172554]">
+        <BoxCubeIcon className="h-8 w-8 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" /><div><h2 className="font-semibold text-gray-900 dark:text-white">Catat titipan dengan rincian yang jelas</h2><p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">Pilih outlet dan supplier, tambahkan produk, lalu periksa jumlah serta nilai titipan sebelum menyimpan tanda terima.</p></div>
+      </div>
+
       <FormCard
-        title="Konteks outlet konsinyasi"
+        title="1. Tentukan outlet"
         description="Owner dapat mengganti outlet konsinyasi aktif. Admin dan Keuangan mengikuti outlet pada akun."
       >
         <ProcurementOutletSelector
@@ -240,8 +245,8 @@ export default function ConsignmentCreatePage() {
         />
       ) : (
         <FormCard
-          title="Form tanda terima konsinyasi"
-          description="Tentukan supplier lalu masukkan produk titipan beserta qty, unit cost, dan unit price."
+          title="2. Lengkapi barang titipan"
+          description="Tentukan supplier, jumlah barang, hak supplier per unit, dan harga jual produk."
         >
           <form className="space-y-6" onSubmit={(event) => void handleSubmit(event)}>
             <label className="block max-w-lg">
@@ -249,7 +254,7 @@ export default function ConsignmentCreatePage() {
               <select
                 value={values.supplierId}
                 onChange={(event) => updateValue("supplierId", event.target.value)}
-                className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
               >
                 <option value="">Pilih supplier</option>
                 {suppliers.map((supplier) => (
@@ -262,7 +267,7 @@ export default function ConsignmentCreatePage() {
             </label>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h4 className="text-base font-semibold text-gray-900 dark:text-white">Item konsinyasi</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -272,9 +277,9 @@ export default function ConsignmentCreatePage() {
                 <button
                   type="button"
                   onClick={addRow}
-                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                  className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300"
                 >
-                  Tambah item
+                  <PlusIcon className="h-4 w-4" aria-hidden="true" />Tambah item
                 </button>
               </div>
               <FieldErrorText message={errors.items} />
@@ -283,14 +288,15 @@ export default function ConsignmentCreatePage() {
                 {values.items.map((item, index) => {
                   const estimatedCost = Number(item.qty || 0) * Number(item.unitCost || 0);
                   return (
-                    <div key={`${index}-${item.productId}`} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
-                      <div className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+                    <div key={`${index}-${item.productId}`} className="rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-[#293b58] dark:bg-[#111b2c]">
+                      <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-300">Barang titipan {index + 1}</p>
+                      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto]">
                         <label className="block">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Produk</span>
                           <select
                             value={item.productId}
                             onChange={(event) => updateItem(index, "productId", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                            className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                           >
                             <option value="">Pilih produk</option>
                             {products.map((product) => (
@@ -302,38 +308,38 @@ export default function ConsignmentCreatePage() {
                           <FieldErrorText message={errors[`items.${index}.productId`]} />
                         </label>
                         <label className="block">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Qty</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Jumlah</span>
                           <input
                             type="number"
                             min="0"
                             step="0.01"
                             value={item.qty}
                             onChange={(event) => updateItem(index, "qty", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                            className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                           />
                           <FieldErrorText message={errors[`items.${index}.qty`]} />
                         </label>
                         <label className="block">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Unit cost</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Hak supplier/unit (Rp)</span>
                           <input
                             type="number"
                             min="0"
                             step="0.01"
                             value={item.unitCost}
                             onChange={(event) => updateItem(index, "unitCost", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                            className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                           />
                           <FieldErrorText message={errors[`items.${index}.unitCost`]} />
                         </label>
                         <label className="block">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Unit price</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Harga jual/unit (Rp)</span>
                           <input
                             type="number"
                             min="0"
                             step="0.01"
                             value={item.unitPrice}
                             onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                            className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                           />
                           <FieldErrorText message={errors[`items.${index}.unitPrice`]} />
                         </label>
@@ -364,9 +370,9 @@ export default function ConsignmentCreatePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-dashed border-gray-300 px-5 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200">
-              Total estimasi HPP konsinyasi:{" "}
-              <span className="font-semibold text-gray-900 dark:text-white">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-5 text-sm font-medium text-gray-700 dark:border-[#293b58] dark:bg-[#172554] dark:text-gray-200">
+              Total estimasi nilai titipan
+              <span className="text-2xl font-bold text-brand-700 dark:text-brand-200">
                 {formatCurrency(totalEstimation)}
               </span>
             </div>
