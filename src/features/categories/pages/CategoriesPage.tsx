@@ -197,6 +197,8 @@ function ChevronIcon({ className }: { className?: string }) {
   );
 }
 
+// Di light mode ring berada di atas hero gradasi gelap, jadi warnanya dibuat
+// terang (hijau muda + putih). Di dark mode kembali ke warna semula.
 function RatioRing({ parent, child }: { parent: number; child: number }) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
@@ -207,14 +209,19 @@ function RatioRing({ parent, child }: { parent: number; child: number }) {
 
   return (
     <div className="relative h-40 w-40 shrink-0">
-      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" role="img" aria-label="Perbandingan kategori induk dan sub-kategori">
+      <svg
+        viewBox="0 0 100 100"
+        className="h-full w-full -rotate-90"
+        role="img"
+        aria-label="Perbandingan kategori induk dan sub-kategori"
+      >
         <circle
           cx="50"
           cy="50"
           r={radius}
           fill="none"
           strokeWidth="9"
-          className="stroke-gray-100 dark:stroke-gray-800"
+          className="stroke-white/20 dark:stroke-gray-800"
         />
         {parentLength > 0 ? (
           <circle
@@ -225,7 +232,7 @@ function RatioRing({ parent, child }: { parent: number; child: number }) {
             strokeWidth="9"
             strokeLinecap="round"
             strokeDasharray={`${parentLength} ${circumference}`}
-            className="stroke-success-500 transition-all duration-500"
+            className="stroke-success-400 transition-all duration-500 dark:stroke-success-500"
           />
         ) : null}
         {childLength > 0 ? (
@@ -238,13 +245,13 @@ function RatioRing({ parent, child }: { parent: number; child: number }) {
             strokeLinecap="round"
             strokeDasharray={`${childLength} ${circumference}`}
             strokeDashoffset={-(parentLength + gap)}
-            className="stroke-brand-500 transition-all duration-500"
+            className="stroke-white transition-all duration-500 dark:stroke-brand-500"
           />
         ) : null}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-semibold text-gray-900 dark:text-white">{total}</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">kategori</span>
+        <span className="text-3xl font-semibold text-white">{total}</span>
+        <span className="text-xs text-white/70 dark:text-gray-400">kategori</span>
       </div>
     </div>
   );
@@ -501,27 +508,27 @@ export default function CategoriesPage() {
       <InlineAlert tone="error" message={error} />
 
       {/* ------------------------------ Hero visual ------------------------------ */}
-      <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-brand-50/80 via-white to-white p-6 shadow-theme-xs dark:border-gray-800 dark:from-brand-500/10 dark:via-gray-900 dark:to-gray-900 sm:p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-transparent bg-gradient-to-br from-brand-600 via-indigo-600 to-violet-600 p-6 text-white shadow-lg shadow-brand-600/20 dark:border-gray-800 dark:from-brand-500/10 dark:via-gray-900 dark:to-gray-900 dark:shadow-none sm:p-8">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-500/10 blur-3xl"
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl dark:bg-brand-500/10"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-success-500/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-violet-300/20 blur-3xl dark:bg-success-500/10"
         />
 
         <div className="relative grid gap-8 lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.2fr)] lg:items-center">
           {/* Ring */}
           <div className="flex flex-col items-center gap-4 sm:flex-row lg:flex-col">
             <RatioRing parent={parentCount} child={childCount} />
-            <div className="flex gap-5 text-xs text-gray-600 dark:text-gray-300 sm:flex-col sm:gap-2 lg:flex-row lg:gap-5">
+            <div className="flex gap-5 text-xs text-white/80 dark:text-gray-300 sm:flex-col sm:gap-2 lg:flex-row lg:gap-5">
               <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-success-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-success-400 dark:bg-success-500" />
                 Induk
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-brand-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-white dark:bg-brand-500" />
                 Sub-kategori
               </span>
             </div>
@@ -551,28 +558,26 @@ export default function CategoriesPage() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex items-center gap-4 rounded-2xl border border-gray-200/80 bg-white/80 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-900/70"
+                className="flex items-center gap-4 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-900/70"
               >
                 <div
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.iconClass}`}
                 >
                   {stat.icon}
                 </div>
-                <p className="flex-1 text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {stat.value}
-                </p>
+                <p className="flex-1 text-sm text-white/80 dark:text-gray-400">{stat.label}</p>
+                <p className="text-2xl font-semibold text-white">{stat.value}</p>
               </div>
             ))}
           </div>
 
           {/* Distribution */}
-          <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-5 backdrop-blur dark:border-gray-800 dark:bg-gray-900/70">
+          <div className="rounded-2xl border border-white/40 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/70">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               Induk dengan sub-kategori terbanyak
             </h3>
             {topGroups.length === 0 ? (
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-4 text-sm text-slate-600 dark:text-gray-400">
                 Belum ada sub-kategori. Tambahkan kategori dengan induk untuk melihat sebarannya
                 di sini.
               </p>
@@ -646,7 +651,7 @@ export default function CategoriesPage() {
         ) : (
           <>
             {/* Toolbar */}
-            <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800 sm:px-6">
+            <div className="flex flex-col gap-3 border-y border-indigo-100 bg-gradient-to-r from-indigo-50 to-blue-50/70 px-5 py-4 dark:border-gray-800 dark:bg-none sm:px-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full sm:max-w-xs">
                   <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -682,7 +687,7 @@ export default function CategoriesPage() {
                   <div
                     role="group"
                     aria-label="Mode tampilan"
-                    className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-950"
+                    className="inline-flex rounded-xl border border-indigo-200 bg-indigo-100/60 p-1 dark:border-gray-800 dark:bg-gray-950"
                   >
                     {(
                       [
@@ -721,7 +726,7 @@ export default function CategoriesPage() {
                         className={`rounded-full border px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 ${
                           filter === option.value
                             ? "border-brand-500 bg-brand-500 text-white"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
+                            : "border-indigo-200 bg-white/80 text-slate-600 hover:bg-indigo-100 dark:border-gray-800 dark:bg-transparent dark:text-gray-300 dark:hover:bg-gray-800"
                         }`}
                       >
                         {option.label}
@@ -778,7 +783,7 @@ export default function CategoriesPage() {
               </div>
             ) : view === "tree" ? (
               /* ------------------------------ Tree view ------------------------------ */
-              <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+              <ul className="divide-y divide-indigo-100 dark:divide-gray-800">
                 {visibleRows.map(({ category, depth, childCount: directChildren, tone }) => {
                   const palette = palettes[tone];
                   const indent = isFlat ? 0 : Math.min(depth, 3);
@@ -787,7 +792,7 @@ export default function CategoriesPage() {
                   return (
                     <li
                       key={category.id}
-                      className="group flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.02] sm:flex-row sm:items-center sm:px-6"
+                      className="group flex flex-col gap-3 bg-slate-50/60 px-5 py-4 transition-colors even:bg-indigo-50/50 hover:bg-indigo-100/60 dark:bg-transparent dark:even:bg-transparent dark:hover:bg-white/[0.02] sm:flex-row sm:items-center sm:px-6"
                     >
                       <div
                         className="flex min-w-0 flex-1 items-center gap-3"
@@ -880,7 +885,7 @@ export default function CategoriesPage() {
               </ul>
             ) : (
               /* ------------------------------ Grid view ------------------------------ */
-              <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
+              <div className="grid gap-4 bg-slate-100/70 p-5 dark:bg-transparent sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
                 {visibleGroups.map(({ root, items }) => {
                   const palette = palettes[root.tone];
                   const share = (items.length / maxChildren) * 100;
@@ -888,7 +893,7 @@ export default function CategoriesPage() {
                   return (
                     <article
                       key={root.category.id}
-                      className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-xs transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
+                      className="group relative flex flex-col overflow-hidden rounded-3xl border border-indigo-200 bg-gradient-to-br from-white to-indigo-50 p-5 shadow-theme-xs transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900 dark:bg-none"
                     >
                       <div
                         aria-hidden="true"
