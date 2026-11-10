@@ -15,6 +15,7 @@ import {
   updateTaxRule,
 } from "../api/pricingApi";
 import type { ServiceChargeRuleDto, TaxRuleDto } from "../types/pricing";
+import { DocsIcon, DollarLineIcon } from "../../../icons";
 
 function resolveDefaultOutletId(role: string | undefined, selectedOutletId: string | null, sessionOutletId: string | null | undefined) {
   if (role === "Owner") {
@@ -160,17 +161,26 @@ export default function PricingRulesPage() {
   return (
     <ProtectedPageShell
       title="Tax & Service"
-      description="Kelola aturan pajak exclusive dan service charge per outlet untuk pricing engine checkout."
+      description="Atur pajak dan biaya layanan per outlet agar perhitungan transaksi sesuai kebutuhan bisnis Anda."
     >
       <InlineAlert tone="error" message={error} />
 
-      <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+      <section className="relative overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 shadow-theme-xs dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#111b2c] sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl" />
+        <div className="relative flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/20"><DollarLineIcon className="h-7 w-7" aria-hidden="true" /></div>
+          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Pajak & biaya layanan</p><h2 className="mt-1 text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Pengaturan tarif yang lebih terarah</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">Pilih outlet, tentukan tarif, lalu kelola aturan yang digunakan saat pembayaran. Pajak diatur secara eksklusif, di luar harga produk.</p></div>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-5 rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="font-semibold text-gray-900 dark:text-white">Outlet pengaturan</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Aturan yang ditampilkan dan disimpan mengikuti outlet pilihan.</p></div>
         <label className="block max-w-md">
           <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Outlet</span>
           <select
             value={selectedRuleOutletId ?? ""}
             onChange={(event) => setSelectedRuleOutletId(event.target.value)}
-            className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+            className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white sm:min-w-64"
           >
             <option value="">Pilih outlet</option>
             {outlets.map((outlet) => (
@@ -187,22 +197,26 @@ export default function PricingRulesPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Tax Rule</h2>
+            <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><DocsIcon className="h-5 w-5" aria-hidden="true" /></div><div><h2 className="text-lg font-semibold text-gray-900 dark:text-white">Aturan pajak</h2><p className="text-xs text-gray-500 dark:text-gray-400">Tarif pajak dan urutan perhitungan</p></div></div>
             <form className="mt-4 space-y-4" onSubmit={handleTaxSubmit}>
+              <label htmlFor="tax-name" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Nama aturan</label>
               <input
+                id="tax-name"
                 value={taxForm.name}
                 onChange={(event) => setTaxForm((current) => ({ ...current, name: event.target.value }))}
-                placeholder="Nama rule pajak"
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                placeholder="Contoh: PPN"
+                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
               />
+              <label htmlFor="tax-rate" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Tarif pajak (%)</label>
               <input
+                id="tax-rate"
                 type="number"
                 min="0"
                 step="0.01"
                 value={taxForm.rate}
                 onChange={(event) => setTaxForm((current) => ({ ...current, rate: event.target.value }))}
                 placeholder="Rate pajak (%)"
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-lg font-semibold text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
               />
               <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-950/50">
                 <div className="flex flex-col gap-3">
@@ -213,7 +227,7 @@ export default function PricingRulesPage() {
                       onChange={(event) => setTaxForm((current) => ({ ...current, isActive: event.target.checked }))}
                       className="mt-0.5"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">Aktifkan rule pajak ini</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">Aktifkan aturan pajak</span>
                   </label>
                   <label className="inline-flex items-start gap-3">
                     <input
@@ -222,24 +236,26 @@ export default function PricingRulesPage() {
                       onChange={(event) => setTaxForm((current) => ({ ...current, appliesBeforeServiceCharge: event.target.checked }))}
                       className="mt-0.5"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">Hitung tax sebelum service charge</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">Hitung pajak sebelum biaya layanan</span>
                   </label>
                 </div>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Simpan setelah outlet, nama, dan rate sudah benar.
+                    Periksa outlet, nama, dan tarif sebelum menyimpan.
                   </p>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex min-h-11 items-center justify-center self-start rounded-2xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {taxForm.id ? "Update tax rule" : "Tambah tax rule"}
+                    {taxForm.id ? "Simpan perubahan" : "Tambah aturan pajak"}
                   </button>
                 </div>
               </div>
             </form>
             <div className="mt-6 space-y-3">
+              <div className="border-t border-gray-200 pt-5 dark:border-gray-800"><h3 className="text-sm font-semibold text-gray-900 dark:text-white">Daftar aturan pajak</h3><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Pilih aturan untuk mengubah pengaturannya.</p></div>
+              {taxRules.length === 0 && <p className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">Belum ada aturan pajak untuk outlet ini.</p>}
               {taxRules.map((rule) => (
                 <button
                   key={rule.id}
@@ -251,11 +267,11 @@ export default function PricingRulesPage() {
                     isActive: rule.isActive,
                     appliesBeforeServiceCharge: rule.appliesBeforeServiceCharge,
                   })}
-                  className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-left dark:border-gray-800"
+                  className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-left transition hover:border-brand-400 hover:bg-brand-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-[#293b58] dark:bg-[#111b2c] dark:hover:bg-brand-500/10"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium text-gray-900 dark:text-white">{rule.name}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{rule.rate}%</span>
+                    <span className="rounded-xl bg-brand-50 px-3 py-1 text-lg font-bold text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">{rule.rate}%</span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{rule.isActive ? "Aktif" : "Nonaktif"}</p>
                 </button>
@@ -264,22 +280,26 @@ export default function PricingRulesPage() {
           </section>
 
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Service Charge Rule</h2>
+            <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300"><DollarLineIcon className="h-5 w-5" aria-hidden="true" /></div><div><h2 className="text-lg font-semibold text-gray-900 dark:text-white">Biaya layanan</h2><p className="text-xs text-gray-500 dark:text-gray-400">Tarif layanan tambahan per transaksi</p></div></div>
             <form className="mt-4 space-y-4" onSubmit={handleServiceSubmit}>
+              <label htmlFor="service-name" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Nama aturan</label>
               <input
+                id="service-name"
                 value={serviceForm.name}
                 onChange={(event) => setServiceForm((current) => ({ ...current, name: event.target.value }))}
-                placeholder="Nama rule service charge"
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                placeholder="Contoh: Biaya layanan restoran"
+                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
               />
+              <label htmlFor="service-rate" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Tarif biaya layanan (%)</label>
               <input
+                id="service-rate"
                 type="number"
                 min="0"
                 step="0.01"
                 value={serviceForm.rate}
                 onChange={(event) => setServiceForm((current) => ({ ...current, rate: event.target.value }))}
                 placeholder="Rate service charge (%)"
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-lg font-semibold text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
               />
               <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-950/50">
                 <label className="inline-flex items-start gap-3">
@@ -289,23 +309,25 @@ export default function PricingRulesPage() {
                     onChange={(event) => setServiceForm((current) => ({ ...current, isActive: event.target.checked }))}
                     className="mt-0.5"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-200">Aktifkan rule service charge ini</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-200">Aktifkan aturan biaya layanan</span>
                 </label>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Gunakan satu rule aktif utama per outlet agar hasil pricing konsisten.
+                    Gunakan satu aturan aktif utama per outlet agar perhitungan konsisten.
                   </p>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex min-h-11 items-center justify-center self-start rounded-2xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {serviceForm.id ? "Update service rule" : "Tambah service rule"}
+                    {serviceForm.id ? "Simpan perubahan" : "Tambah biaya layanan"}
                   </button>
                 </div>
               </div>
             </form>
             <div className="mt-6 space-y-3">
+              <div className="border-t border-gray-200 pt-5 dark:border-gray-800"><h3 className="text-sm font-semibold text-gray-900 dark:text-white">Daftar aturan biaya layanan</h3><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Pilih aturan untuk mengubah pengaturannya.</p></div>
+              {serviceRules.length === 0 && <p className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">Belum ada aturan biaya layanan untuk outlet ini.</p>}
               {serviceRules.map((rule) => (
                 <button
                   key={rule.id}
@@ -316,11 +338,11 @@ export default function PricingRulesPage() {
                     rate: String(rule.rate),
                     isActive: rule.isActive,
                   })}
-                  className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-left dark:border-gray-800"
+                  className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-left transition hover:border-brand-400 hover:bg-brand-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-[#293b58] dark:bg-[#111b2c] dark:hover:bg-brand-500/10"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium text-gray-900 dark:text-white">{rule.name}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{rule.rate}%</span>
+                    <span className="rounded-xl bg-warning-50 px-3 py-1 text-lg font-bold text-warning-600 dark:bg-warning-500/10 dark:text-warning-300">{rule.rate}%</span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{rule.isActive ? "Aktif" : "Nonaktif"}</p>
                 </button>
