@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui";
+import { BoxIcon, CheckLineIcon, DocsIcon, DollarLineIcon, GroupIcon } from "../../../icons";
 import ProcurementOutletSelector from "../../procurement/components/ProcurementOutletSelector";
 import { useProcurementOutletScope } from "../../procurement/hooks/useProcurementOutletScope";
 import { getErrorMessage } from "../../../utils/errors";
@@ -211,6 +212,8 @@ export default function SupplierReturnFormPage() {
     >
       <InlineAlert tone="error" message={error} />
 
+      <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 shadow-theme-xs dark:border-gray-800 dark:from-brand-500/10 dark:via-gray-900 dark:to-gray-900 sm:p-8"><div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl" /><div className="relative flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-500/25"><DocsIcon className="h-8 w-8" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Supplier operations</p><h3 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{isEditMode ? "Perbarui supplier return" : "Buat supplier return"}</h3><p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Pilih dokumen pembelian dan tentukan barang yang perlu dikembalikan.</p></div></div></section>
+
       {isLoading ? (
         <AppLoader label="Memuat form retur supplier..." />
       ) : shouldShowOutletPrompt ? (
@@ -223,6 +226,7 @@ export default function SupplierReturnFormPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {!isEditMode ? (
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-5 flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><GroupIcon className="h-5 w-5" /></div><div><h3 className="text-base font-semibold text-gray-900 dark:text-white">Sumber retur</h3><p className="text-sm text-gray-500 dark:text-gray-400">Tentukan outlet, supplier, dan purchase order.</p></div></div>
               <div className="flex flex-wrap gap-4">
                 <ProcurementOutletSelector
                   ownerMode={ownerMode}
@@ -238,7 +242,7 @@ export default function SupplierReturnFormPage() {
                     setEligibleItems([]);
                     setRows([]);
                   }}
-                  className="h-11 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                   className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="">Pilih supplier</option>
                   {suppliers.map((supplier) => (
@@ -250,7 +254,7 @@ export default function SupplierReturnFormPage() {
                 <select
                   value={purchaseOrderId}
                   onChange={(event) => setPurchaseOrderId(event.target.value)}
-                  className="h-11 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                   className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="">Pilih purchase order</option>
                   {purchaseOrders.map((purchaseOrder) => (
@@ -265,8 +269,7 @@ export default function SupplierReturnFormPage() {
 
           <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
             <div className="rounded-3xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Item retur</h3>
+               <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-5 dark:border-gray-800"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><BoxIcon className="h-5 w-5" /></div><div><h3 className="text-lg font-semibold text-gray-900 dark:text-white">Item retur</h3><p className="text-sm text-gray-500 dark:text-gray-400">Pilih jumlah barang yang dikembalikan.</p></div>
               </div>
               {eligibleItems.length === 0 ? (
                 <div className="p-6">
@@ -277,7 +280,7 @@ export default function SupplierReturnFormPage() {
                   />
                 </div>
               ) : (
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                 <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                   <thead className="bg-gray-50 dark:bg-gray-950">
                     <tr>
                       {["Produk", "Eligible Qty", "Unit Cost", "Qty Retur", "Subtotal"].map((column) => (
@@ -309,7 +312,7 @@ export default function SupplierReturnFormPage() {
                               max={item.eligibleQty}
                               value={qty}
                               onChange={(event) => updateQty(item.productId, event.target.value)}
-                              className="h-11 w-32 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                               className="h-11 w-32 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                             />
                             {Number(qty) > item.eligibleQty && (
                               <p className="mt-1 text-[10px] font-semibold text-error-600 dark:text-error-400">
@@ -324,13 +327,13 @@ export default function SupplierReturnFormPage() {
                       );
                     })}
                   </tbody>
-                </table>
+                 </table></div>
               )}
             </div>
 
             <div className="space-y-6">
               <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Informasi retur</h3>
+                 <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300"><DollarLineIcon className="h-5 w-5" /></div><h3 className="text-lg font-semibold text-gray-900 dark:text-white">Informasi retur</h3></div>
                 <div className="mt-4 space-y-4">
                   <label className="block">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Tanggal retur</span>
@@ -338,7 +341,7 @@ export default function SupplierReturnFormPage() {
                       type="date"
                       value={returnDate}
                       onChange={(event) => setReturnDate(event.target.value)}
-                      className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                       className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                     />
                   </label>
                   <label className="block">
@@ -347,7 +350,7 @@ export default function SupplierReturnFormPage() {
                       rows={4}
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                       className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                     />
                   </label>
                   <div className="rounded-2xl border border-dashed border-gray-300 p-4 text-sm dark:border-gray-700">
@@ -375,8 +378,9 @@ export default function SupplierReturnFormPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
-                >
+                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600"
+               >
+                  <CheckLineIcon className="h-4 w-4" />
                   {isSaving ? "Menyimpan..." : isEditMode ? "Simpan perubahan" : "Simpan draft"}
                 </button>
               </div>
