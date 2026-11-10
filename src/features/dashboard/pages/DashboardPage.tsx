@@ -8,6 +8,8 @@ import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppLoader, InlineAlert } from "../../../components/ui";
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
+import { ArrowUpIcon, CheckCircleIcon, DollarLineIcon, DocsIcon } from "../../../icons";
+import { useTheme } from "../../../context/ThemeContext";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -18,6 +20,8 @@ function formatCurrency(value: number) {
 }
 
 export default function DashboardPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { session } = useAuth();
   const { selectedOutletId } = useOutlet();
   
@@ -100,6 +104,7 @@ export default function DashboardPage() {
     chart: {
       type: "area",
       fontFamily: "Outfit, sans-serif",
+      foreColor: isDark ? "#94A3B8" : "#64748B",
       toolbar: { show: false },
       zoom: { enabled: false },
     },
@@ -115,20 +120,22 @@ export default function DashboardPage() {
       },
     },
     grid: {
-      borderColor: "#E2E8F0",
+      borderColor: isDark ? "#263449" : "#E2E8F0",
       strokeDashArray: 5,
       xaxis: { lines: { show: false } },
       yaxis: { lines: { show: true } },
+    },
+    yaxis: {
+      labels: {
+        formatter: (val) => formatCurrency(val),
+        style: { colors: isDark ? "#94A3B8" : "#64748B" },
+      },
     },
     xaxis: {
       categories: summary?.salesTrend.map((t) => new Date(t.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })) ?? [],
       axisBorder: { show: false },
       axisTicks: { show: false },
-    },
-    yaxis: {
-      labels: {
-        formatter: (val) => formatCurrency(val),
-      },
+      labels: { style: { colors: isDark ? "#94A3B8" : "#64748B" } },
     },
     dataLabels: { enabled: false },
     tooltip: {
@@ -149,12 +156,14 @@ export default function DashboardPage() {
     chart: {
       type: "donut",
       fontFamily: "Outfit, sans-serif",
+      foreColor: isDark ? "#CBD5E1" : "#475569",
     },
     colors: ["#3C50E0", "#6577F3", "#8FD0EF", "#0FADCF"],
     labels: summary?.paymentMethods.map((p) => p.method.toUpperCase()) ?? [],
     legend: {
       position: "bottom",
       fontFamily: "Outfit, sans-serif",
+      labels: { colors: isDark ? "#CBD5E1" : "#475569" },
     },
     dataLabels: { enabled: false },
     plotOptions: {
@@ -184,12 +193,14 @@ export default function DashboardPage() {
     chart: {
       type: "donut",
       fontFamily: "Outfit, sans-serif",
+      foreColor: isDark ? "#CBD5E1" : "#475569",
     },
     colors: ["#3C50E0", "#10B981", "#F59E0B", "#EF4444"],
     labels: summary?.salesChannels.map((c) => c.channel.toUpperCase()) ?? [],
     legend: {
       position: "bottom",
       fontFamily: "Outfit, sans-serif",
+      labels: { colors: isDark ? "#CBD5E1" : "#475569" },
     },
     dataLabels: { enabled: false },
     plotOptions: {
@@ -214,9 +225,23 @@ export default function DashboardPage() {
   const renderOwnerDashboard = () => {
     if (!summary) return null;
     return (
-      <div className="space-y-6">
+        <div className="space-y-6">
+          <section className="relative overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-600 via-indigo-700 to-indigo-900 p-6 text-white shadow-lg shadow-brand-500/15 dark:border-brand-800 dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#111827] dark:shadow-brand-950/40 sm:p-8">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl dark:bg-brand-400/10" />
+            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-100">Business overview</p>
+                <h3 className="mt-2 text-2xl font-bold sm:text-3xl">Halo, {session?.name?.split(" ")[0] ?? "Owner"} 👋</h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-brand-100">Pantau performa penjualan, profit, dan aktivitas operasional outlet dalam satu tampilan.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:min-w-[310px]">
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><p className="text-xs text-brand-100">Periode aktif</p><p className="mt-1 font-semibold">{rangeType === "today" ? "Hari ini" : rangeType === "7days" ? "7 hari" : rangeType === "30days" ? "30 hari" : rangeType === "month" ? "Bulan ini" : "Kustom"}</p></div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><p className="text-xs text-brand-100">Outlet</p><p className="mt-1 truncate font-semibold">{effectiveOutletId ? "Outlet aktif" : "Semua outlet"}</p></div>
+              </div>
+            </div>
+          </section>
         {/* Banner Target Bulanan */}
-        <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-brand-600 to-indigo-700 p-6 text-white shadow-theme-sm dark:border-gray-800 dark:bg-gradient-to-r dark:from-brand-950 dark:to-indigo-950 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-600 to-indigo-700 p-6 text-white shadow-lg shadow-brand-500/15 dark:border-brand-800 dark:from-[#172554] dark:to-[#1e1b4b] dark:shadow-brand-950/40 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-1">
             <h4 className="text-lg font-bold">Pencapaian Target Penjualan</h4>
             <p className="text-sm text-brand-100 font-medium">Outlet sedang beroperasi dengan performa optimal hari ini.</p>
@@ -226,9 +251,9 @@ export default function DashboardPage() {
               <span>Progress: {((summary.totalSales / 50000000) * 100).toFixed(1)}%</span>
               <span>Target: Rp 50.000.000</span>
             </div>
-            <div className="w-full bg-brand-500/30 rounded-full h-3.5">
-              <div 
-                className="bg-white h-3.5 rounded-full shadow-lg transition-all duration-500" 
+             <div className="w-full bg-black/20 rounded-full h-3.5 dark:bg-black/30">
+               <div 
+                 className="bg-brand-200 h-3.5 rounded-full shadow-lg transition-all duration-500 dark:bg-brand-400" 
                 style={{ width: `${Math.min(100, (summary.totalSales / 50000000) * 100)}%` }}
               ></div>
             </div>
@@ -236,62 +261,62 @@ export default function DashboardPage() {
         </div>
 
         {/* WIDGET CARDS / KPIS */}
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {/* Card 1: Omzet */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-[#25344a] dark:bg-[#111b2c] dark:shadow-black/20">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
               Total Omzet
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-              {formatCurrency(summary.totalSales)}
-            </h3>
+             <div className="mt-3 flex items-center justify-between"><h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+               {formatCurrency(summary.totalSales)}
+             </h3><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><DollarLineIcon className="h-5 w-5" /></div></div>
           </div>
 
           {/* Card 2: Jumlah Transaksi */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-[#25344a] dark:bg-[#111b2c] dark:shadow-black/20">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
               Total Transaksi
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-              {summary.totalTransactions.toLocaleString("id-ID")}
-            </h3>
+             <div className="mt-3 flex items-center justify-between"><h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+               {summary.totalTransactions.toLocaleString("id-ID")}
+             </h3><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/10 dark:text-blue-light-300"><DocsIcon className="h-5 w-5" /></div></div>
           </div>
 
           {/* Card 3: Rata-rata Belanja */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-[#25344a] dark:bg-[#111b2c] dark:shadow-black/20">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
               Average Order Value
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-              {formatCurrency(summary.averageOrderValue)}
-            </h3>
+             <div className="mt-3 flex items-center justify-between"><h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+               {formatCurrency(summary.averageOrderValue)}
+             </h3><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300"><ArrowUpIcon className="h-5 w-5" /></div></div>
           </div>
 
           {/* Card 4: Laba Kotor */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-[#25344a] dark:bg-[#111b2c] dark:shadow-black/20">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
               Laba Kotor
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-success-700 dark:text-success-300">
-              {formatCurrency(summary.grossProfit)}
-            </h3>
+             <div className="mt-3 flex items-center justify-between"><h3 className="text-2xl font-bold text-success-700 dark:text-success-300">
+               {formatCurrency(summary.grossProfit)}
+             </h3><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-300"><CheckCircleIcon className="h-5 w-5" /></div></div>
           </div>
 
           {/* Card 5: Margin Laba Kotor */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-[#25344a] dark:bg-[#111b2c] dark:shadow-black/20">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
               Margin Laba
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-brand-600 dark:text-brand-400">
-              {summary.grossMargin.toFixed(1)}%
-            </h3>
+             <div className="mt-3 flex items-center justify-between"><h3 className="text-2xl font-bold text-brand-600 dark:text-brand-400">
+               {summary.grossMargin.toFixed(1)}%
+             </h3><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><ArrowUpIcon className="h-5 w-5" /></div></div>
           </div>
         </div>
 
         {/* CHARTS GRID */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Sales Trend Chart */}
-          <div className="lg:col-span-2 rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="lg:col-span-2 rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-[#25344a] dark:bg-[#111b2c]">
             <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">
               Tren Grafik Penjualan
             </h3>
@@ -299,7 +324,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Payment Method Distribution */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-[#25344a] dark:bg-[#111b2c]">
             <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">
               Metode Pembayaran
             </h3>
@@ -312,7 +337,7 @@ export default function DashboardPage() {
         </div>
 
         {/* TOP CATEGORIES */}
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-[#25344a] dark:bg-[#111b2c]">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">Top Categories (Omzet Bersih)</h3>
             <span className="text-xs font-medium text-gray-500">{summary.topCategories?.length ?? 0} kategori • Periode aktif</span>
@@ -327,7 +352,7 @@ export default function DashboardPage() {
                   colors: ["#465fff"],
                   plotOptions: { bar: { horizontal: true, borderRadius: 8, barHeight: "55%" } },
                   dataLabels: { enabled: false },
-                  grid: { borderColor: "#E2E8F0", strokeDashArray: 4 },
+                  grid: { borderColor: isDark ? "#263449" : "#E2E8F0", strokeDashArray: 4 },
                   xaxis: {
                     categories: summary.topCategories.map((c) => c.categoryName),
                     labels: { formatter: (val: string) => val },
@@ -467,6 +492,7 @@ export default function DashboardPage() {
       chart: {
         type: "area",
         fontFamily: "Outfit, sans-serif",
+        foreColor: isDark ? "#94A3B8" : "#64748B",
         toolbar: { show: false },
         zoom: { enabled: false },
       },
@@ -864,21 +890,21 @@ export default function DashboardPage() {
 
       {/* FILTER PANEL */}
       {showFilterPanel && (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-[#25344a] dark:bg-[#111b2c] mb-6">
           <div className="flex flex-wrap items-center gap-3">
 
 
             {/* Preset Date Range Buttons */}
-            <div className="inline-flex rounded-2xl bg-gray-100 p-1 dark:bg-gray-955">
+            <div className="flex max-w-full overflow-x-auto rounded-2xl border border-gray-200 bg-gray-100 p-1 dark:border-[#2b3b53] dark:bg-[#0b1422]">
               {(["today", "7days", "30days", "month", "custom"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setRangeType(type)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                     className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors ${
                     rangeType === type
-                      ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white"
-                      : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                       ? "bg-white text-gray-900 shadow-sm dark:bg-[#334155] dark:text-white"
+                       : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                   }`}
                 >
                   {type === "today" && "Hari Ini"}
