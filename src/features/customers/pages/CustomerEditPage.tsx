@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
-import { AppLoader, InlineAlert } from "../../../components/ui";
+import { AppLoader } from "../../../components/ui";
+import CustomerForm from "../components/CustomerForm";
 import { getErrorMessage } from "../../../utils/errors";
 import { getCustomerById, updateCustomer } from "../api/customersApi";
 import type { CustomerDto, CustomerFormValues } from "../types/customer";
@@ -94,25 +95,7 @@ export default function CustomerEditPage() {
       {isLoading ? (
         <AppLoader label="Memuat detail customer..." />
       ) : (
-        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Form customer</h3>
-          <InlineAlert tone="error" message={submitError} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <input value={values.name} onChange={(event) => handleChange("name", event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white" />
-            <input value={values.phone} onChange={(event) => handleChange("phone", event.target.value)} placeholder="Nomor HP" className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white" />
-            <input value={values.email} onChange={(event) => handleChange("email", event.target.value)} placeholder="Email (opsional)" className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white" />
-            <input value={values.gender} onChange={(event) => handleChange("gender", event.target.value)} placeholder="Gender (opsional)" className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white" />
-            <input value={values.birthDate} onChange={(event) => handleChange("birthDate", event.target.value)} type="date" className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white" />
-            <label className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-200">
-              <input type="checkbox" checked={values.isActive} onChange={(event) => handleChange("isActive", event.target.checked)} />
-              Customer aktif
-            </label>
-          </div>
-          <textarea value={values.notes} onChange={(event) => handleChange("notes", event.target.value)} placeholder="Catatan (opsional)" rows={4} className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white" />
-          <button type="submit" disabled={isSubmitting} className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-            {isSubmitting ? "Menyimpan..." : "Simpan perubahan"}
-          </button>
-        </form>
+        <CustomerForm values={values} onChange={handleChange} onSubmit={handleSubmit} isSubmitting={isSubmitting} submitError={submitError} title="Perbarui profil pelanggan" />
       )}
     </ProtectedPageShell>
   );
