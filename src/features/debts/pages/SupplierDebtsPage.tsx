@@ -4,6 +4,8 @@ import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
 import { AppLoader, InlineAlert, PagePlaceholder } from "../../../components/ui";
 import { Modal } from "../../../components/ui/modal";
+import { BoxIcon, CheckCircleIcon, DollarLineIcon, DocsIcon, TimeIcon } from "../../../icons";
+import { accentFor } from "../../../utils/accent";
 import { getErrorMessage } from "../../../utils/errors";
 import ProcurementOutletSelector from "../../procurement/components/ProcurementOutletSelector";
 import { useProcurementOutletScope } from "../../procurement/hooks/useProcurementOutletScope";
@@ -75,6 +77,19 @@ export default function SupplierDebtsPage() {
   }, [detailPoId]);
 
   const shouldShowOutletPrompt = ownerMode && !effectiveOutletId;
+  const totals = debts.reduce(
+    (summary, debt) => ({
+      amount: summary.amount + debt.amount,
+      paid: summary.paid + debt.paidAmount,
+      remaining: summary.remaining + debt.remainingAmount,
+    }),
+    { amount: 0, paid: 0, remaining: 0 },
+  );
+  const statusCounts = {
+    unpaid: debts.filter((debt) => debt.status === "unpaid").length,
+    partiallyPaid: debts.filter((debt) => debt.status === "partially_paid").length,
+    paid: debts.filter((debt) => debt.status === "paid").length,
+  };
 
   async function handlePayDebt(values: SupplierPaymentFormValues) {
     if (!payTarget) {
@@ -126,9 +141,17 @@ export default function SupplierDebtsPage() {
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={error} />
 
+      <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 shadow-theme-xs dark:border-gray-800 dark:from-brand-500/10 dark:via-gray-900 dark:to-gray-900 sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl" />
+        <div className="relative grid gap-8 lg:grid-cols-[1fr_1.35fr] lg:items-center">
+          <div><div className="flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-500/25"><DollarLineIcon className="h-8 w-8" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Financial control</p><h3 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Utang supplier lebih terkendali</h3></div></div><p className="mt-5 max-w-xl text-sm leading-6 text-gray-600 dark:text-gray-300">Pantau kewajiban pembayaran, progres pelunasan, dan tagihan supplier berdasarkan outlet procurement aktif.</p></div>
+          <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-gray-200/80 bg-white/80 p-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/70 sm:col-span-2"><p className="text-xs uppercase tracking-wider text-gray-500">Sisa utang supplier</p><p className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(totals.remaining)}</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"><div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-success-500" style={{ width: `${totals.amount ? Math.min(100, (totals.paid / totals.amount) * 100) : 0}%` }} /></div><p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{formatCurrency(totals.paid)} sudah terbayar dari {formatCurrency(totals.amount)}</p></div>{[{ label: "Belum dibayar", value: statusCounts.unpaid, icon: <TimeIcon className="h-5 w-5" />, tone: "bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300" }, { label: "Sebagian dibayar", value: statusCounts.partiallyPaid, icon: <BoxIcon className="h-5 w-5" />, tone: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300" }, { label: "Lunas", value: statusCounts.paid, icon: <CheckCircleIcon className="h-5 w-5" />, tone: "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-300" }].map((stat) => <div key={stat.label} className="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white/80 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-900/70"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.tone}`}>{stat.icon}</div><p className="flex-1 text-sm text-gray-500 dark:text-gray-400">{stat.label}</p><p className="text-2xl font-semibold text-gray-900 dark:text-white">{stat.value}</p></div>)}</div>
+        </div>
+      </section>
+
       <AppTableShell
         title="Daftar utang supplier"
-        description={`Total tagihan: ${debts.length}`}
+        description={`${debts.length} tagihan pada outlet dan filter yang dipilih`}
         actions={
           <>
             <ProcurementOutletSelector
@@ -140,7 +163,7 @@ export default function SupplierDebtsPage() {
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="h-11 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
             >
               <option value="all">Semua status</option>
               <option value="unpaid">Unpaid</option>
@@ -149,8 +172,9 @@ export default function SupplierDebtsPage() {
             </select>
             <Link
               to="/supplier-debts/payments"
-              className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-brand-500/10"
             >
+              <DocsIcon className="h-4 w-4" />
               Histori pembayaran
             </Link>
           </>
@@ -175,39 +199,16 @@ export default function SupplierDebtsPage() {
             />
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-950">
-              <tr>
-                {["Supplier", "No. PO", "Jatuh Tempo", "Nilai Utang", "Terbayar", "Sisa", "Status", "Aksi"].map((column) => (
-                  <th
-                    key={column}
-                    className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
-                  >
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {debts.map((debt) => (
-                <tr key={debt.id}>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{debt.supplierName}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{debt.poNumber}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatDateOnly(debt.dueDate)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{formatCurrency(debt.amount)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{formatCurrency(debt.paidAmount)}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(debt.remainingAmount)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getDebtStatusClasses(debt.status)}`}>
-                      {debt.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-2">
+                <li key={debt.id} className="flex flex-col gap-4 px-5 py-5 transition hover:bg-gray-50/80 dark:hover:bg-white/[0.02] xl:flex-row xl:items-center sm:px-6">
+                  <div className="flex min-w-0 flex-1 items-center gap-3"><div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-bold ${accentFor(debt.supplierName)}`}>{debt.supplierName.trim().charAt(0).toUpperCase()}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{debt.supplierName}</p><span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${getDebtStatusClasses(debt.status)}`}>{debt.status}</span></div><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{debt.poNumber} · Jatuh tempo {formatDateOnly(debt.dueDate)}</p></div></div>
+                  <div className="grid gap-3 pl-15 sm:grid-cols-3 xl:min-w-[44%] xl:pl-0"><div><p className="text-[11px] uppercase tracking-wider text-gray-400">Nilai utang</p><p className="mt-1 text-sm text-gray-700 dark:text-gray-200">{formatCurrency(debt.amount)}</p></div><div><p className="text-[11px] uppercase tracking-wider text-gray-400">Terbayar</p><p className="mt-1 text-sm text-success-600 dark:text-success-300">{formatCurrency(debt.paidAmount)}</p></div><div><p className="text-[11px] uppercase tracking-wider text-gray-400">Sisa</p><p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(debt.remainingAmount)}</p></div></div>
+                  <div className="flex gap-2 pl-15 xl:pl-0">
                       <button
                         type="button"
                         onClick={() => setDetailPoId(debt.purchaseOrderId)}
-                        className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                        className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-brand-50 hover:text-brand-600 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-brand-500/10"
                       >
                         Detail
                       </button>
@@ -215,16 +216,15 @@ export default function SupplierDebtsPage() {
                         type="button"
                         onClick={() => setPayTarget(debt)}
                         disabled={debt.status === "paid"}
-                        className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
                       >
+                        <DollarLineIcon className="h-3.5 w-3.5" />
                         Bayar
                       </button>
                     </div>
-                  </td>
-                </tr>
+                </li>
               ))}
-            </tbody>
-          </table>
+          </ul>
         )}
       </AppTableShell>
 
