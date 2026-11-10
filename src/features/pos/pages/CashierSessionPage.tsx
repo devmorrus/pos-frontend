@@ -15,6 +15,7 @@ import {
   getPettyCashExpenses,
 } from "../api/cashierSessionsApi";
 import type { PettyCashExpenseDto } from "../types/cashier";
+import { BoxIcon, CheckCircleIcon, DollarLineIcon, GroupIcon, PaperPlaneIcon, TimeIcon } from "../../../icons";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -202,6 +203,23 @@ export default function CashierSessionPage() {
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={submitError} />
 
+      <section className="relative mb-6 overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-600 via-indigo-700 to-slate-900 p-6 text-white shadow-lg shadow-brand-500/15 dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#0f172a] dark:shadow-black/20 sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl dark:bg-brand-400/10" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-brand-100 backdrop-blur"><DollarLineIcon className="h-7 w-7" /></div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-100">Cashier operations</p>
+              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">{currentSession ? "Sesi kasir sedang berjalan" : "Siapkan sesi kasir"}</h3>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-brand-100">{currentSession ? `Kelola kas, petty cash, dan rekonsiliasi untuk ${currentSession.outletName}.` : "Buka shift dengan kas awal yang tepat sebelum mulai melayani transaksi di POS."}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+            {currentSession ? <><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-300 opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-success-300" /></span><div><p className="text-xs text-brand-100">Status sesi</p><p className="font-semibold">Aktif · {currentSession.userName}</p></div></> : <><TimeIcon className="h-5 w-5 text-brand-100" /><div><p className="text-xs text-brand-100">Status sesi</p><p className="font-semibold">Belum dibuka</p></div></>}
+          </div>
+        </div>
+      </section>
+
       {isLoading ? (
         <AppLoader label="Memuat sesi kasir..." />
       ) : (
@@ -212,6 +230,7 @@ export default function CashierSessionPage() {
                 title="Outlet kerja"
                 description="Owner dapat memilih outlet operasional. Admin dan Kasir memakai outlet yang terikat pada akun."
               >
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><GroupIcon className="h-5 w-5" /></div>
                 {ownerMode ? (
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -220,7 +239,7 @@ export default function CashierSessionPage() {
                     <select
                       value={selectedOutletId ?? ""}
                       onChange={(event) => setSelectedOutletId(event.target.value || null)}
-                      className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                      className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#111b2c] dark:text-white"
                     >
                       <option value="">Pilih outlet</option>
                       {activeOutlets.map((outlet) => (
@@ -241,6 +260,7 @@ export default function CashierSessionPage() {
                 title="Buka sesi baru"
                 description="Satu user hanya boleh memiliki satu sesi kasir aktif pada outlet yang sama."
               >
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-300"><CheckCircleIcon className="h-5 w-5" /></div>
                 <form className="space-y-4" onSubmit={handleOpenSession}>
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -252,15 +272,16 @@ export default function CashierSessionPage() {
                       step="0.01"
                       value={openingCash}
                       onChange={(event) => setOpeningCash(event.target.value)}
-                      className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                      className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#111b2c] dark:text-white"
                     />
                     <p className="mt-1 text-xs text-gray-400">Harus berupa angka 0 atau lebih.</p>
                   </label>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
                   >
+                    <PaperPlaneIcon className="h-4 w-4" />
                     {isSubmitting ? "Membuka sesi..." : "Buka sesi kasir"}
                   </button>
                 </form>
@@ -274,6 +295,11 @@ export default function CashierSessionPage() {
                   description="Informasi sesi kasir berjalan serta laporan penerimaan laci kas secara detail."
                 >
                   <div className="space-y-5">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-[#293b58] dark:bg-[#0f1a2b]"><p className="text-xs text-gray-500 dark:text-gray-400">Kas awal</p><p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(currentSession.openingCash)}</p></div>
+                      <div className="rounded-2xl border border-success-100 bg-success-50/70 p-4 dark:border-success-900/40 dark:bg-success-950/20"><p className="text-xs text-success-700 dark:text-success-300">Penerimaan tunai</p><p className="mt-1 text-lg font-bold text-success-800 dark:text-success-200">{formatCurrency(currentSession.totalCashReceived)}</p></div>
+                      <div className="rounded-2xl border border-brand-100 bg-brand-50/70 p-4 dark:border-brand-900/40 dark:bg-brand-950/20"><p className="text-xs text-brand-700 dark:text-brand-300">Expected cash</p><p className="mt-1 text-lg font-bold text-brand-800 dark:text-brand-200">{formatCurrency(expectedCash)}</p></div>
+                    </div>
                     <dl className="grid gap-4 md:grid-cols-2 text-sm">
                       <div>
                         <dt className="text-xs uppercase tracking-[0.2em] text-gray-500 font-medium">Outlet / Kasir</dt>
@@ -313,7 +339,7 @@ export default function CashierSessionPage() {
                         <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Ringkasan Non-Tunai (EDC/QRIS)</h5>
                         <div className="grid gap-2 grid-cols-2">
                           {nonCashSummary.map((sum) => (
-                            <div key={sum.method} className="rounded-xl border border-gray-100 dark:border-gray-900 p-2 text-xs bg-gray-50/50 dark:bg-gray-950/20">
+                            <div key={sum.method} className="rounded-xl border border-gray-200 bg-gray-50/70 p-3 text-xs dark:border-[#293b58] dark:bg-[#0f1a2b]">
                               <span className="text-gray-400 uppercase">{sum.method}</span>
                               <p className="font-bold text-gray-900 dark:text-white mt-0.5">{formatCurrency(sum.amount)}</p>
                             </div>
@@ -344,7 +370,7 @@ export default function CashierSessionPage() {
                           value={actualCash}
                           onChange={(event) => setActualCash(event.target.value)}
                           placeholder="Hitung koin/kertas di laci kas"
-                          className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                          className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#111b2c] dark:text-white"
                         />
                         <FieldErrorText message={!actualCash ? "Kas aktual wajib diisi untuk tutup sesi." : undefined} />
                       </label>
@@ -391,6 +417,7 @@ export default function CashierSessionPage() {
                 title="Kas Kecil / Pengeluaran Toko"
                 description="Catat pengeluaran operasional harian yang diambil langsung dari uang kas di laci POS."
               >
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300"><BoxIcon className="h-5 w-5" /></div>
                 <form onSubmit={handleRecordPettyCash} className="space-y-4">
                   {pettyError && <InlineAlert tone="error" message={pettyError} />}
                   
@@ -405,7 +432,7 @@ export default function CashierSessionPage() {
                         value={pettyAmount}
                         onChange={(e) => setPettyAmount(e.target.value)}
                         placeholder="Contoh: 15000"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#111b2c] dark:text-white"
                       />
                     </div>
 
@@ -416,7 +443,7 @@ export default function CashierSessionPage() {
                       <select
                         value={pettyCategory}
                         onChange={(e) => setPettyCategory(e.target.value)}
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                         className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#111b2c] dark:text-white"
                       >
                         <option value="ATK">ATK</option>
                         <option value="Konsumsi">Konsumsi</option>
@@ -437,7 +464,7 @@ export default function CashierSessionPage() {
                       value={pettyDesc}
                       onChange={(e) => setPettyDesc(e.target.value)}
                       placeholder="Contoh: Beli kantong plastik ukuran jumbo"
-                      className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                       className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#111b2c] dark:text-white"
                     />
                   </div>
 

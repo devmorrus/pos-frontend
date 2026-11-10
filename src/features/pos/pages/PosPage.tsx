@@ -23,6 +23,7 @@ import type {
 } from "../../transactions/types/transaction";
 import type { PricingBreakdownDto } from "../../pricing/types/pricing";
 import { useCapabilities } from "../../capabilities/hooks/useCapabilities";
+import { BoxIcon, CheckCircleIcon, ChevronLeftIcon, TrashBinIcon } from "../../../icons";
 
 type CartItem = {
   lineId: string;
@@ -117,6 +118,7 @@ export default function PosPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerListItemDto | null>(null);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState<CheckoutRequest | null>(null);
+  const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
 
   // States for Tempo (Kasbon) & Profile Completion
   const [isTempo, setIsTempo] = useState(false);
@@ -840,12 +842,12 @@ export default function PosPage() {
   return (
     <div className="space-y-5">
       {/* ── Premium Header ── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 p-5 shadow-lg">
+       <section className="relative overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-500 p-5 shadow-lg shadow-brand-500/15 dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#1e3a8a] dark:shadow-black/20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.12)_0%,_transparent_60%)] pointer-events-none" />
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm text-white text-2xl shadow-inner flex-shrink-0">
-              🏪
+                 <BoxIcon className="h-6 w-6" />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-white/70">POS Kasir</p>
@@ -857,7 +859,8 @@ export default function PosPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+           <div className="flex items-center gap-2">
+             <div className="hidden rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-right backdrop-blur sm:block"><p className="text-[10px] uppercase tracking-wider text-white/60">Keranjang</p><p className="text-sm font-bold text-white">{totalCartItems} item</p></div>
             <Link
               to="/cashier/session"
               className="rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-all"
@@ -890,9 +893,9 @@ export default function PosPage() {
 
       <section className="w-full">
         {step === "catalog" ? (
-          <div className="rounded-3xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
+           <div className="rounded-3xl border border-gray-200 bg-white shadow-theme-sm dark:border-[#25344a] dark:bg-[#111b2c] overflow-hidden">
             {/* Search bar */}
-            <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+             <div className="border-b border-gray-100 bg-gray-50/70 p-5 dark:border-[#25344a] dark:bg-[#0f1a2b]">
               <div className="relative">
                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -902,7 +905,7 @@ export default function PosPage() {
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Cari nama produk, SKU, atau scan barcode..."
-                  className="h-14 w-full rounded-2xl border border-gray-200 bg-gray-50 pl-11 pr-32 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white transition-all"
+                   className="h-14 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-32 text-sm text-gray-900 outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 rounded-xl bg-brand-50 dark:bg-brand-950/40 px-2.5 py-1 text-xs font-semibold text-brand-600 dark:text-brand-400">
                   {filteredProducts.length} produk
@@ -911,7 +914,8 @@ export default function PosPage() {
             </div>
 
             {/* Product Grid */}
-            <div className="p-5">
+             <div className="p-5">
+               <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Katalog produk</p><h2 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">Pilih produk untuk transaksi</h2></div><div className="hidden items-center gap-2 text-xs text-gray-500 dark:text-gray-400 sm:flex"><span className="h-2 w-2 rounded-full bg-success-500" />Stok tersedia</div></div>
               {isLoadingProducts ? (
                 <AppLoader label="Memuat katalog produk..." />
               ) : filteredProducts.length === 0 ? (
@@ -933,12 +937,12 @@ export default function PosPage() {
                         type="button"
                         disabled={outOfStock}
                         onClick={() => addToCart(product)}
-                        className={`group relative flex flex-col rounded-2xl border text-left transition-all duration-200 overflow-hidden active:scale-95 ${
+                         className={`group relative flex flex-col rounded-2xl border text-left transition-all duration-200 overflow-hidden active:scale-95 bg-white dark:bg-[#111b2c] ${
                           outOfStock
                             ? "border-gray-200 dark:border-gray-800 opacity-50 cursor-not-allowed grayscale"
                             : cartQty > 0
                             ? "border-brand-400 dark:border-brand-500 shadow-md shadow-brand-500/10"
-                            : "border-gray-200 dark:border-gray-800 hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-md"
+                           : "border-gray-200 dark:border-[#293b58] hover:-translate-y-0.5 hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-md"
                         }`}
                       >
                         {/* Quantity Badge */}
@@ -954,7 +958,7 @@ export default function PosPage() {
                         )}
 
                         {/* Product Image */}
-                        <div className="relative w-full aspect-square bg-gray-100 dark:bg-gray-950 flex-shrink-0">
+                         <div className="relative w-full aspect-square bg-gray-100 dark:bg-[#0b1422] flex-shrink-0">
                           {product.imageUrl ? (
                             <img
                               src={`${API_BASE_URL}${product.imageUrl}`}
@@ -977,7 +981,7 @@ export default function PosPage() {
                         </div>
 
                         {/* Product Info */}
-                        <div className="flex flex-col gap-1 p-3 flex-1 bg-white dark:bg-gray-900">
+                         <div className="flex flex-col gap-1 bg-white p-3 flex-1 dark:bg-[#111b2c]">
                           <h3 className="text-xs font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2 min-h-[32px]">{product.name}</h3>
                           <p className="text-sm font-bold text-brand-600 dark:text-brand-400">{formatCurrency(product.basePrice)}</p>
                           <div className="flex items-center justify-between mt-0.5">
@@ -1006,14 +1010,10 @@ export default function PosPage() {
                 <div className="flex items-center gap-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (window.confirm("Kosongkan keranjang?")) clearCart();
-                    }}
+                     onClick={() => setShowClearCartConfirm(true)}
                     className="flex items-center gap-1.5 rounded-xl border border-error-200 dark:border-error-800/50 bg-white dark:bg-gray-900 px-3 py-2 text-xs font-semibold text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-950/20 transition-all flex-shrink-0"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                     <TrashBinIcon className="h-3.5 w-3.5" />
                     Kosongkan
                   </button>
                   <div className="flex-1 min-w-0">
@@ -1040,16 +1040,14 @@ export default function PosPage() {
           </div>
         ) : (
           /* ── Checkout Step ── */
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+           <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-[#25344a] dark:bg-[#111b2c]">
             <div className="mb-6 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setStep("catalog")}
                 className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 shadow-theme-xs transition hover:bg-gray-50 dark:hover:bg-gray-900"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
+                 <ChevronLeftIcon className="h-3.5 w-3.5" />
                 Kembali ke Katalog
               </button>
               <div>
@@ -1071,7 +1069,7 @@ export default function PosPage() {
                   </p>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.lineId} className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+                     <div key={item.lineId} className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/50 p-3 dark:border-[#293b58] dark:bg-[#0f1a2b]">
                       {/* Avatar */}
                       <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/30 border border-brand-100 dark:border-brand-900/50 flex items-center justify-center text-lg font-bold text-brand-500 flex-shrink-0">
                         {item.productName.substring(0, 1).toUpperCase()}
@@ -1209,7 +1207,7 @@ export default function PosPage() {
                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Pembayaran</h3>
 
                 {/* Customer */}
-                <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+                 <div className="rounded-2xl border border-gray-200 bg-gray-50/40 p-4 space-y-3 dark:border-[#293b58] dark:bg-[#0f1a2b]">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">Pelanggan</p>
@@ -1244,7 +1242,7 @@ export default function PosPage() {
                         </div>
                       </div>
                     </div>
-                  ) : (
+                 ) : (
                     <div className="space-y-2">
                       <input
                         value={customerQuery}
@@ -1279,8 +1277,8 @@ export default function PosPage() {
                 </div>
 
                 {/* Voucher */}
-                {canUseVoucher ? (
-                  <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+                 {canUseVoucher ? (
+                   <div className="rounded-2xl border border-gray-200 bg-gray-50/40 p-4 space-y-3 dark:border-[#293b58] dark:bg-[#0f1a2b]">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">Kode Voucher</p>
                     <input
                       value={voucherCode}
@@ -1293,7 +1291,7 @@ export default function PosPage() {
                 ) : null}
 
                 {/* Price Summary */}
-                <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-2.5">
+                 <div className="rounded-2xl border border-gray-200 bg-gray-50/40 p-4 space-y-2.5 dark:border-[#293b58] dark:bg-[#0f1a2b]">
                   <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ringkasan Harga</p>
                   {[
                     { label: "Subtotal", value: subtotal },
@@ -1327,7 +1325,7 @@ export default function PosPage() {
                 </div>
 
                 {/* Payment Methods */}
-                <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+                 <div className="rounded-2xl border border-gray-200 bg-gray-50/40 p-4 space-y-3 dark:border-[#293b58] dark:bg-[#0f1a2b]">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">Metode Pembayaran</p>
                     <button type="button" onClick={addPaymentRow} className="text-xs font-bold text-brand-500 hover:text-brand-600 transition-colors">
@@ -1336,7 +1334,7 @@ export default function PosPage() {
                   </div>
 
                   {payments.map((payment) => (
-                    <div key={payment.id} className="rounded-2xl border border-gray-200 dark:border-gray-800 p-3 space-y-3">
+                     <div key={payment.id} className="rounded-2xl border border-gray-200 bg-white/70 p-3 space-y-3 dark:border-[#293b58] dark:bg-[#111b2c]">
                       {/* Method Selector Buttons */}
                       <div className="grid grid-cols-4 gap-1.5">
                         {defaultPaymentMethods.map((method) => (
@@ -1347,7 +1345,7 @@ export default function PosPage() {
                             className={`rounded-xl py-2 text-xs font-bold border transition-all ${
                               payment.method === method.value
                                 ? "border-brand-500 bg-brand-500 text-white shadow-md shadow-brand-500/30"
-                                : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-brand-300"
+                                 : "border-gray-200 dark:border-[#3a4b64] text-gray-600 dark:text-gray-400 hover:border-brand-300"
                             }`}
                           >
                             {method.value === "cash" ? "💵" : method.value === "qris" ? "📱" : method.value === "transfer" ? "🏦" : "💳"}
@@ -1366,7 +1364,7 @@ export default function PosPage() {
                           value={payment.amount}
                           onChange={(event) => updatePaymentRow(payment.id, "amount", event.target.value)}
                           placeholder="0"
-                          className="h-11 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 pl-8 pr-3 text-sm font-bold text-right text-gray-900 dark:text-white outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
+                           className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-8 pr-3 text-sm font-bold text-right text-gray-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#3a4b64] dark:bg-[#0b1422] dark:text-white"
                         />
                       </div>
 
@@ -1426,17 +1424,28 @@ export default function PosPage() {
                       </svg>
                       Memproses...
                     </span>
-                  ) : (
-                    "✓ Checkout Sekarang"
-                  )}
+                   ) : (
+                     <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-5 w-5" />Checkout Sekarang</span>
+                   )}
                 </button>
               </div>
             </div>
           </div>
         )}
-      </section>
+       </section>
 
-      {/* Batch / serial allocation modal */}
+       {showClearCartConfirm && (
+         <div className="fixed inset-0 z-[55] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-[#293b58] dark:bg-[#111b2c]">
+             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"><TrashBinIcon className="h-6 w-6" /></div>
+             <h3 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">Kosongkan keranjang?</h3>
+             <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">Semua item dan diskon pada transaksi ini akan dihapus dari keranjang.</p>
+             <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setShowClearCartConfirm(false)} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:border-[#293b58] dark:text-gray-200">Batal</button><button type="button" onClick={() => { clearCart(); setShowClearCartConfirm(false); }} className="rounded-xl bg-error-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-error-600">Kosongkan</button></div>
+           </div>
+         </div>
+       )}
+
+       {/* Batch / serial allocation modal */}
       {trackingItem && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl dark:border-gray-900 dark:bg-gray-950">
