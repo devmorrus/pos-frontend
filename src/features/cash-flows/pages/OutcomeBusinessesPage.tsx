@@ -14,6 +14,7 @@ import CashFlowFilters from "../components/CashFlowFilters";
 import CashFlowStatusSummary from "../components/CashFlowStatusSummary";
 import type { CashFlowFilterValues, CashFlowListItemDto } from "../types/cashFlow";
 import { formatCashFlowCurrency, formatCashFlowDate, formatCashFlowDateTime } from "../utils/presentation";
+import { ArrowUpIcon, PlusIcon } from "../../../icons";
 
 export default function OutcomeBusinessesPage() {
   const { session } = useAuth();
@@ -67,6 +68,13 @@ export default function OutcomeBusinessesPage() {
     >
       <InlineAlert tone="error" message={error} />
 
+      <section className="rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#111b2c] sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-warning-500 text-white shadow-lg shadow-warning-500/20"><ArrowUpIcon className="h-7 w-7" aria-hidden="true" /></div>
+          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Pencatatan pengeluaran</p><h2 className="mt-1 text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Pengeluaran jelas, keuangan lebih terarah</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">Telusuri pengeluaran manual bisnis dan outlet, periksa akun transaksi, dan lengkapi pencatatan dengan bukti pendukung.</p></div>
+        </div>
+      </section>
+
       <CashFlowStatusSummary
         totalAmount={summary.totalAmount}
         totalTransactions={summary.totalTransactions}
@@ -79,9 +87,9 @@ export default function OutcomeBusinessesPage() {
         actions={
           <Link
             to="/outcome-businesses/create"
-            className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
           >
-            Tambah pengeluaran
+            <PlusIcon className="h-5 w-5" aria-hidden="true" />Tambah pengeluaran
           </Link>
         }
       >
@@ -107,12 +115,13 @@ export default function OutcomeBusinessesPage() {
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-950">
+            <thead className="bg-gray-50 dark:bg-[#111b2c]">
               <tr>
                 {["No. Transaksi", "Tanggal", "Akun", "Outlet", "Nominal", "Dibuat", "Aksi"].map((column) => (
                   <th
                     key={column}
-                    className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+                    scope="col"
+                    className="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                   >
                     {column}
                   </th>
@@ -121,7 +130,7 @@ export default function OutcomeBusinessesPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {items.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} className="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                   <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
                     {item.trxNumber}
                   </td>
@@ -130,22 +139,23 @@ export default function OutcomeBusinessesPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">
                     <div>{item.fromChartOfAccountCode} - {item.fromChartOfAccountName}</div>
-                    <div className="text-xs text-gray-500">ke {item.toChartOfAccountCode} - {item.toChartOfAccountName}</div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Ke {item.toChartOfAccountCode} - {item.toChartOfAccountName}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {item.outletName ?? "Business"}
+                    {item.outletName ?? "Seluruh bisnis"}
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-warning-700 dark:text-warning-400">
                     {formatCashFlowCurrency(item.amount)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     <div>{item.createdByName}</div>
-                    <div className="text-xs text-gray-500">{formatCashFlowDateTime(item.createdAt)}</div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{formatCashFlowDateTime(item.createdAt)}</div>
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <Link
                       to={`/outcome-businesses/${item.id}`}
-                      className="font-semibold text-brand-600 hover:text-brand-500"
+                      aria-label={`Lihat pengeluaran ${item.trxNumber}`}
+                      className="inline-flex min-h-10 items-center rounded-xl border border-brand-200 bg-brand-50 px-3 font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
                     >
                       Detail
                     </Link>
