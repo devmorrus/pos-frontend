@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { FieldErrorText, FormCard } from "../../../components/forms";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppLoader, ConfirmDialog, InlineAlert, PagePlaceholder } from "../../../components/ui";
+import { BoxIcon, CheckLineIcon, DocsIcon, DollarLineIcon, GroupIcon, PlusIcon, TrashBinIcon } from "../../../icons";
 import { getErrorMessage } from "../../../utils/errors";
 import { getProducts } from "../../products/api/productsApi";
 import type { ProductDto } from "../../products/types/product";
@@ -249,16 +250,25 @@ export default function PurchaseOrderCreatePage() {
     >
       <InlineAlert tone="error" message={submitError} />
 
+      <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 shadow-theme-xs dark:border-gray-800 dark:from-brand-500/10 dark:via-gray-900 dark:to-gray-900 sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-500/25"><DocsIcon className="h-8 w-8" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Procurement workspace</p><h3 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Buat purchase order baru</h3><p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Catat kebutuhan pembelian supplier dengan data yang lengkap dan mudah dilacak.</p></div></div>
+          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-brand-100 bg-white/70 px-4 py-3 text-sm text-brand-700 dark:border-brand-500/20 dark:bg-gray-900/60 dark:text-brand-300"><CheckLineIcon className="h-5 w-5" /> Draft tersimpan saat dikirim</div>
+        </div>
+      </section>
+
       <FormCard
         title="Konteks outlet procurement"
         description="Owner dapat mengganti outlet procurement aktif. Admin dan Keuangan memakai outlet yang terikat pada akun."
       >
-        <ProcurementOutletSelector
+        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><BoxIcon className="h-5 w-5" /></div><div><h3 className="text-xl font-semibold text-gray-900 dark:text-white">Konteks outlet procurement</h3><p className="text-sm text-gray-600 dark:text-gray-300">Owner dapat mengganti outlet procurement aktif. Admin dan Keuangan memakai outlet yang terikat pada akun.</p></div></div>
+        <div className="mt-6"><ProcurementOutletSelector
           ownerMode={ownerMode}
           value={selectedOutletId}
           onChange={setSelectedOutletId}
           outlets={activeOutlets}
-        />
+        /></div>
       </FormCard>
 
       {isLoading ? (
@@ -274,14 +284,15 @@ export default function PurchaseOrderCreatePage() {
           title="Form purchase order"
           description="Tentukan supplier, tipe pembayaran, dan daftar item pembelian."
         >
-          <form className="space-y-6" onSubmit={(event) => void handleSubmit(event)}>
+          <form className="space-y-7" onSubmit={(event) => void handleSubmit(event)}>
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-5 dark:border-gray-800"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><GroupIcon className="h-5 w-5" /></div><div><h4 className="text-base font-semibold text-gray-900 dark:text-white">Informasi pembelian</h4><p className="text-sm text-gray-500 dark:text-gray-400">Pilih partner supplier, lokasi penerimaan, dan cara pembayaran.</p></div></div>
             <div className="grid gap-5 md:grid-cols-3">
               <label className="block">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Supplier</span>
                 <select
                   value={values.supplierId}
                   onChange={(event) => updateValue("supplierId", event.target.value)}
-                  className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                   className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="">Pilih supplier</option>
                   {suppliers.map((supplier) => (
@@ -297,7 +308,7 @@ export default function PurchaseOrderCreatePage() {
                 <select
                   value={destinationStockLocationId}
                   onChange={(event) => setDestinationStockLocationId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                   className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   {stockLocations.map((location) => (
                     <option key={location.id} value={location.id}>
@@ -318,7 +329,7 @@ export default function PurchaseOrderCreatePage() {
                       dueDate: nextVal === "tempo" ? (current.dueDate || getTomorrowString()) : "",
                     }));
                   }}
-                  className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                   className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="cash">Cash</option>
                   <option value="tempo">Tempo</option>
@@ -336,7 +347,7 @@ export default function PurchaseOrderCreatePage() {
                     value={values.dueDate}
                     onClick={(e) => e.currentTarget.showPicker?.()}
                     onChange={(event) => updateValue("dueDate", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-gray-200 bg-white pl-4 pr-10 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-955 dark:text-white"
+                     className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
                     <svg
@@ -360,18 +371,19 @@ export default function PurchaseOrderCreatePage() {
             ) : null}
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h4 className="text-base font-semibold text-gray-900 dark:text-white">Item purchase order</h4>
+                  <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-300"><BoxIcon className="h-5 w-5" /></div><div><h4 className="text-base font-semibold text-gray-900 dark:text-white">Item purchase order</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300">
                     Tambahkan produk dari outlet aktif beserta qty dan unit cost pembelian.
-                  </p>
+                  </p></div></div>
                 </div>
                 <button
                   type="button"
                   onClick={addRow}
-                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-200 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 dark:border-brand-500/30 dark:text-brand-300 dark:hover:bg-brand-500/10"
                 >
+                  <PlusIcon className="h-4 w-4" />
                   Tambah item
                 </button>
               </div>
@@ -383,14 +395,14 @@ export default function PurchaseOrderCreatePage() {
                   const selectedProduct = products.find((product) => product.id === item.productId);
 
                   return (
-                    <div key={`${index}-${item.productId}`} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                    <div key={`${index}-${item.productId}`} className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 transition hover:border-brand-200 dark:border-gray-800 dark:bg-gray-950/40 dark:hover:border-brand-800">
                       <div className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr_auto]">
                         <label className="block">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Produk</span>
                           <select
                             value={item.productId}
                             onChange={(event) => updateItem(index, "productId", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                             className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                           >
                             <option value="">Pilih produk</option>
                             {products.map((product) => (
@@ -409,7 +421,7 @@ export default function PurchaseOrderCreatePage() {
                             step="0.01"
                             value={item.qty}
                             onChange={(event) => updateItem(index, "qty", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                             className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                           />
                           <FieldErrorText message={errors[`items.${index}.qty`]} />
                         </label>
@@ -421,7 +433,7 @@ export default function PurchaseOrderCreatePage() {
                             step="0.01"
                             value={item.unitCost}
                             onChange={(event) => updateItem(index, "unitCost", event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                             className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                           />
                           <FieldErrorText message={errors[`items.${index}.unitCost`]} />
                           {selectedProduct && item.unitCost && Number(item.unitCost) > selectedProduct.basePrice && (
@@ -435,8 +447,9 @@ export default function PurchaseOrderCreatePage() {
                             type="button"
                             onClick={() => removeRow(index)}
                             disabled={values.items.length === 1}
-                            className="h-11 rounded-xl border border-error-200 px-4 text-sm font-semibold text-error-700 disabled:opacity-50 dark:border-error-500/20 dark:text-error-300"
+                             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-error-200 px-4 text-sm font-semibold text-error-700 transition hover:bg-error-50 disabled:opacity-50 dark:border-error-500/20 dark:text-error-300 dark:hover:bg-error-500/10"
                           >
+                            <TrashBinIcon className="h-4 w-4" />
                             Hapus
                           </button>
                         </div>
@@ -452,23 +465,24 @@ export default function PurchaseOrderCreatePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-dashed border-gray-300 px-5 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200">
-              Total PO: <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(totalAmount)}</span>
+             <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-brand-50 to-brand-100/60 px-5 py-5 text-sm text-brand-800 dark:from-brand-500/10 dark:to-brand-500/5 dark:text-brand-200">
+               <span className="flex items-center gap-2 font-semibold"><DollarLineIcon className="h-5 w-5" /> Total purchase order</span><span className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalAmount)}</span>
             </div>
 
-            <div className="flex items-center justify-end gap-3">
+             <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-end dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => navigate("/purchase-orders")}
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                 className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 Kembali
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
+                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 disabled:opacity-70"
               >
+                <CheckLineIcon className="h-4 w-4" />
                 {isSubmitting ? "Menyimpan..." : "Simpan purchase order"}
               </button>
             </div>

@@ -7,6 +7,8 @@ import { formatCurrency, formatDateOnly, formatDateTime, getPoStatusClasses } fr
 import { getPurchaseOrderById, updatePurchaseOrderStatus } from "../api/purchaseOrdersApi";
 import type { PurchaseOrderDto } from "../types/purchaseOrder";
 import AccountingPostingBadge from "../../accounting-integrations/components/AccountingPostingBadge";
+import { BoxIcon } from "../../../icons";
+import { accentFor } from "../../../utils/accent";
 
 type PurchaseOrderDetailLocationState = {
   successMessage?: string;
@@ -133,12 +135,12 @@ export default function PurchaseOrderDetailPage() {
         <AppLoader label="Memuat detail purchase order..." />
       ) : !order ? null : (
         <div className="space-y-6">
-          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 sm:p-8">
+          <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 shadow-theme-sm dark:border-gray-800 dark:from-brand-500/10 dark:via-gray-900 dark:to-gray-900 sm:p-8">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl" />
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">No. PO</p>
-                  <p className="mt-2 text-base font-semibold text-gray-900 dark:text-white">{order.poNumber}</p>
+                  <div className="flex items-center gap-3"><div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold ${accentFor(order.poNumber)}`}>{order.poNumber.slice(-2)}</div><div><p className="text-xs uppercase tracking-[0.2em] text-gray-500">No. PO</p><p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">{order.poNumber}</p></div></div>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Supplier</p>
@@ -163,10 +165,11 @@ export default function PurchaseOrderDetailPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="relative space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPoStatusClasses(order.status)}`}>
-                    {order.status}
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${getPoStatusClasses(order.status)}`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                      {order.status}
                   </span>
                   <AccountingPostingBadge
                     referenceType="purchase_order"
@@ -177,14 +180,14 @@ export default function PurchaseOrderDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/purchase-orders"
-                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-white dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
                     Kembali ke daftar
                   </Link>
                   {(order.status === "pending" || order.status === "partially_received") && (
                     <Link
                       to={`/purchase-orders/${order.id}/receive`}
-                      className="rounded-xl bg-green-600 hover:bg-green-700 px-4 py-2 text-sm font-semibold text-white inline-flex items-center"
+                    className="inline-flex items-center rounded-xl bg-success-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-success-700"
                     >
                       Terima Barang
                     </Link>
@@ -194,7 +197,7 @@ export default function PurchaseOrderDetailPage() {
                       key={action.nextStatus}
                       type="button"
                       onClick={() => setPendingStatus(action.nextStatus)}
-                      className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+                      className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
                     >
                       {action.label}
                     </button>
@@ -205,8 +208,9 @@ export default function PurchaseOrderDetailPage() {
           </section>
 
           <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-            <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Item purchase order</h3>
+            <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
+              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300"><BoxIcon className="h-5 w-5" /></div><div><h3 className="text-lg font-semibold text-gray-900 dark:text-white">Item purchase order</h3><p className="text-sm text-gray-500 dark:text-gray-400">{order.items.length} item dalam dokumen ini</p></div></div>
+              <div className="rounded-xl bg-brand-50 px-4 py-2 text-right dark:bg-brand-500/10"><p className="text-[11px] uppercase tracking-wider text-brand-600 dark:text-brand-300">Total PO</p><p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</p></div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
@@ -225,9 +229,9 @@ export default function PurchaseOrderDetailPage() {
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {order.items.map((item) => (
                     <tr key={item.productId}>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.sku}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white"><span className="rounded-lg bg-gray-100 px-2 py-1 text-xs dark:bg-gray-800">{item.sku}</span></td>
                       <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-200">{item.productName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.qty}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.qty} <span className="text-xs text-gray-400">unit</span></td>
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{formatCurrency(item.unitCost)}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(item.totalCost)}</td>
                     </tr>
