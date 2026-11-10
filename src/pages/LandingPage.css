@@ -1,0 +1,124 @@
+.saas-landing {
+  background: #f8fafc;
+  isolation: isolate;
+}
+
+.saas-landing :is(#features, #pricing) { scroll-margin-top: 90px; }
+.saas-landing :is(a, button):focus-visible { outline: 3px solid #a78bfa; outline-offset: 5px; }
+.saas-landing .nav-blur { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.saas-landing header { box-shadow: 0 8px 32px #08051a08; }
+
+.saas-landing .hero-bg-light {
+  background: radial-gradient(ellipse at 50% 0%, #ddd6fe70, transparent 65%), linear-gradient(#f5f3ff, #eff6ff 60%, #f8fafc);
+}
+.saas-landing .hero-bg-dark {
+  background: radial-gradient(ellipse at 50% 0%, #7c3aed20, transparent 65%), linear-gradient(#0c0719, #06080f);
+}
+.saas-landing .landing-aurora,
+.saas-landing .landing-grid { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.saas-landing .landing-aurora span {
+  position: absolute;
+  width: min(65vw, 760px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8b5cf630, transparent 68%);
+  top: -12%;
+  left: -15%;
+  animation: landing-drift 30s ease-in-out infinite alternate;
+}
+.saas-landing .landing-aurora span:nth-child(2) {
+  background: radial-gradient(circle, #3b82f628, transparent 68%);
+  top: 5%; left: 58%; animation-delay: -8s; animation-duration: 36s;
+}
+.saas-landing .landing-aurora span:nth-child(3) {
+  background: radial-gradient(circle, #06b6d41a, transparent 68%);
+  top: 45%; left: 20%; animation-delay: -12s; animation-duration: 42s;
+}
+.saas-landing .landing-grid {
+  background-image: linear-gradient(#8b5cf60c 1px, transparent 1px), linear-gradient(90deg, #8b5cf60c 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(transparent, #000 35%, transparent 90%);
+}
+.saas-landing .anim-grad {
+  background: linear-gradient(110deg, #7c3aed, #2563eb, #0891b2, #7c3aed);
+  background-size: 300% 100%;
+  animation: landing-gradient 16s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.dark .saas-landing .anim-grad { background-image: linear-gradient(110deg, #a78bfa, #818cf8, #38bdf8, #a78bfa); }
+.saas-landing .h-anim { animation: landing-enter 1.8s cubic-bezier(.22,.61,.36,1) both; }
+.saas-landing .h-anim-1 { animation-delay: .1s; }
+.saas-landing .h-anim-2 { animation-delay: .4s; }
+.saas-landing .h-anim-3 { animation-delay: .75s; }
+.saas-landing .h-anim-4 { animation-delay: 1.1s; }
+.saas-landing .animate-ping { animation-duration: 3s; }
+.saas-landing .animate-pulse { animation-duration: 6s; }
+
+.saas-landing :is(.stat-card, .feature-card, .pricing-card) {
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+}
+.saas-landing .feature-card > div:first-child { transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.saas-landing .stat-card { position: relative; overflow: hidden; }
+.saas-landing .stat-card::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 20%, #a78bfa18, transparent 80%);
+  transform: translateX(-110%); transition: transform .7s ease; pointer-events: none;
+}
+.saas-landing :is(a[href="/signup"], .pricing-card > a, a[href="#pricing"]) {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.saas-landing .dashboard-preview { filter: drop-shadow(0 -12px 40px #7c3aed15); }
+.saas-landing .demo-chart-bar { transform-origin: bottom; }
+.saas-landing .dashboard-preview[data-revealed="true"] .demo-chart-bar {
+  animation: landing-chart 1.8s cubic-bezier(.22,.61,.36,1) both;
+}
+.saas-landing .landing-final-cta { box-shadow: 0 20px 80px #7c3aed26; }
+.saas-landing .landing-final-cta > div:first-child { animation: landing-grid-pan 32s linear infinite; }
+
+@media (hover: hover) and (pointer: fine) {
+  .saas-landing :is(.stat-card, .feature-card, .pricing-card):hover {
+    transform: translateY(-7px); box-shadow: 0 20px 50px #7c3aed1c;
+  }
+  .saas-landing .feature-card:hover > div:first-child { transform: rotate(-6deg) scale(1.08); }
+  .saas-landing .stat-card:hover::after { transform: translateX(110%); }
+  .saas-landing :is(a[href="/signup"], .pricing-card > a, a[href="#pricing"]):hover {
+    transform: translateY(-3px); box-shadow: 0 12px 32px #7c3aed30;
+  }
+}
+
+/* Keep content visible before observation and when browser animation APIs are unavailable. */
+@keyframes landing-enter {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes landing-gradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes landing-drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(12%,8%,0) scale(1.15); } }
+@keyframes landing-chart { from { transform: scaleY(.05); } to { transform: scaleY(1); } }
+@keyframes landing-grid-pan { to { background-position: 64px 32px; } }
+
+.saas-landing[data-motion-paused="true"] *,
+.saas-landing[data-motion-paused="true"] *::after { animation-play-state: paused !important; }
+/* Pausing decoration must not freeze the introductory content while it is hidden. */
+.saas-landing[data-motion-paused="true"] .h-anim { animation: none; }
+
+@media (max-width: 640px) {
+  .saas-landing header > div { padding-inline: 16px; }
+  .saas-landing header .flex.items-center.gap-3 { gap: 4px; }
+  .saas-landing header a { padding-inline: 10px; font-size: 12px; }
+  .saas-landing header .font-black.text-lg { font-size: 16px; }
+  .saas-landing h1 { font-size: clamp(2.5rem, 10vw, 3.25rem); line-height: 1.12; }
+  .saas-landing .landing-aurora span { width: 100vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saas-landing *, .saas-landing *::before, .saas-landing *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .saas-landing .motion-toggle { display: none; }
+  .saas-landing :is(.feature-card, .stat-card, .pricing-card):hover,
+  .saas-landing .feature-card:hover > div:first-child { transform: none; }
+}

@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useTheme } from "../context/ThemeContext";
+import "./LandingPage.css";
 
 const features = [
   { title: "Kasir POS & Sesi Kasir",         desc: "Aplikasi POS responsif dengan manajemen shift kasir untuk meminimalkan selisih uang tunai.", icon: "🖥️", from: "#7c3aed", to: "#9333ea" },
@@ -42,54 +44,54 @@ const pricingPlans = [
 export default function LandingPage() {
   const { isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [motionPaused, setMotionPaused] = useState(false);
+
+  useEffect(() => {
+    const page = pageRef.current;
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!page || !("IntersectionObserver" in window)) return;
+
+    const animations = new Set<Animation>();
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const element = entry.target as HTMLElement;
+        element.dataset.revealed = "true";
+        observer.unobserve(element);
+        if (motionPreference.matches || typeof element.animate !== "function") return;
+
+        const animation = element.animate(
+          [{ opacity: 0, translate: "0 32px" }, { opacity: 1, translate: "0 0" }],
+          { duration: 1500, delay: Number(element.dataset.delay ?? 0), easing: "cubic-bezier(.22,.61,.36,1)", fill: "backwards" },
+        );
+        animations.add(animation);
+        animation.onfinish = () => animations.delete(animation);
+      });
+    }, { threshold: 0.12 });
+
+    page.querySelectorAll("[data-reveal]").forEach((element) => observer.observe(element));
+    const stopAnimations = () => {
+      if (motionPreference.matches) {
+        animations.forEach((animation) => animation.cancel());
+        animations.clear();
+      }
+    };
+    motionPreference.addEventListener("change", stopAnimations);
+    return () => {
+      observer.disconnect();
+      animations.forEach((animation) => animation.cancel());
+      motionPreference.removeEventListener("change", stopAnimations);
+    };
+  }, []);
 
   return (
     <div
-      className="min-h-screen overflow-x-hidden text-gray-900 dark:text-white transition-colors duration-300"
+      ref={pageRef}
+      data-motion-paused={motionPaused}
+      className="saas-landing min-h-screen overflow-x-hidden text-gray-900 dark:text-white transition-colors duration-300"
       style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: theme === "dark" ? "#06080f" : undefined }}
     >
-      {/* ── CSS Animations ── */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', -apple-system, sans-serif !important; }
-
-        @keyframes gradShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-        @keyframes floatUp  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        @keyframes floatUp2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
-        @keyframes fadeUp   { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulseRing{ 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.06)} }
-
-        .anim-grad { background:linear-gradient(135deg,#7c3aed,#2563eb,#0891b2,#7c3aed); background-size:300% 300%; animation:gradShift 5s ease infinite; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .card-1 { animation: floatUp 4.5s ease-in-out infinite; }
-        .card-2 { animation: floatUp2 5.5s ease-in-out infinite; }
-        .h-anim { animation: fadeUp .65s ease both; }
-        .h-anim-1 { animation-delay:.1s; }
-        .h-anim-2 { animation-delay:.2s; }
-        .h-anim-3 { animation-delay:.35s; }
-        .h-anim-4 { animation-delay:.5s; }
-
-        .nav-blur { backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
-        .feature-card { transition:all .22s cubic-bezier(.4,0,.2,1); }
-        .feature-card:hover { transform:translateY(-5px); }
-        .pricing-card { transition:all .25s cubic-bezier(.4,0,.2,1); }
-        .pricing-card:hover { transform:translateY(-4px); }
-
-        /* Hero gradient background */
-        .hero-bg-light {
-          background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(167,139,250,.18) 0%, transparent 70%),
-                      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(96,165,250,.12) 0%, transparent 60%),
-                      radial-gradient(ellipse 50% 40% at 20% 60%, rgba(45,212,191,.08) 0%, transparent 60%),
-                      linear-gradient(180deg, #f3f0ff 0%, #eff6ff 40%, #f0fdfa 70%, #f8fafc 100%);
-        }
-        .hero-bg-dark {
-          background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,.25) 0%, transparent 70%),
-                      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(37,99,235,.15) 0%, transparent 60%),
-                      radial-gradient(ellipse 50% 40% at 20% 60%, rgba(14,165,233,.1) 0%, transparent 60%),
-                      linear-gradient(180deg, #09040f 0%, #06080f 100%);
-        }
-        .hero-glow { filter: blur(60px); }
-      `}</style>
-
       {/* ── Navbar ── */}
       <header className="nav-blur sticky top-0 z-50 border-b border-black/5 dark:border-white/5"
         style={{ background: theme === "dark" ? "rgba(6,8,15,0.88)" : "rgba(243,240,255,0.88)" }}>
@@ -112,7 +114,7 @@ export default function LandingPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} title="Toggle theme"
+            <button onClick={toggleTheme} title="Ganti tema" aria-label={theme === "dark" ? "Aktifkan tema terang" : "Aktifkan tema gelap"}
               className="w-9 h-9 flex items-center justify-center rounded-xl border text-gray-500 dark:text-gray-400 transition-all"
               style={{ borderColor: theme === "dark" ? "rgba(255,255,255,.1)" : "rgba(124,58,237,.2)", background: theme === "dark" ? "rgba(255,255,255,.05)" : "rgba(124,58,237,.05)" }}>
               {theme === "dark" ? (
@@ -137,7 +139,9 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className={`relative z-10 pt-24 pb-0 overflow-hidden ${theme === "dark" ? "hero-bg-dark" : "hero-bg-light"}`}>
-        <div className="max-w-7xl mx-auto px-6 text-center pb-12">
+        <div className="landing-aurora" aria-hidden="true"><span /><span /><span /></div>
+        <div className="landing-grid" aria-hidden="true" />
+        <div className="relative max-w-7xl mx-auto px-6 text-center pb-12">
           {/* Badge */}
           <div className="h-anim h-anim-1 inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-xs font-semibold"
             style={{ background: "rgba(124,58,237,.1)", border: "1px solid rgba(124,58,237,.25)", color: "#7c3aed" }}>
@@ -159,7 +163,7 @@ export default function LandingPage() {
           </p>
 
           {/* CTA */}
-          <div className="h-anim h-anim-4 flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+          <div className="h-anim h-anim-4 flex flex-col sm:flex-row items-center justify-center gap-4 mb-5">
             <Link to="/signup"
               className="group w-full sm:w-auto flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl text-sm font-bold text-white shadow-xl shadow-violet-500/30 active:scale-95 transition-transform"
               style={{ background: "linear-gradient(135deg,#7c3aed,#2563eb)" }}>
@@ -180,10 +184,15 @@ export default function LandingPage() {
             </a>
           </div>
 
+          <div className="h-anim h-anim-4 mb-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>✓ Tanpa kartu kredit</span><span>✓ Setup instan</span>
+            <button type="button" aria-pressed={motionPaused} onClick={() => setMotionPaused((paused) => !paused)} className="motion-toggle rounded-full border border-violet-500/20 px-3 py-1.5 transition-colors hover:bg-violet-500/10">{motionPaused ? "▶ Lanjutkan animasi latar" : "Ⅱ Jeda animasi latar"}</button>
+          </div>
+
           {/* Stats bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto mb-16">
-            {stats.map((s) => (
-              <div key={s.label} className="rounded-2xl px-4 py-4 text-center"
+            {stats.map((s, i) => (
+              <div key={s.label} data-reveal data-delay={i * 180} className="stat-card rounded-2xl px-4 py-4 text-center"
                 style={{
                   background: theme === "dark" ? "rgba(255,255,255,.05)" : "rgba(255,255,255,.7)",
                   border: theme === "dark" ? "1px solid rgba(255,255,255,.08)" : "1px solid rgba(124,58,237,.12)",
@@ -198,7 +207,8 @@ export default function LandingPage() {
         </div>
 
         {/* Dashboard mockup — full width, inside hero */}
-        <div className="relative w-full max-w-5xl mx-auto px-6 pb-0">
+        <div data-reveal className="dashboard-preview relative w-full max-w-5xl mx-auto px-6 pb-0">
+          <div className="preview-caption mb-4 flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400"><span className="h-2 w-2 rounded-full bg-emerald-500" />Pratinjau dashboard · Data ilustrasi</div>
           {/* The main browser frame */}
           <div className="relative rounded-t-2xl overflow-hidden shadow-2xl"
             style={{
@@ -221,7 +231,7 @@ export default function LandingPage() {
             {/* Dashboard content */}
             <div className="p-5">
               {/* Top metric cards */}
-              <div className="grid grid-cols-4 gap-3 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 {[
                   { label: "Pendapatan Hari Ini", val: "Rp 4.21jt", color: "#7c3aed", bg: "rgba(124,58,237,.08)" },
                   { label: "Total Transaksi", val: "142 Trx", color: "#2563eb", bg: "rgba(37,99,235,.08)" },
@@ -237,14 +247,15 @@ export default function LandingPage() {
               </div>
 
               {/* Chart + outlet grid */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Chart area */}
-                <div className="col-span-2 rounded-xl p-4"
+                <div className="sm:col-span-2 rounded-xl p-4"
                   style={{ background: theme === "dark" ? "rgba(255,255,255,.03)" : "rgba(124,58,237,.03)", border: theme === "dark" ? "1px solid rgba(255,255,255,.06)" : "1px solid rgba(124,58,237,.08)" }}>
                   <p className="text-[10px] font-semibold text-gray-400 mb-3">Grafik Penjualan — 7 Hari</p>
                   <div className="flex items-end gap-1.5 h-16">
                     {[55, 80, 45, 90, 65, 100, 75].map((h, i) => (
-                      <div key={i} className="flex-1 rounded-sm transition-all" style={{
+                      <div key={i} className="demo-chart-bar flex-1 rounded-sm" style={{
+                        animationDelay: `${i * 160 + 300}ms`,
                         height: `${h}%`,
                         background: i === 5
                           ? "linear-gradient(to top,#7c3aed,#2563eb)"
@@ -290,7 +301,7 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section id="features" className="relative z-10 py-24 px-6 max-w-7xl mx-auto"
         style={{ background: theme === "dark" ? "#06080f" : "#f8fafc" }}>
-        <div className="text-center mb-16">
+        <div data-reveal className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 text-xs font-semibold"
             style={{ background: "rgba(124,58,237,.08)", border: "1px solid rgba(124,58,237,.2)", color: "#7c3aed" }}>
             ✨ Fitur Unggulan
@@ -305,7 +316,7 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {features.map((f, i) => (
-            <div key={i} className="feature-card group relative rounded-3xl p-7 overflow-hidden"
+            <div key={i} data-reveal data-delay={(i % 3) * 180} className="feature-card group relative rounded-3xl p-7 overflow-hidden"
               style={{
                 background: theme === "dark" ? "rgba(255,255,255,.03)" : "rgba(255,255,255,.9)",
                 border: theme === "dark" ? "1px solid rgba(255,255,255,.07)" : "1px solid rgba(124,58,237,.1)",
@@ -329,7 +340,7 @@ export default function LandingPage() {
       {/* ── Trust strip ── */}
       <section className="py-10 px-6"
         style={{ background: theme === "dark" ? "#09040f" : "#f0ebff" }}>
-        <div className="max-w-7xl mx-auto">
+        <div data-reveal className="max-w-7xl mx-auto">
           <p className="text-center text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-6">
             Dipercaya oleh berbagai jenis bisnis
           </p>
@@ -344,7 +355,7 @@ export default function LandingPage() {
       {/* ── Pricing ── */}
       <section id="pricing" className="relative z-10 py-24 px-6 max-w-7xl mx-auto"
         style={{ background: theme === "dark" ? "#06080f" : "#f8fafc" }}>
-        <div className="text-center mb-16">
+        <div data-reveal className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 text-xs font-semibold"
             style={{ background: "rgba(124,58,237,.08)", border: "1px solid rgba(124,58,237,.2)", color: "#7c3aed" }}>
             💎 Harga Transparan
@@ -359,7 +370,7 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {pricingPlans.map((p, i) => (
-            <div key={i} className={`pricing-card relative flex flex-col justify-between rounded-3xl p-8 overflow-hidden ${
+            <div key={i} data-reveal data-delay={i * 200} className={`pricing-card relative flex flex-col justify-between rounded-3xl p-8 overflow-hidden ${
               p.highlight ? "shadow-2xl shadow-violet-500/25" : "shadow-md"
             }`}
               style={p.highlight ? {
@@ -413,7 +424,7 @@ export default function LandingPage() {
       {/* ── Bottom CTA ── */}
       <section className="relative z-10 py-20 px-6 max-w-5xl mx-auto"
         style={{ background: theme === "dark" ? "#06080f" : "#f8fafc" }}>
-        <div className="relative rounded-3xl overflow-hidden text-center p-12 md:p-16"
+        <div data-reveal className="landing-final-cta relative rounded-3xl overflow-hidden text-center p-8 sm:p-12 md:p-16"
           style={{ background: "linear-gradient(135deg,#6d28d9,#7c3aed,#4f46e5,#2563eb)" }}>
           <div className="absolute inset-0 opacity-10" style={{
             backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)",
