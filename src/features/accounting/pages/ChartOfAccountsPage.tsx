@@ -12,6 +12,9 @@ import {
   updateChartOfAccountStatus,
 } from "../api/chartOfAccountsApi";
 import ChartOfAccountFormModal from "../components/ChartOfAccountFormModal";
+import { DocsIcon, PlusIcon } from "../../../icons";
+
+const filterClassName = "mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-[#293b58] dark:bg-[#0b1422] dark:text-white";
 import type {
   ChartOfAccountDto,
   ChartOfAccountFormValues,
@@ -216,11 +219,15 @@ export default function ChartOfAccountsPage() {
       <InlineAlert tone="success" message={successMessage} />
       <InlineAlert tone="error" message={error} />
 
+      <section className="rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-white p-6 dark:border-[#293b58] dark:from-[#172554] dark:via-[#1e1b4b] dark:to-[#111b2c] sm:p-8">
+        <div className="flex items-start gap-4"><div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/20"><DocsIcon className="h-7 w-7" aria-hidden="true" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">Struktur akun keuangan</p><h2 className="mt-1 text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Akun tertata, pencatatan lebih terarah</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">Susun akun keuangan bisnis dan outlet, tentukan akun induk, serta kelola akun kas dan bank dalam satu tempat.</p></div></div>
+      </section>
+
       <AppTableShell
         title="Daftar akun"
-        description="Akun global business dan akun khusus outlet dikelola dalam satu pusat keuangan."
+        description="Kelola akun untuk seluruh bisnis maupun akun khusus outlet."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setIsGuideOpen(true)}
@@ -234,25 +241,27 @@ export default function ChartOfAccountsPage() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
             >
-              Tambah akun
+              <PlusIcon className="h-5 w-5" aria-hidden="true" />Tambah akun
             </button>
           </div>
         }
       >
-        <div className="grid gap-3 border-b border-gray-200 p-4 dark:border-gray-800 md:grid-cols-4">
+        <div className="grid gap-4 border-b border-gray-200 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-[#111b2c] sm:grid-cols-2 xl:grid-cols-4">
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Cari akun
           <input
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="Cari kode atau nama akun"
-            className="h-11 rounded-2xl border border-gray-200 px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+            className={filterClassName}
           />
-
+          </label>
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Tipe akun
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value as ChartOfAccountType | "all")}
-            className="h-11 rounded-2xl border border-gray-200 px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+            className={filterClassName}
           >
             <option value="all">Semua tipe</option>
             <option value="asset">Asset</option>
@@ -262,26 +271,29 @@ export default function ChartOfAccountsPage() {
             <option value="cogs">COGS</option>
             <option value="expense">Expense</option>
           </select>
-
+          </label>
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Cakupan akun
           <select
             value={scopeFilter}
             onChange={(event) => setScopeFilter(event.target.value as ChartOfAccountScope | "all")}
-            className="h-11 rounded-2xl border border-gray-200 px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+            className={filterClassName}
           >
-            <option value="all">Semua scope</option>
-            <option value="business">Business</option>
+            <option value="all">Semua cakupan</option>
+            <option value="business">Seluruh bisnis</option>
             <option value="outlet">Outlet</option>
           </select>
-
+          </label>
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Status akun
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}
-            className="h-11 rounded-2xl border border-gray-200 px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+            className={filterClassName}
           >
             <option value="active">Akun aktif</option>
             <option value="inactive">Akun nonaktif</option>
             <option value="all">Semua status</option>
           </select>
+          </label>
         </div>
 
         {isLoading ? (
@@ -289,19 +301,20 @@ export default function ChartOfAccountsPage() {
         ) : filteredAccounts.length === 0 ? (
           <div className="p-6">
             <PagePlaceholder
-              title="Belum ada akun"
-              description="Tambahkan akun pertama untuk memulai master keuangan MorrusPOS."
-              status="Empty"
+              title={accounts.length ? "Tidak ada akun yang sesuai" : "Belum ada akun"}
+              description={accounts.length ? "Coba ubah kata pencarian, tipe, cakupan, atau status akun untuk melihat hasil lainnya." : "Tambahkan akun pertama untuk mulai menyusun pencatatan keuangan bisnis Anda."}
+              status={accounts.length ? "Ubah filter" : "Mulai di sini"}
             />
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-950">
+            <thead className="bg-gray-50 dark:bg-[#111b2c]">
               <tr>
-                {["Kode Akun", "Nama Akun", "Tipe", "Scope", "Parent", "Cash/Bank", "Status", "Diupdate", "Aksi"].map((column) => (
+                {["Kode Akun", "Nama Akun", "Tipe", "Cakupan", "Akun induk", "Kas/Bank", "Status", "Diperbarui", "Aksi"].map((column) => (
                   <th
                     key={column}
-                    className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
+                    scope="col"
+                    className="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                   >
                     {column}
                   </th>
@@ -310,7 +323,7 @@ export default function ChartOfAccountsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {filteredAccounts.map((account) => (
-                <tr key={account.id} className="align-top">
+                <tr key={account.id} className="align-top transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                   <td className="px-6 py-4 font-mono text-sm font-semibold text-gray-900 dark:text-white">
                     {account.accountCode}
                   </td>
@@ -323,7 +336,7 @@ export default function ChartOfAccountsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {account.outletName ? `Outlet: ${account.outletName}` : "Business"}
+                    {account.outletName ? `Outlet: ${account.outletName}` : "Seluruh bisnis"}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {account.parentAccountName ?? "-"}
@@ -414,16 +427,21 @@ export default function ChartOfAccountsPage() {
           onClick={() => setIsGuideOpen(false)}
         >
           <div
-            className="my-8 flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-900"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="coa-guide-title"
+            className="my-8 flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-[#293b58] dark:bg-gray-900"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-brand-100 bg-gradient-to-br from-brand-50 to-white px-6 py-5 dark:border-[#293b58] dark:from-[#172554] dark:to-[#111b2c]">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Panduan Chart of Accounts (COA)</h3>
-                <p className="text-xs text-gray-500">Referensi informatif — tidak mengubah konfigurasi akun Anda</p>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-300">Panduan keuangan</p>
+                <h3 id="coa-guide-title" className="text-lg font-bold text-gray-900 dark:text-white">Memahami Chart of Accounts</h3>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Referensi informatif — tidak mengubah konfigurasi akun Anda</p>
               </div>
               <button
                 type="button"
+                aria-label="Tutup panduan COA"
                 onClick={() => setIsGuideOpen(false)}
                 className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400"
               >
@@ -432,7 +450,7 @@ export default function ChartOfAccountsPage() {
                 </svg>
               </button>
             </div>
-            <div className="flex-1 space-y-6 overflow-y-auto p-6 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+            <div className="flex-1 space-y-4 overflow-y-auto p-6 text-sm leading-7 text-gray-700 dark:text-gray-300 [&>section]:rounded-2xl [&>section]:border [&>section]:border-gray-200 [&>section]:p-5 dark:[&>section]:border-[#293b58] dark:[&>section]:bg-[#111b2c]">
               <section>
                 <h4 className="text-base font-semibold text-gray-900 dark:text-white">1. Tujuan COA</h4>
                 <p className="mt-1">COA adalah daftar terstruktur semua akun keuangan bisnis Anda. COA yang rapi membantu pencatatan transaksi, arus kas, laba rugi, dan buku besar menjadi konsisten dan mudah diaudit.</p>
