@@ -2,19 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
-import { AppLoader, ConfirmDialog, InlineAlert } from "../../../components/ui";
+import { AppLoader, InlineAlert } from "../../../components/ui";
 import {
   ArrowDownIcon,
-  CheckLineIcon,
-  CloseLineIcon,
   EyeIcon,
 } from "../../../icons";
 import { getErrorMessage } from "../../../utils/errors";
 import {
-  approveStockTransfer,
   getIncomingStockTransfers,
-  rejectStockTransfer,
+  receiveStockTransfer,
 } from "../api/inventoryApi";
+import TransferReceiveModal from "../components/TransferReceiveModal";
 import {
   StockTransfersSummary,
   StockTransfersTabs,
@@ -38,10 +36,7 @@ export default function StockTransfersIncomingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [actionTarget, setActionTarget] = useState<{
-    item: StockTransferDto;
-    action: "approve" | "reject";
-  } | null>(null);
+  const [actionTarget, setActionTarget] = useState<StockTransferDto | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TransferStatusFilter>("all");
 
@@ -68,23 +63,14 @@ export default function StockTransfersIncomingPage() {
     void loadTransfers();
   }, [effectiveOutletId]);
 
-  async function handleConfirmAction() {
-    if (!actionTarget) {
-      return;
-    }
-
+  async function handleReceive(payload: Parameters<typeof receiveStockTransfer>[1]) {
+    if (!actionTarget) return;
     setIsSubmitting(true);
     setError(null);
 
     try {
-      if (actionTarget.action === "approve") {
-        const result = await approveStockTransfer(actionTarget.item.id);
-        setSuccessMessage(`Transfer ${result.transferNumber} berhasil di-approve.`);
-      } else {
-        const result = await rejectStockTransfer(actionTarget.item.id);
-        setSuccessMessage(`Transfer ${result.transferNumber} berhasil di-reject.`);
-      }
-
+      const result = await receiveStockTransfer(actionTarget.id, payload);
+      setSuccessMessage(`Transfer ${result.transferNumber} berhasil diterima${result.hasVariance ? " dengan selisih" : ""}.`);
       setActionTarget(null);
       await loadTransfers();
     } catch (requestError) {
@@ -157,7 +143,7 @@ export default function StockTransfersIncomingPage() {
 
       <AppTableShell
         title="Transfer masuk"
-        description="Permintaan transfer stok yang masuk ke outlet aktif."
+        description="Barang dalam perjalanan dan penerimaan untuk lokasi stok aktif."
       >
         {isLoading ? (
           <AppLoader label="Memuat transfer stok incoming..." />
@@ -202,7 +188,7 @@ export default function StockTransfersIncomingPage() {
             ) : (
               <ul className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredItems.map((item) => {
-                  const canAction = getTransferStatusBucket(item.status) === "pending";
+                    const canAction = getTransferStatusBucket(item.status) === "pending";
 
                   return (
                     <li
@@ -252,23 +238,8 @@ export default function StockTransfersIncomingPage() {
                         </Link>
                         {canAction ? (
                           <>
-                            <button
-                              type="button"
-                              onClick={() => setActionTarget({ item, action: "approve" })}
-                              aria-label={`Approve transfer ${item.transferNumber}`}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-success-200 bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 transition hover:bg-success-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-success-500/20 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-300 dark:hover:bg-success-500/20"
-                            >
-                              <CheckLineIcon className="h-4 w-4" />
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setActionTarget({ item, action: "reject" })}
-                              aria-label={`Reject transfer ${item.transferNumber}`}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-error-200 bg-error-50 px-3 py-2 text-xs font-semibold text-error-700 transition hover:bg-error-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-error-500/20 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300 dark:hover:bg-error-500/20"
-                            >
-                              <CloseLineIcon className="h-4 w-4" />
-                              Reject
+                            <button type="button" onClick={() => setActionTarget(item)} aria-label={`Terima transfer ${item.transferNumber}`} className="inline-flex items-center gap-1.5 rounded-xl border border-success-200 bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 transition hover:bg-success-100 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-300">
+                              Periksa & terima
                             </button>
                           </>
                         ) : null}
@@ -282,19 +253,7 @@ export default function StockTransfersIncomingPage() {
         )}
       </AppTableShell>
 
-      <ConfirmDialog
-        open={Boolean(actionTarget)}
-        title={actionTarget?.action === "approve" ? "Approve transfer stok" : "Reject transfer stok"}
-        description={
-          actionTarget?.action === "approve"
-            ? "Approve akan memindahkan stok secara riil dari outlet asal ke outlet tujuan."
-            : "Reject akan menutup permintaan transfer tanpa mengubah stok."
-        }
-        confirmLabel={actionTarget?.action === "approve" ? "Approve transfer" : "Reject transfer"}
-        isBusy={isSubmitting}
-        onCancel={() => setActionTarget(null)}
-        onConfirm={() => void handleConfirmAction()}
-      />
+      <TransferReceiveModal open={Boolean(actionTarget)} transfer={actionTarget} isSubmitting={isSubmitting} submitError={error} onClose={() => !isSubmitting && setActionTarget(null)} onSubmit={handleReceive} />
     </ProtectedPageShell>
   );
 }

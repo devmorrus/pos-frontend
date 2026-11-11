@@ -13,9 +13,9 @@ export type TransferStatusFilter = "all" | "pending" | "approved" | "rejected";
 
 const statusOptions: { value: TransferStatusFilter; label: string }[] = [
   { value: "all", label: "Semua" },
-  { value: "pending", label: "Menunggu" },
-  { value: "approved", label: "Disetujui" },
-  { value: "rejected", label: "Ditolak" },
+  { value: "pending", label: "Dalam perjalanan" },
+  { value: "approved", label: "Diterima" },
+  { value: "rejected", label: "Perlu perhatian" },
 ];
 
 const barTones = ["bg-warning-500", "bg-success-500", "bg-error-500"];
@@ -161,9 +161,9 @@ export function StockTransfersSummary({
 }) {
   const total = pending + approved + rejected;
   const distribution = [
-    { label: "Menunggu", value: pending },
-    { label: "Disetujui", value: approved },
-    { label: "Ditolak", value: rejected },
+    { label: "Dalam perjalanan", value: pending },
+    { label: "Diterima", value: approved },
+    { label: "Perlu perhatian", value: rejected },
   ];
 
   return (
@@ -183,15 +183,15 @@ export function StockTransfersSummary({
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-gray-600 dark:text-gray-300">
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-warning-500" />
-              Menunggu
+              Dalam perjalanan
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-success-500" />
-              Disetujui
+              Diterima
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-error-500" />
-              Ditolak
+              Perlu perhatian
             </span>
           </div>
         </div>
@@ -206,14 +206,14 @@ export function StockTransfersSummary({
                 "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300",
             },
             {
-              label: "Menunggu",
+              label: "Dalam perjalanan",
               value: pending,
               icon: <TimeIcon className="h-5 w-5" />,
               iconClass:
                 "bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300",
             },
             {
-              label: "Disetujui",
+              label: "Diterima",
               value: approved,
               icon: <CheckCircleIcon className="h-5 w-5" />,
               iconClass:

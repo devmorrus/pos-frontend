@@ -4,6 +4,7 @@ import type {
   CreateStockTransferRequest,
   InventoryFilters,
   InventoryListItem,
+  ReceiveStockTransferRequest,
   StockOpnameDto,
   StockTransferDto,
 } from "../types/inventory";
@@ -59,7 +60,15 @@ export function getStockTransferById(id: string) {
 }
 
 export function createStockTransfer(payload: CreateStockTransferRequest) {
-  return apiClient.post<StockTransferDto>("/api/stocktransfers", payload);
+  return apiClient.post<StockTransferDto>("/api/stocktransfers", payload, {
+    headers: { "Idempotency-Key": payload.requestId },
+  });
+}
+
+export function receiveStockTransfer(id: string, payload: ReceiveStockTransferRequest) {
+  return apiClient.post<StockTransferDto>(`/api/stocktransfers/${id}/receive`, payload, {
+    headers: { "Idempotency-Key": payload.requestId },
+  });
 }
 
 export function approveStockTransfer(id: string) {

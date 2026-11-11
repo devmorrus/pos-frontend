@@ -73,7 +73,7 @@ export default function StockTransfersOutgoingPage() {
     try {
       const result = await createStockTransfer(payload);
       setCreateOpen(false);
-      setSuccessMessage(`Transfer ${result.transferNumber} berhasil diajukan.`);
+      setSuccessMessage(`Transfer ${result.transferNumber} berhasil dikirim.`);
       await loadPage();
     } catch (requestError) {
       setSubmitError(getErrorMessage(requestError, "Gagal mengajukan transfer stok."));
@@ -144,7 +144,7 @@ export default function StockTransfersOutgoingPage() {
 
       <AppTableShell
         title="Transfer keluar"
-        description="Permintaan transfer stok yang diajukan dari outlet aktif."
+        description="Barang yang dikirim dari lokasi stok aktif. Stok sumber berkurang saat dikirim."
         actions={
           <button
             type="button"

@@ -8,7 +8,7 @@ import {
   PlusIcon,
   TrashBinIcon,
 } from "../../../icons";
-import type { OutletLookupDto } from "../../outlets/types/outlet";
+import type { StockLocationDto } from "../../stock-locations/types";
 import { getProductTrackingOptions } from "../../products/api/productsApi";
 import type { ProductTrackingOptionsDto } from "../../products/types/product";
 import type { CreateStockTransferRequest, InventoryListItem } from "../types/inventory";
@@ -43,7 +43,7 @@ export default function TransferCreateModal({
 }: {
   open: boolean;
   fromOutletId: string | null;
-  outlets: OutletLookupDto[];
+  outlets: StockLocationDto[];
   inventoryItems: InventoryListItem[];
   isSubmitting: boolean;
   submitError?: string | null;
@@ -55,6 +55,7 @@ export default function TransferCreateModal({
   const [trackingOptions, setTrackingOptions] = useState<Record<string, ProductTrackingOptionsDto>>({});
   const [serialSearch, setSerialSearch] = useState<Record<string, string>>({});
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     if (!open) {
@@ -63,6 +64,7 @@ export default function TransferCreateModal({
       setTrackingOptions({});
       setSerialSearch({});
       setValidationError(null);
+      setRequestId(crypto.randomUUID());
     }
   }, [open]);
 
@@ -131,12 +133,12 @@ export default function TransferCreateModal({
     setValidationError(null);
 
     if (!fromOutletId) {
-      setValidationError("Outlet asal belum tersedia.");
+      setValidationError("Lokasi asal belum tersedia.");
       return;
     }
 
     if (!toOutletId) {
-      setValidationError("Pilih outlet tujuan terlebih dahulu.");
+      setValidationError("Pilih lokasi tujuan terlebih dahulu.");
       return;
     }
 
@@ -207,6 +209,7 @@ export default function TransferCreateModal({
     }
 
     await onSubmit({
+      requestId,
       fromStockLocationId: fromOutletId,
       toStockLocationId: toOutletId,
       items: normalizedItems,
@@ -238,8 +241,8 @@ export default function TransferCreateModal({
                 Buat transfer stok
               </h3>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                Ajukan perpindahan stok dari outlet aktif ke outlet tujuan. Stok baru berubah
-                saat transfer di-approve.
+                Kirim stok dari lokasi aktif ke tujuan. Stok sumber langsung berkurang dan
+                stok tujuan bertambah setelah barang diterima.
               </p>
             </div>
           </div>
@@ -252,7 +255,7 @@ export default function TransferCreateModal({
           <div className="grid gap-4 rounded-2xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-white/[0.02] md:grid-cols-2">
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Outlet asal
+                Lokasi asal
               </span>
               <div className="relative">
                 <BoxIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -266,7 +269,7 @@ export default function TransferCreateModal({
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Outlet tujuan <span className="text-error-500">*</span>
+                Lokasi tujuan <span className="text-error-500">*</span>
               </span>
               <div className="relative">
                 <select
@@ -274,7 +277,7 @@ export default function TransferCreateModal({
                   onChange={(event) => setToOutletId(event.target.value)}
                   className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white pl-4 pr-11 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
-                  <option value="">Pilih outlet tujuan</option>
+                  <option value="">Pilih lokasi tujuan</option>
                   {selectableOutlets.map((outlet) => (
                     <option key={outlet.id} value={outlet.id}>
                       {outlet.name}
@@ -306,7 +309,7 @@ export default function TransferCreateModal({
               </button>
             </div>
             <p className="-mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Stok referensi mengikuti outlet asal yang sedang aktif.
+              Stok referensi mengikuti lokasi asal yang sedang aktif.
             </p>
 
             {items.map((item, index) => {
@@ -454,7 +457,7 @@ export default function TransferCreateModal({
 
           <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {items.length} baris item · stok berpindah setelah transfer di-approve.
+              {items.length} baris item · stok sumber berkurang ketika transfer dikirim.
             </p>
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
@@ -471,7 +474,7 @@ export default function TransferCreateModal({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <PaperPlaneIcon className="h-4 w-4" />
-                {isSubmitting ? "Menyimpan..." : "Ajukan transfer"}
+                {isSubmitting ? "Mengirim..." : "Kirim transfer"}
               </button>
             </div>
           </div>

@@ -65,11 +65,19 @@ export type CreateStockOpnameRequest = {
 };
 
 export type StockTransferItemDto = {
+  id: string;
   productId: string;
   productVariantId?: string | null;
   productName: string;
   sku: string;
   qty: number;
+  sentQty: number;
+  receivedQty: number | null;
+  differenceQty: number | null;
+  varianceReasonCode: string | null;
+  varianceNote: string | null;
+  unitCostSnapshot: number;
+  varianceValue: number | null;
   productBatchId?: string | null;
   batchNumber?: string | null;
   expiryDate?: string | null;
@@ -94,6 +102,12 @@ export type StockTransferDto = {
   approvedBy: string | null;
   approvedByName: string | null;
   createdAt: string;
+  receivedAt: string | null;
+  receiptNote: string | null;
+  hasVariance: boolean;
+  totalSentQty: number;
+  totalReceivedQty: number | null;
+  totalDifferenceQty: number | null;
   items: StockTransferItemDto[];
 };
 
@@ -106,7 +120,19 @@ export type StockTransferItemRequest = {
 };
 
 export type CreateStockTransferRequest = {
+  requestId: string;
   fromStockLocationId: string;
   toStockLocationId: string;
   items: StockTransferItemRequest[];
+};
+
+export type ReceiveStockTransferRequest = {
+  requestId: string;
+  receiptNote: string | null;
+  items: {
+    transferItemId: string;
+    receivedQty: number;
+    varianceReasonCode: string | null;
+    varianceNote: string | null;
+  }[];
 };

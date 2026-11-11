@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import ProtectedPageShell from "../../../components/layout/ProtectedPageShell";
 import { AppTableShell } from "../../../components/tables";
-import { AppLoader, ConfirmDialog, InlineAlert } from "../../../components/ui";
+import { AppLoader, InlineAlert } from "../../../components/ui";
 import { getErrorMessage } from "../../../utils/errors";
 import {
-  approveStockTransfer,
   getStockTransferById,
-  rejectStockTransfer,
+  receiveStockTransfer,
 } from "../api/inventoryApi";
+import TransferReceiveModal from "../components/TransferReceiveModal";
 import type { StockTransferDto } from "../types/inventory";
 import { getTransferStatusTone } from "../utils/presentation";
 
@@ -19,7 +19,7 @@ export default function StockTransferDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [action, setAction] = useState<"approve" | "reject" | null>(null);
+  const [receiveOpen, setReceiveOpen] = useState(false);
 
   async function loadDetail() {
     if (!id) {
@@ -44,26 +44,16 @@ export default function StockTransferDetailPage() {
     void loadDetail();
   }, [id]);
 
-  async function handleAction() {
-    if (!item || !action) {
-      return;
-    }
-
+  async function handleReceive(payload: Parameters<typeof receiveStockTransfer>[1]) {
+    if (!item) return;
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const result =
-        action === "approve"
-          ? await approveStockTransfer(item.id)
-          : await rejectStockTransfer(item.id);
+      const result = await receiveStockTransfer(item.id, payload);
       setItem(result);
-      setSuccessMessage(
-        action === "approve"
-          ? `Transfer ${result.transferNumber} berhasil di-approve.`
-          : `Transfer ${result.transferNumber} berhasil di-reject.`,
-      );
-      setAction(null);
+      setSuccessMessage(`Transfer ${result.transferNumber} berhasil diterima${result.hasVariance ? " dengan selisih" : ""}.`);
+      setReceiveOpen(false);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Gagal memproses aksi transfer."));
     } finally {
@@ -108,25 +98,19 @@ export default function StockTransferDetailPage() {
                   {item.status}
                 </span>
               </div>
-              {item.status.toLowerCase() === "pending" ? (
+               {["pending", "in_transit"].includes(item.status.toLowerCase()) ? (
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setAction("approve")}
+                     onClick={() => setReceiveOpen(true)}
                     className="rounded-xl border border-success-200 px-4 py-2 text-sm font-semibold text-success-700 dark:border-success-500/20 dark:text-success-300 hover:bg-success-50 dark:hover:bg-success-950/20"
                   >
-                    Terima Barang
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAction("reject")}
-                    className="rounded-xl border border-error-200 px-4 py-2 text-sm font-semibold text-error-700 dark:border-error-500/20 dark:text-error-300 hover:bg-error-50 dark:hover:bg-error-950/20"
-                  >
-                    Tolak
-                  </button>
+                     Periksa & Terima
+                   </button>
                 </div>
               ) : null}
             </div>
+            {item.receivedAt && <p className="mt-4 text-sm text-gray-500">Diterima {new Date(item.receivedAt).toLocaleString("id-ID")} oleh {item.approvedByName ?? "-"}{item.receiptNote ? ` · ${item.receiptNote}` : ""}</p>}
           </section>
 
           <AppTableShell
@@ -136,7 +120,7 @@ export default function StockTransferDetailPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-950">
                 <tr>
-                  {["SKU", "Produk", "Batch / Serial", "Qty"].map((column) => (
+                  {["SKU", "Produk", "Batch / Serial", "Dikirim", "Diterima", "Selisih", "Keterangan"].map((column) => (
                     <th
                       key={column}
                       className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"
@@ -156,7 +140,10 @@ export default function StockTransferDetailPage() {
                         ? `${row.batchNumber}${row.expiryDate ? ` · exp ${new Date(row.expiryDate).toLocaleDateString("id-ID")}` : ""}`
                         : row.serialNumber ?? "-"}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{row.qty}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{row.sentQty ?? row.qty}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{row.receivedQty ?? "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{row.differenceQty ?? "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{row.varianceNote ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -165,19 +152,7 @@ export default function StockTransferDetailPage() {
         </>
       )}
 
-      <ConfirmDialog
-        open={Boolean(action)}
-        title={action === "approve" ? "Persetujuan Penerimaan Barang" : "Tolak Transfer Stok"}
-        description={
-          action === "approve"
-            ? "Stok akan dikonfirmasi telah diterima dan ditambahkan ke cabang tujuan."
-            : "Transfer akan ditolak dan stok akan dikembalikan ke cabang asal."
-        }
-        confirmLabel={action === "approve" ? "Terima Barang" : "Tolak Transfer"}
-        isBusy={isSubmitting}
-        onCancel={() => setAction(null)}
-        onConfirm={() => void handleAction()}
-      />
+      <TransferReceiveModal open={receiveOpen} transfer={item} isSubmitting={isSubmitting} submitError={error} onClose={() => !isSubmitting && setReceiveOpen(false)} onSubmit={handleReceive} />
     </ProtectedPageShell>
   );
 }

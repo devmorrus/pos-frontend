@@ -45,11 +45,11 @@ export function getTransferStatusBucket(
 ): "pending" | "approved" | "rejected" {
   const normalized = status.toLowerCase();
 
-  if (normalized === "approved") {
+  if (normalized === "approved" || normalized === "received") {
     return "approved";
   }
 
-  if (normalized === "rejected" || normalized === "cancelled") {
+  if (["rejected", "cancelled", "returned", "received_with_variance"].includes(normalized)) {
     return "rejected";
   }
 
@@ -59,20 +59,23 @@ export function getTransferStatusBucket(
 export function getTransferStatusLabel(status: string) {
   const normalized = status.toLowerCase();
 
-  if (normalized === "approved") {
-    return "Disetujui";
+  if (normalized === "approved" || normalized === "received") {
+    return "Diterima";
   }
 
   if (normalized === "rejected") {
     return "Ditolak";
   }
 
+  if (normalized === "returned") return "Dikembalikan";
+  if (normalized === "received_with_variance") return "Diterima dengan selisih";
+
   if (normalized === "cancelled") {
     return "Dibatalkan";
   }
 
-  if (normalized === "pending") {
-    return "Menunggu";
+  if (normalized === "pending" || normalized === "in_transit") {
+    return "Dalam perjalanan";
   }
 
   return status;
@@ -81,11 +84,11 @@ export function getTransferStatusLabel(status: string) {
 export function getTransferStatusTone(status: string) {
   const normalized = status.toLowerCase();
 
-  if (normalized === "approved") {
+  if (normalized === "approved" || normalized === "received") {
     return "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300";
   }
 
-  if (normalized === "rejected" || normalized === "cancelled") {
+  if (["rejected", "cancelled", "returned"].includes(normalized)) {
     return "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-300";
   }
 
