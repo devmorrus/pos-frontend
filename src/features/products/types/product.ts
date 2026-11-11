@@ -15,6 +15,8 @@ export type ProductDto = {
   unit: string;
   isConsignment: boolean;
   qtyOnHand: number;
+  qtyReserved: number;
+  qtyAvailable: number;
   imageUrl?: string | null;
   isTaxable?: boolean | null;
   isServiceChargeable?: boolean | null;
@@ -48,6 +50,8 @@ export type ProductVariantDto = {
   imageUrl?: string | null;
   isActive: boolean;
   qtyOnHand?: number;
+  qtyReserved?: number;
+  qtyAvailable?: number;
   attributeValues: ProductAttributeValueDto[];
 };
 
@@ -87,15 +91,22 @@ export type ProductBatchDto = {
 export type ProductTrackingOptionsDto = {
   trackingMode: ProductTrackingMode;
   qtyOnHand: number;
+  qtyReserved: number;
+  qtyAvailable: number;
   batches: {
     id: string;
     batchNumber: string;
     expiryDate: string | null;
     qtyRemaining: number;
+    qtyReserved: number;
+    qtyAvailable: number;
   }[];
   serials: {
     id: string;
     serialNumber: string;
+    status: "available" | "reserved" | "sold" | "in_transfer" | "returned_to_supplier" | "written_off";
+    reservationId?: string | null;
+    reservationExpiresAt?: string | null;
   }[];
 };
 

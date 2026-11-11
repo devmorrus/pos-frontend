@@ -8,6 +8,8 @@ export type BufferStockItem = {
   categoryName: string;
   unit: string;
   qtyOnHand: number;
+  qtyReserved: number;
+  qtyAvailable: number;
   bufferQty: number;
   availableOnlineQty: number;
   isOnlineAvailable: boolean;
@@ -33,10 +35,10 @@ export function getBufferStockKey(item: Pick<BufferStockItem, "productId" | "pro
   return `${item.productId}::${item.productVariantId ?? "base"}`;
 }
 
-export function calculateAvailableOnline(qtyOnHand: number, bufferQty: number, isEnabled: boolean) {
+export function calculateAvailableOnline(qtyOnHand: number, bufferQty: number, isEnabled: boolean, qtyReserved = 0) {
   if (!isEnabled) {
-    return Math.max(0, qtyOnHand);
+    return Math.max(0, qtyOnHand - qtyReserved);
   }
   const safeBuffer = bufferQty < 0 ? 0 : bufferQty;
-  return Math.max(0, qtyOnHand - safeBuffer);
+  return Math.max(0, qtyOnHand - qtyReserved - safeBuffer);
 }

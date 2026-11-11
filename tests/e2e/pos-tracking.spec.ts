@@ -50,6 +50,8 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
       unit: "pcs",
       isConsignment: false,
       qtyOnHand: 10,
+      qtyReserved: 0,
+      qtyAvailable: 10,
       hasVariants: false,
       trackingMode: "batch",
     },
@@ -64,6 +66,8 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
       unit: "pcs",
       isConsignment: false,
       qtyOnHand: 2,
+      qtyReserved: 0,
+      qtyAvailable: 2,
       hasVariants: false,
       trackingMode: "serial",
     },
@@ -78,6 +82,8 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
       unit: "jasa",
       isConsignment: false,
       qtyOnHand: 0,
+      qtyReserved: 0,
+      qtyAvailable: 0,
       hasVariants: false,
       trackingMode: "none",
     },
@@ -85,19 +91,23 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
   await mockJson(page, "**/api/products/10000000-0000-4000-8000-000000000001/stock-tracking*", {
     trackingMode: "batch",
     qtyOnHand: 10,
+    qtyReserved: 0,
+    qtyAvailable: 10,
     batches: [
-      { id: "30000000-0000-4000-8000-000000000001", batchNumber: "LOT-A", expiryDate: "2026-12-01T00:00:00Z", qtyRemaining: 3 },
-      { id: "30000000-0000-4000-8000-000000000002", batchNumber: "LOT-B", expiryDate: "2027-01-01T00:00:00Z", qtyRemaining: 7 },
+      { id: "30000000-0000-4000-8000-000000000001", batchNumber: "LOT-A", expiryDate: "2026-12-01T00:00:00Z", qtyRemaining: 3, qtyReserved: 0, qtyAvailable: 3 },
+      { id: "30000000-0000-4000-8000-000000000002", batchNumber: "LOT-B", expiryDate: "2027-01-01T00:00:00Z", qtyRemaining: 7, qtyReserved: 0, qtyAvailable: 7 },
     ],
     serials: [],
   });
   await mockJson(page, "**/api/products/10000000-0000-4000-8000-000000000002/stock-tracking*", {
     trackingMode: "serial",
     qtyOnHand: 2,
+    qtyReserved: 0,
+    qtyAvailable: 2,
     batches: [],
     serials: [
-      { id: "40000000-0000-4000-8000-000000000001", serialNumber: "IMEI-001" },
-      { id: "40000000-0000-4000-8000-000000000002", serialNumber: "IMEI-002" },
+      { id: "40000000-0000-4000-8000-000000000001", serialNumber: "IMEI-001", status: "available" },
+      { id: "40000000-0000-4000-8000-000000000002", serialNumber: "IMEI-002", status: "available" },
     ],
   });
   await mockJson(page, "**/api/transactions/pricing-preview", {
@@ -112,6 +122,16 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
     appliedPromo: null,
     lineBreakdowns: [],
   }, { method: "POST" });
+  let reservationId: string | null = null;
+  await page.route("**/api/stock-reservations", async (route) => {
+    const payload = route.request().postDataJSON() as { id: string };
+    reservationId = payload.id;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ id: payload.id, status: "active", expiresAt: "2026-11-11T12:00:00Z", items: [] }),
+    });
+  });
 
   let checkoutPayload: CapturedCheckout | null = null;
   let idempotencyHeader: string | undefined;
@@ -154,6 +174,7 @@ test("POS mengirim alokasi batch, multi-serial, dan menjual produk non-stok", as
 
   const items = checkoutPayload!.items;
   expect(idempotencyHeader).toBe(checkoutPayload!.id);
+  expect(reservationId).toBe(checkoutPayload!.id);
   expect(checkoutPayload!.payments[0].id).toMatch(/^[0-9a-f-]{36}$/);
   expect(items.find((item) => item.productId.endsWith("0001"))?.batchAllocations).toEqual([
     { productBatchId: "30000000-0000-4000-8000-000000000001", qty: 1 },

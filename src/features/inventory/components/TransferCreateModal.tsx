@@ -181,9 +181,9 @@ export default function TransferCreateModal({
 
     for (const item of items) {
       const inv = inventoryItems.find((entry) => entry.productId === item.productId && entry.productVariantId === item.productVariantId);
-      if (inv && Number(item.qty) > inv.qtyOnHand) {
+      if (inv && Number(item.qty) > inv.qtyAvailable) {
         setValidationError(
-          `Qty transfer untuk ${inv.productName} (${Number(item.qty)}) melebihi stok tersedia (${inv.qtyOnHand}).`
+          `Qty transfer untuk ${inv.productName} (${Number(item.qty)}) melebihi stok tersedia (${inv.qtyAvailable}).`
         );
         return;
       }
@@ -370,7 +370,7 @@ export default function TransferCreateModal({
                         Stok saat ini
                       </span>
                       <div className="flex h-11 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200">
-                        {selectedInventory ? formatQuantity(selectedInventory.qtyOnHand) : "-"}
+                        {selectedInventory ? formatQuantity(selectedInventory.qtyAvailable) : "-"}
                       </div>
                     </div>
 
@@ -381,15 +381,15 @@ export default function TransferCreateModal({
                       <input
                         type="number"
                         min="0.01"
-                        max={selectedBatch?.qtyRemaining ?? selectedInventory?.qtyOnHand}
+                        max={selectedBatch?.qtyAvailable ?? selectedInventory?.qtyAvailable}
                         step="0.01"
                         value={item.qty}
                         readOnly={selectedInventory?.trackingMode === "serial"}
                         onChange={(event) => updateItem(index, "qty", event.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition read-only:bg-gray-50 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:read-only:bg-white/[0.03]"
                       />
-                      {selectedInventory && Number(item.qty) > selectedInventory.qtyOnHand && (
-                        <p className="mt-1 text-xs text-error-600">Melebihi stok tersedia ({formatQuantity(selectedInventory.qtyOnHand)}).</p>
+                      {selectedInventory && Number(item.qty) > selectedInventory.qtyAvailable && (
+                        <p className="mt-1 text-xs text-error-600">Melebihi stok tersedia ({formatQuantity(selectedInventory.qtyAvailable)}).</p>
                       )}
                       <p className="mt-1 text-xs text-gray-400">Harus lebih besar dari 0.</p>
                     </label>

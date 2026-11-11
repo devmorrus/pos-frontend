@@ -9,6 +9,9 @@ export type InventoryListItem = {
   unit: string;
   isConsignment: boolean;
   qtyOnHand: number;
+  qtyReserved: number;
+  qtyAvailable: number;
+  qtySold: number;
   minStockAlert: number;
   isLowStock: boolean;
   costPrice: number;
@@ -23,6 +26,50 @@ export type InventoryFilters = {
   search?: string;
   lowStockOnly?: boolean;
   includeZeroStock?: boolean;
+};
+
+export type StockReservationItemDto = {
+  id: string;
+  productId: string;
+  productVariantId: string | null;
+  productName: string;
+  sku: string;
+  qty: number;
+  trackingMode: "quantity" | "batch" | "serial";
+  productBatchId: string | null;
+  batchNumber: string | null;
+  productSerialId: string | null;
+  serialNumber: string | null;
+  status: "active" | "consumed" | "released" | "expired";
+};
+
+export type StockReservationDto = {
+  id: string;
+  stockLocationId: string;
+  stockLocationName: string;
+  cashierSessionId: string | null;
+  createdBy: string;
+  createdByName: string;
+  sourceType: string;
+  status: "active" | "consumed" | "released" | "expired";
+  expiresAt: string;
+  resolvedAt: string | null;
+  releaseReason: string | null;
+  createdAt: string;
+  items: StockReservationItemDto[];
+};
+
+export type CreateStockReservationRequest = {
+  id: string;
+  outletId: string;
+  cashierSessionId: string;
+  items: {
+    productId: string;
+    productVariantId?: string | null;
+    qty: number;
+    batchAllocations?: { productBatchId: string; qty: number }[] | null;
+    serialIds?: string[] | null;
+  }[];
 };
 
 export type StockOpnameItemDto = {

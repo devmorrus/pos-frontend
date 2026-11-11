@@ -21,12 +21,12 @@ import { accentFor } from "../../../utils/accent";
 import { getErrorMessage } from "../../../utils/errors";
 import { getConsignmentLabel, getConsignmentTone } from "../../products/utils/presentation";
 import { useRealtime } from "../../../lib/realtime/hooks";
-import { getInventory } from "../api/inventoryApi";
+import { getActiveStockReservations, getInventory } from "../api/inventoryApi";
 import { getProductTrackingOptions } from "../../products/api/productsApi";
 import type { ProductTrackingOptionsDto } from "../../products/types/product";
 import StockStatusBadge from "../components/StockStatusBadge";
 import { useStockOutletScope } from "../hooks/useStockOutletScope";
-import type { InventoryListItem } from "../types/inventory";
+import type { InventoryListItem, StockReservationDto } from "../types/inventory";
 import { formatDateTime, formatQuantity } from "../utils/presentation";
 
 type ViewMode = "list" | "grid";
@@ -166,7 +166,7 @@ export default function InventoryPage() {
   const [items, setItems] = useState<InventoryListItem[]>([]);
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
-  const [stockMode, setStockMode] = useState<"all" | "low">("all");
+  const [stockMode, setStockMode] = useState<"all" | "available" | "reserved" | "low" | "out">("all");
   const [includeZeroStock, setIncludeZeroStock] = useState(true);
   const [view, setView] = useState<ViewMode>("list");
   const [isLoading, setIsLoading] = useState(true);
@@ -176,6 +176,29 @@ export default function InventoryPage() {
     options: ProductTrackingOptionsDto;
   } | null>(null);
   const [isLoadingTracking, setIsLoadingTracking] = useState(false);
+  const [reservationDetail, setReservationDetail] = useState<{
+    item: InventoryListItem;
+    reservations: StockReservationDto[];
+  } | null>(null);
+  const [isLoadingReservations, setIsLoadingReservations] = useState(false);
+
+  async function openReservationDetail(item: InventoryListItem) {
+    if (!effectiveOutletId) return;
+    setIsLoadingReservations(true);
+    setError(null);
+    try {
+      const reservations = await getActiveStockReservations({
+        stockLocationId: effectiveOutletId,
+        productId: item.productId,
+        productVariantId: item.productVariantId,
+      });
+      setReservationDetail({ item, reservations });
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Gagal memuat detail stok dipesan."));
+    } finally {
+      setIsLoadingReservations(false);
+    }
+  }
 
   async function openTrackingDetail(item: InventoryListItem) {
     if (!effectiveOutletId) return;
@@ -238,10 +261,10 @@ export default function InventoryPage() {
   }, [effectiveOutletId, onStockUpdate]);
 
   const stockStats = useMemo(() => {
-    const out = items.filter((item) => item.qtyOnHand <= 0).length;
+    const out = items.filter((item) => item.qtyAvailable <= 0).length;
     const low = items.filter(
       (item) =>
-        item.qtyOnHand > 0 && (item.isLowStock || item.qtyOnHand <= item.minStockAlert),
+        item.qtyAvailable > 0 && (item.isLowStock || item.qtyAvailable <= item.minStockAlert),
     ).length;
 
     return {
@@ -249,8 +272,19 @@ export default function InventoryPage() {
       out,
       safe: items.length - low - out,
       attention: low + out,
+      qtyOnHand: items.reduce((sum, item) => sum + item.qtyOnHand, 0),
+      qtyReserved: items.reduce((sum, item) => sum + item.qtyReserved, 0),
+      qtyAvailable: items.reduce((sum, item) => sum + item.qtyAvailable, 0),
+      qtySold: items.reduce((sum, item) => sum + item.qtySold, 0),
     };
   }, [items]);
+
+  const displayedItems = useMemo(() => items.filter((item) => {
+    if (stockMode === "available") return item.qtyAvailable > 0;
+    if (stockMode === "reserved") return item.qtyReserved > 0;
+    if (stockMode === "out") return item.qtyAvailable <= 0;
+    return true;
+  }), [items, stockMode]);
 
   const categoryStats = useMemo(() => {
     const counts = new Map<string, number>();
@@ -272,7 +306,7 @@ export default function InventoryPage() {
 
   const shouldShowOutletPrompt = ownerMode && !effectiveOutletId;
   const hasActiveFilters =
-    Boolean(appliedSearch) || stockMode === "low" || !includeZeroStock;
+    Boolean(appliedSearch) || stockMode !== "all" || !includeZeroStock;
 
   function resetFilters() {
     setSearch("");
@@ -288,7 +322,7 @@ export default function InventoryPage() {
   return (
     <ProtectedPageShell
       title="Stok"
-      description="Pantau stok outlet aktif dan deteksi stok rendah. Gunakan tombol aksi untuk mengatur buffer, membuat opname, atau memindahkan stok antar outlet."
+      description="Pantau stok fisik, tersedia, dipesan, dan terjual bersih pada lokasi aktif."
     >
       <InlineAlert tone="error" message={error} />
 
@@ -321,22 +355,22 @@ export default function InventoryPage() {
           <div className="grid gap-3">
             {[
               {
-                label: "Total item",
-                value: items.length,
+                label: "Stok tersedia",
+                value: formatQuantity(stockStats.qtyAvailable),
                 icon: <BoxCubeIcon className="h-5 w-5" />,
                 iconClass:
                   "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300",
               },
               {
-                label: "Stok rendah",
-                value: stockStats.low,
+                label: "Stok dipesan",
+                value: formatQuantity(stockStats.qtyReserved),
                 icon: <AlertIcon className="h-5 w-5" />,
                 iconClass:
                   "bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-300",
               },
               {
-                label: "Stok habis",
-                value: stockStats.out,
+                label: "Terjual bersih",
+                value: formatQuantity(stockStats.qtySold),
                 icon: <ErrorIcon className="h-5 w-5" />,
                 iconClass:
                   "bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300",
@@ -447,7 +481,7 @@ export default function InventoryPage() {
             title="Pilih outlet terlebih dahulu"
             description="Owner perlu menentukan outlet operasional agar inventory, opname, dan transfer stok memakai konteks yang benar."
           />
-        ) : items.length === 0 ? (
+        ) : displayedItems.length === 0 ? (
           <EmptyState
             title="Belum ada data stok"
             description="Belum ada item inventory yang cocok dengan filter saat ini pada outlet aktif."
@@ -523,7 +557,7 @@ export default function InventoryPage() {
 
                 <div className="flex items-center gap-3">
                   <p className="whitespace-nowrap text-xs font-medium text-gray-500 dark:text-gray-400">
-                    {items.length} item
+                    {displayedItems.length} item
                   </p>
                   <div
                     role="group"
@@ -559,7 +593,10 @@ export default function InventoryPage() {
                 {(
                   [
                     { value: "all", label: "Semua stok" },
+                    { value: "available", label: "Tersedia" },
+                    { value: "reserved", label: "Dipesan" },
                     { value: "low", label: "Stok rendah" },
+                    { value: "out", label: "Stok habis" },
                   ] as const
                 ).map((option) => (
                   <button
@@ -582,7 +619,7 @@ export default function InventoryPage() {
             {view === "list" ? (
               /* ------------------------------ List view ------------------------------ */
               <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                {items.map((item) => {
+                {displayedItems.map((item) => {
                   const key = `${item.productId}::${item.productVariantId ?? "base"}`;
                   const canTrack = item.trackingMode === "batch" || item.trackingMode === "serial";
 
@@ -638,23 +675,33 @@ export default function InventoryPage() {
                         <div className="flex items-center gap-3">
                           <div className="text-right">
                             <p className="text-base font-semibold text-gray-900 dark:text-white">
-                              {formatQuantity(item.qtyOnHand)}
+                              {formatQuantity(item.qtyAvailable)}
                               <span className="ml-1 text-xs font-normal text-gray-400">
                                 {item.unit}
                               </span>
                             </p>
                             <p className="text-[11px] text-gray-400">
-                              Min. {formatQuantity(item.minStockAlert)}
+                              Fisik {formatQuantity(item.qtyOnHand)} · Min. {formatQuantity(item.minStockAlert)}
                             </p>
                           </div>
                           <StockStatusBadge
-                            qtyOnHand={item.qtyOnHand}
+                            qtyOnHand={item.qtyAvailable}
                             minStockAlert={item.minStockAlert}
                             isLowStock={item.isLowStock}
                           />
                         </div>
 
                         <div className="flex shrink-0 items-center gap-1 self-end lg:self-auto">
+                          {item.qtyReserved > 0 ? (
+                            <button
+                              type="button"
+                              disabled={isLoadingReservations}
+                              onClick={() => void openReservationDetail(item)}
+                              className="rounded-xl bg-warning-50 px-3 py-2 text-xs font-semibold text-warning-700 dark:bg-warning-500/10 dark:text-warning-300"
+                            >
+                              Dipesan {formatQuantity(item.qtyReserved)}
+                            </button>
+                          ) : null}
                           {canTrack ? (
                             <button
                               type="button"
@@ -676,7 +723,7 @@ export default function InventoryPage() {
             ) : (
               /* ------------------------------ Grid view ------------------------------ */
               <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
-                {items.map((item) => {
+                {displayedItems.map((item) => {
                   const key = `${item.productId}::${item.productVariantId ?? "base"}`;
                   const canTrack = item.trackingMode === "batch" || item.trackingMode === "serial";
 
@@ -738,20 +785,20 @@ export default function InventoryPage() {
                       <div className="mt-4 flex items-end justify-between gap-3">
                         <div>
                           <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                            Stok saat ini
+                             Stok tersedia
                           </p>
                           <p className="mt-0.5 text-lg font-semibold text-gray-900 dark:text-white">
-                            {formatQuantity(item.qtyOnHand)}
+                             {formatQuantity(item.qtyAvailable)}
                             <span className="ml-1 text-xs font-normal text-gray-400">
                               {item.unit}
                             </span>
                           </p>
                           <p className="text-[11px] text-gray-400">
-                            Min. {formatQuantity(item.minStockAlert)}
+                             Fisik {formatQuantity(item.qtyOnHand)} · Dipesan {formatQuantity(item.qtyReserved)}
                           </p>
                         </div>
                         <StockStatusBadge
-                          qtyOnHand={item.qtyOnHand}
+                           qtyOnHand={item.qtyAvailable}
                           minStockAlert={item.minStockAlert}
                           isLowStock={item.isLowStock}
                         />
@@ -831,7 +878,7 @@ export default function InventoryPage() {
                           </p>
                         </div>
                         <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                          {formatQuantity(batch.qtyRemaining)}
+                           {formatQuantity(batch.qtyAvailable)} tersedia · {formatQuantity(batch.qtyReserved)} dipesan
                         </span>
                       </div>
                     );
@@ -849,11 +896,46 @@ export default function InventoryPage() {
                     key={serial.id}
                     className="rounded-xl border border-gray-200 px-3 py-1.5 font-mono text-xs text-gray-900 dark:border-gray-800 dark:text-white"
                   >
-                    {serial.serialNumber}
+                    {serial.serialNumber} · {serial.status.replace(/_/g, " ")}
                   </span>
                 ))}
               </div>
             )}
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(reservationDetail)}
+        onClose={() => setReservationDetail(null)}
+        className="max-w-2xl p-6 sm:p-8"
+      >
+        {reservationDetail ? (
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-warning-600">Stok dipesan</p>
+              <h3 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{reservationDetail.item.productName}</h3>
+              <p className="text-sm text-gray-500">{reservationDetail.item.sku} · {formatQuantity(reservationDetail.item.qtyReserved)} {reservationDetail.item.unit}</p>
+            </div>
+            {reservationDetail.reservations.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-800">Reservasi sudah selesai atau kedaluwarsa.</p>
+            ) : reservationDetail.reservations.map((reservation) => (
+              <div key={reservation.id} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-mono text-xs font-semibold text-gray-900 dark:text-white">{reservation.id}</p>
+                  <span className="rounded-full bg-warning-50 px-2.5 py-1 text-xs font-semibold text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">Aktif</span>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">Kasir {reservation.createdByName} · kedaluwarsa {formatDateTime(reservation.expiresAt)}</p>
+                <ul className="mt-3 space-y-2">
+                  {reservation.items.filter((entry) => entry.productId === reservationDetail.item.productId && entry.productVariantId === (reservationDetail.item.productVariantId ?? null)).map((entry) => (
+                    <li key={entry.id} className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2 text-sm dark:bg-gray-800/60">
+                      <span>{entry.batchNumber ? `Batch ${entry.batchNumber}` : entry.serialNumber ? `Serial ${entry.serialNumber}` : entry.sku}</span>
+                      <strong>{formatQuantity(entry.qty)} {reservationDetail.item.unit}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         ) : null}
       </Modal>

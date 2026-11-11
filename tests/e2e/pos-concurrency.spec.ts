@@ -40,6 +40,8 @@ test("kasir yang kalah race stok tetap di POS dan melihat error", async ({ page 
       unit: "pcs",
       isConsignment: false,
       qtyOnHand: 1,
+      qtyReserved: 0,
+      qtyAvailable: 1,
       hasVariants: false,
       trackingMode: "quantity",
     },
@@ -56,6 +58,14 @@ test("kasir yang kalah race stok tetap di POS dan melihat error", async ({ page 
     appliedPromo: null,
     lineBreakdowns: [],
   }, { method: "POST" });
+  await page.route("**/api/stock-reservations", async (route) => {
+    const payload = route.request().postDataJSON() as { id: string };
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ id: payload.id, status: "active", expiresAt: "2026-11-11T12:00:00Z", items: [] }),
+    });
+  });
 
   let checkoutRequests = 0;
   await page.route("**/api/transactions/checkout", async (route) => {

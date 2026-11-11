@@ -210,8 +210,8 @@ function getStockPresentation(product: ProductDto) {
   }
 
   return {
-    label: `Stok ${formatStockQuantity(product.qtyOnHand)}`,
-    tone: getStockBadgeClasses(product.qtyOnHand),
+    label: `Tersedia ${formatStockQuantity(product.qtyAvailable)}`,
+    tone: getStockBadgeClasses(product.qtyAvailable),
   };
 }
 
@@ -331,9 +331,9 @@ export default function ProductsPage() {
   const stockStats = useMemo(() => {
     const tracked = products.filter((product) => product.trackingMode !== "none");
     const low = tracked.filter(
-      (product) => product.qtyOnHand > 0 && product.qtyOnHand <= 5,
+      (product) => product.qtyAvailable > 0 && product.qtyAvailable <= 5,
     ).length;
-    const out = tracked.filter((product) => product.qtyOnHand <= 0).length;
+    const out = tracked.filter((product) => product.qtyAvailable <= 0).length;
 
     return {
       low,

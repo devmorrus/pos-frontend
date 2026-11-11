@@ -8,6 +8,9 @@ export interface PublicProduct {
   categoryName: string | null;
   categoryId: string | null;
   qtyOnHand: number;
+  qtyPhysical?: number;
+  qtyReserved?: number;
+  qtyAvailable?: number;
 }
 
 // Types untuk kategori — dari GET /api/public/{businessSlug}/categories

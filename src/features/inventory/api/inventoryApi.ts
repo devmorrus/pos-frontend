@@ -5,6 +5,8 @@ import type {
   InventoryFilters,
   InventoryListItem,
   ReceiveStockTransferRequest,
+  CreateStockReservationRequest,
+  StockReservationDto,
   StockOpnameDto,
   StockTransferDto,
 } from "../types/inventory";
@@ -30,6 +32,27 @@ export function getInventory(filters: InventoryFilters) {
 
   const query = params.toString();
   return apiClient.get<InventoryListItem[]>(`/api/inventory${query ? `?${query}` : ""}`);
+}
+
+export function createStockReservation(payload: CreateStockReservationRequest) {
+  return apiClient.post<StockReservationDto>("/api/stock-reservations", payload, {
+    headers: { "Idempotency-Key": payload.id },
+  });
+}
+
+export function getActiveStockReservations(filters: {
+  stockLocationId: string;
+  productId?: string;
+  productVariantId?: string | null;
+}) {
+  const params = new URLSearchParams({ stockLocationId: filters.stockLocationId });
+  if (filters.productId) params.set("productId", filters.productId);
+  if (filters.productVariantId) params.set("productVariantId", filters.productVariantId);
+  return apiClient.get<StockReservationDto[]>(`/api/stock-reservations?${params}`);
+}
+
+export function releaseStockReservation(id: string) {
+  return apiClient.post<StockReservationDto>(`/api/stock-reservations/${id}/release`);
 }
 
 export function getStockOpnames(stockLocationId?: string | null) {

@@ -254,11 +254,11 @@ export default function BufferStockPage() {
     if (!editing) return 0;
     const parsed = Number(bufferInput || 0);
     if (Number.isNaN(parsed)) return editing.availableOnlineQty;
-    return calculateAvailableOnline(editing.qtyOnHand, parsed, isEnabledInput);
+    return calculateAvailableOnline(editing.qtyOnHand, parsed, isEnabledInput, editing.qtyReserved);
   }, [editing, bufferInput, isEnabledInput]);
 
   const bufferExceedsStock =
-    editing != null && Number(bufferInput || 0) > editing.qtyOnHand && isEnabledInput;
+    editing != null && Number(bufferInput || 0) > editing.qtyAvailable && isEnabledInput;
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();

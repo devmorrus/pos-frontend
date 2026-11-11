@@ -60,6 +60,8 @@ test.describe("Buffer stock flow", () => {
           categoryName: "Makanan",
           unit: "porsi",
           qtyOnHand: 10,
+          qtyReserved: 0,
+          qtyAvailable: 10,
           bufferQty: 5,
           availableOnlineQty: 5,
           isOnlineAvailable: true,

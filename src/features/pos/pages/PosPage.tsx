@@ -23,6 +23,8 @@ import type {
 } from "../../transactions/types/transaction";
 import type { PricingBreakdownDto } from "../../pricing/types/pricing";
 import { useCapabilities } from "../../capabilities/hooks/useCapabilities";
+import { createStockReservation, releaseStockReservation } from "../../inventory/api/inventoryApi";
+import type { StockReservationDto } from "../../inventory/types/inventory";
 import { BoxIcon, CheckCircleIcon, ChevronLeftIcon, TrashBinIcon } from "../../../icons";
 
 type CartItem = {
@@ -119,6 +121,7 @@ export default function PosPage() {
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState<CheckoutRequest | null>(null);
   const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
+  const [stockReservation, setStockReservation] = useState<StockReservationDto | null>(null);
 
   // States for Tempo (Kasbon) & Profile Completion
   const [isTempo, setIsTempo] = useState(false);
@@ -147,6 +150,7 @@ export default function PosPage() {
   const effectiveOutletId = ownerMode ? selectedOutletId : session?.outletId ?? null;
   const canUseVoucher = hasCapability("pricing.vouchers");
   const pendingCheckoutStorageKey = `morruspos.pending-checkout:${session?.businessId ?? "unknown"}:${effectiveOutletId ?? "none"}:${currentSession?.id ?? "none"}`;
+  const reservationStorageKey = `morruspos.stock-reservation:${session?.businessId ?? "unknown"}:${effectiveOutletId ?? "none"}:${currentSession?.id ?? "none"}`;
   const trackingItem = trackingLineId
     ? cart.find((item) => item.lineId === trackingLineId) ?? null
     : null;
@@ -184,7 +188,7 @@ export default function PosPage() {
                 unitPrice: item.productVariantId ? item.unitPrice : matched.basePrice,
                 availableStock: matched.trackingMode === "none"
                   ? item.availableStock
-                  : matchedVariant?.qtyOnHand ?? matched.qtyOnHand,
+                  : matchedVariant?.qtyAvailable ?? matched.qtyAvailable,
                 trackingMode: matched.trackingMode ?? "quantity",
               }
             : item;
@@ -215,6 +219,25 @@ export default function PosPage() {
   }, [effectiveOutletId, currentSession, pendingCheckoutStorageKey]);
 
   useEffect(() => {
+    if (!effectiveOutletId || !currentSession) return;
+    try {
+      const raw = window.sessionStorage.getItem(reservationStorageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { reservation: StockReservationDto; cart: CartItem[] };
+      if (saved.reservation.status !== "active" || new Date(saved.reservation.expiresAt).getTime() <= Date.now()) {
+        window.sessionStorage.removeItem(reservationStorageKey);
+        return;
+      }
+      setStockReservation(saved.reservation);
+      setCart(saved.cart);
+      checkoutAttemptRef.current = { fingerprint: "reserved", id: saved.reservation.id };
+      setStep("checkout");
+    } catch {
+      window.sessionStorage.removeItem(reservationStorageKey);
+    }
+  }, [effectiveOutletId, currentSession, reservationStorageKey]);
+
+  useEffect(() => {
     const unsubscribe = onStockUpdate((event) => {
       if (event.outletId !== effectiveOutletId) {
         return;
@@ -230,7 +253,7 @@ export default function PosPage() {
     const normalized = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
-      if (product.trackingMode !== "none" && product.qtyOnHand <= 0) {
+      if (product.trackingMode !== "none" && product.qtyAvailable <= 0) {
         return false;
       }
 
@@ -316,6 +339,12 @@ export default function PosPage() {
     }),
     [cart],
   );
+
+  useEffect(() => {
+    if (step === "checkout" && trackingComplete && !stockReservation && !isSubmitting) {
+      void beginCheckout();
+    }
+  }, [step, trackingComplete, stockReservation, isSubmitting]);
 
   const canCheckout = useMemo(() => {
     if (isSubmitting || isPricingLoading || cart.length === 0 || !trackingComplete) return false;
@@ -483,7 +512,7 @@ export default function PosPage() {
       return;
     }
 
-    if (product.trackingMode !== "none" && product.qtyOnHand <= 0) {
+    if (product.trackingMode !== "none" && product.qtyAvailable <= 0) {
       return;
     }
 
@@ -492,14 +521,14 @@ export default function PosPage() {
       const existing = current.find((item) => item.productId === product.id && !item.productVariantId);
       if (existing) {
         const nextQty = (Number(existing.qty) || 0) + 1;
-        if (product.trackingMode !== "none" && nextQty > product.qtyOnHand) {
+        if (product.trackingMode !== "none" && nextQty > product.qtyAvailable) {
           setWarning(`Stok ${product.name} tidak cukup untuk menambah qty lagi.`);
           return current;
         }
 
         return current.map((item) =>
           item.productId === product.id && !item.productVariantId
-            ? { ...item, qty: nextQty, availableStock: product.qtyOnHand, batchAllocations: [], serials: [] }
+            ? { ...item, qty: nextQty, availableStock: product.qtyAvailable, batchAllocations: [], serials: [] }
             : item,
         );
       }
@@ -516,7 +545,7 @@ export default function PosPage() {
           qty: 1,
           unitPrice: product.basePrice,
           discountAmount: 0,
-          availableStock: product.qtyOnHand,
+          availableStock: product.qtyAvailable,
           trackingMode: product.trackingMode ?? "quantity",
           batchAllocations: [],
           serials: [],
@@ -582,6 +611,71 @@ export default function PosPage() {
     setCart([]);
     setVoucherCode("");
     setPricing(null);
+  }
+
+  async function beginCheckout() {
+    if (!effectiveOutletId || !currentSession || cart.length === 0) return;
+    if (cart.some((item) => (Number(item.qty) || 0) <= 0)) {
+      setError("Jumlah item (Qty) harus minimal 1.");
+      return;
+    }
+    if (!trackingComplete) {
+      setStep("checkout");
+      return;
+    }
+
+    const id = crypto.randomUUID();
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const reservation = await createStockReservation({
+        id,
+        outletId: effectiveOutletId,
+        cashierSessionId: currentSession.id,
+        items: cart.map((item) => ({
+          productId: item.productId,
+          productVariantId: item.productVariantId,
+          qty: Number(item.qty) || 0,
+          batchAllocations: item.trackingMode === "batch"
+            ? item.batchAllocations.map((batch) => ({ productBatchId: batch.productBatchId, qty: batch.qty }))
+            : null,
+          serialIds: item.trackingMode === "serial"
+            ? item.serials.map((serial) => serial.productSerialId)
+            : null,
+        })),
+      });
+      if (reservation.status !== "active") {
+        throw new Error("Reservasi stok tidak lagi aktif. Muat ulang katalog dan coba lagi.");
+      }
+      setStockReservation(reservation);
+      window.sessionStorage.setItem(reservationStorageKey, JSON.stringify({ reservation, cart }));
+      checkoutAttemptRef.current = { fingerprint: "reserved", id: reservation.id };
+      setStep("checkout");
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Stok gagal dikunci untuk checkout."));
+      setStep("catalog");
+      await loadProducts();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function returnToCatalog() {
+    if (stockReservation) {
+      setIsSubmitting(true);
+      try {
+        await releaseStockReservation(stockReservation.id);
+      } catch (requestError) {
+        setWarning(getErrorMessage(requestError, "Reservasi akan dilepas otomatis saat kedaluwarsa."));
+      } finally {
+        setStockReservation(null);
+        window.sessionStorage.removeItem(reservationStorageKey);
+        checkoutAttemptRef.current = null;
+        setIsSubmitting(false);
+      }
+    }
+    setStep("catalog");
+    await loadProducts();
   }
 
   const totalCartItems = cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
@@ -664,11 +758,16 @@ export default function PosPage() {
       isTempo,
       tempoDays,
     });
-    if (!checkoutAttemptRef.current || checkoutAttemptRef.current.fingerprint !== fingerprint)
+    if (!stockReservation && (!checkoutAttemptRef.current || checkoutAttemptRef.current.fingerprint !== fingerprint))
       checkoutAttemptRef.current = { fingerprint, id: crypto.randomUUID() };
+    const checkoutId = stockReservation?.id ?? checkoutAttemptRef.current?.id;
+    if (!checkoutId) {
+      setError("ID checkout tidak tersedia. Kembali ke katalog dan coba lagi.");
+      return;
+    }
 
     const payload: CheckoutRequest = {
-      id: checkoutAttemptRef.current.id,
+      id: checkoutId,
       outletId: effectiveOutletId,
       cashierSessionId: currentSession.id,
       channel: "pos",
@@ -756,9 +855,11 @@ export default function PosPage() {
     try {
       const result = await checkoutTransaction(payload);
       window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+      window.sessionStorage.removeItem(reservationStorageKey);
       setPendingCheckout(null);
-      checkoutAttemptRef.current = null;
+      setStockReservation(null);
       setCart([]);
+      checkoutAttemptRef.current = null;
       setPayments([createPaymentRow()]);
       setVoucherCode("");
       setPricing(null);
@@ -774,6 +875,13 @@ export default function PosPage() {
     } catch (requestError) {
       const message = getErrorMessage(requestError, "Checkout gagal diproses.");
       setError(message);
+      if (message.toLowerCase().includes("kedaluwarsa") || message.includes("STOCK_RESERVATION_EXPIRED")) {
+        setStockReservation(null);
+        window.sessionStorage.removeItem(reservationStorageKey);
+        checkoutAttemptRef.current = null;
+        setStep("catalog");
+        await loadProducts();
+      }
       if (message.toLowerCase().includes("sesi kasir")) {
         navigate("/cashier/session", { replace: true });
       }
@@ -791,11 +899,24 @@ export default function PosPage() {
     try {
       const result = await checkoutTransaction(pendingCheckout);
       window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+      window.sessionStorage.removeItem(reservationStorageKey);
       setPendingCheckout(null);
+      setStockReservation(null);
+      setCart([]);
       checkoutAttemptRef.current = null;
       navigate(`/transactions/${result.id}`);
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Retry checkout tertunda gagal."));
+      const message = getErrorMessage(requestError, "Retry checkout tertunda gagal.");
+      setError(message);
+      if (message.toLowerCase().includes("kedaluwarsa")) {
+        window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+        window.sessionStorage.removeItem(reservationStorageKey);
+        setPendingCheckout(null);
+        setStockReservation(null);
+        checkoutAttemptRef.current = null;
+        setStep("catalog");
+        await loadProducts();
+      }
     } finally {
       checkoutInFlightRef.current = false;
       setIsSubmitting(false);
@@ -928,7 +1049,7 @@ export default function PosPage() {
                 <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {filteredProducts.map((product) => {
                     const invalidTracking = !isKnownTrackingMode(product.trackingMode);
-                    const outOfStock = invalidTracking || (product.trackingMode !== "none" && product.qtyOnHand <= 0);
+                    const outOfStock = invalidTracking || (product.trackingMode !== "none" && product.qtyAvailable <= 0);
                     const cartItem = cart.find((item) => item.productId === product.id && !item.productVariantId);
                     const cartQty = cartItem ? Number(cartItem.qty) : 0;
                     return (
@@ -992,7 +1113,7 @@ export default function PosPage() {
                                   : "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"
                               }`}
                             >
-                              {invalidTracking ? "Mode invalid" : product.trackingMode === "none" ? "Non-stok" : `Stok ${product.qtyOnHand}`}
+                              {invalidTracking ? "Mode invalid" : product.trackingMode === "none" ? "Non-stok" : `Tersedia ${product.qtyAvailable}`}
                             </span>
                             <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal uppercase">{product.unit}</span>
                           </div>
@@ -1026,13 +1147,14 @@ export default function PosPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setStep("checkout")}
+                    onClick={() => void beginCheckout()}
+                    disabled={isSubmitting}
                     className="flex items-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/30 transition-all flex-shrink-0"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    Checkout & Bayar
+                     {isSubmitting ? "Mengunci stok..." : "Checkout & Bayar"}
                   </button>
                 </div>
               </div>
@@ -1044,15 +1166,17 @@ export default function PosPage() {
             <div className="mb-6 flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setStep("catalog")}
+                onClick={() => void returnToCatalog()}
+                disabled={isSubmitting}
                 className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 shadow-theme-xs transition hover:bg-gray-50 dark:hover:bg-gray-900"
               >
                  <ChevronLeftIcon className="h-3.5 w-3.5" />
                 Kembali ke Katalog
               </button>
-              <div>
+               <div>
                 <h2 className="text-base font-bold text-gray-900 dark:text-white">Checkout</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{cart.length} jenis produk · {totalCartItems} item</p>
+                 <p className="text-xs text-gray-500 dark:text-gray-400">{cart.length} jenis produk · {totalCartItems} item</p>
+                 {stockReservation ? <p className="mt-1 text-xs font-semibold text-warning-600">Stok dikunci sampai {new Date(stockReservation.expiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</p> : null}
               </div>
             </div>
 
@@ -1637,7 +1761,7 @@ export default function PosPage() {
                       key={variant.id}
                       type="button"
                       onClick={() => setSelectedVariantId(variant.id)}
-                      disabled={selectedVariantProduct.trackingMode !== "none" && (variant.qtyOnHand ?? 0) <= 0}
+                      disabled={selectedVariantProduct.trackingMode !== "none" && (variant.qtyAvailable ?? 0) <= 0}
                       className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${selectedVariantId === variant.id ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/10" : "border-gray-200 dark:border-gray-800"}`}
                     >
                       <span className="text-xs font-bold text-gray-900 dark:text-white">
@@ -1647,7 +1771,7 @@ export default function PosPage() {
                         {formatCurrency(variant.basePrice)}
                       </span>
                       <span className="mt-1 text-[10px] text-gray-400">
-                        {selectedVariantProduct.trackingMode === "none" ? "Non-stok" : `Stok ${variant.qtyOnHand ?? 0}`}
+                        {selectedVariantProduct.trackingMode === "none" ? "Non-stok" : `Tersedia ${variant.qtyAvailable ?? 0}`}
                       </span>
                     </button>
                   ))}
@@ -1698,7 +1822,7 @@ export default function PosPage() {
                     qty: 1,
                     unitPrice: variant.basePrice + extraPrice,
                     discountAmount: 0,
-                    availableStock: selectedVariantProduct.trackingMode === "none" ? Number.POSITIVE_INFINITY : variant.qtyOnHand ?? 0,
+                    availableStock: selectedVariantProduct.trackingMode === "none" ? Number.POSITIVE_INFINITY : variant.qtyAvailable ?? 0,
                     trackingMode: selectedVariantProduct.trackingMode ?? "quantity",
                     batchAllocations: [],
                     serials: [],
