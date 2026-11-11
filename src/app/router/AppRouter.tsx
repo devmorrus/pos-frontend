@@ -31,6 +31,7 @@ import AuthLayout from "../../components/layout/AuthLayout";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import SignInPage from "../../features/auth/pages/SignInPage";
 import CategoriesPage from "../../features/categories/pages/CategoriesPage";
+import ProductMastersPage from "../../features/products/pages/ProductMastersPage";
 import ConsignmentsPage from "../../features/consignments/pages/ConsignmentsPage";
 import ConsignmentCreatePage from "../../features/consignments/pages/ConsignmentCreatePage";
 import ConsignmentDetailPage from "../../features/consignments/pages/ConsignmentDetailPage";
@@ -459,6 +460,7 @@ export default function AppRouter() {
               </PermissionGuard>
             }
           />
+          <Route path="product-masters" element={<PermissionGuard requiredPermissions={productsPolicy?.requiredPermissions} fallbackRoles={productsPolicy?.fallbackRoles} requiredCapabilities={productsPolicy?.requiredCapabilities}><ProductMastersPage /></PermissionGuard>} />
           <Route
             path="inventory"
             element={

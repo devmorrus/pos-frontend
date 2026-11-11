@@ -7,6 +7,7 @@ import InlineAlert from "../../../components/ui/InlineAlert";
 import type { CategoryDto } from "../../categories/types/category";
 import type { ProductFieldErrors } from "../schemas/productSchema";
 import type { ProductFormValues } from "../types/product";
+import { generateProductBarcode, type ProductBrand, type ProductModel } from "../api/productMastersApi";
 import { uploadProductImage } from "../api/productsApi";
 import { API_BASE_URL } from "../../../api/client/config";
 import { getErrorMessage } from "../../../utils/errors";
@@ -17,6 +18,8 @@ type ProductFormProps = {
   values: ProductFormValues;
   errors: ProductFieldErrors;
   categories: CategoryDto[];
+  brands?: ProductBrand[];
+  models?: ProductModel[];
   isSubmitting: boolean;
   submitError?: string | null;
   onChange: (key: keyof ProductFormValues, value: any) => void;
@@ -28,6 +31,8 @@ export default function ProductForm({
   values,
   errors,
   categories,
+  brands = [],
+  models = [],
   isSubmitting,
   submitError,
   onChange,
@@ -94,6 +99,22 @@ export default function ProductForm({
             </label>
 
             <label className="block">
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Brand</span>
+              <select value={values.brandId} onChange={(event) => onChange("brandId", event.target.value)} className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white">
+                <option value="">Tanpa brand</option>
+                {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}{!brand.isActive ? " (Nonaktif)" : ""}</option>)}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Model</span>
+              <select disabled={!values.brandId} value={values.modelId} onChange={(event) => onChange("modelId", event.target.value)} className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:text-white">
+                <option value="">Tanpa model</option>
+                {models.map((model) => <option key={model.id} value={model.id}>{model.name}{!model.isActive ? " (Nonaktif)" : ""}</option>)}
+              </select>
+            </label>
+
+            <label className="block">
               <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
                 SKU <span className="text-error-500">*</span>
               </span>
@@ -131,10 +152,10 @@ export default function ProductForm({
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-                    onChange("barcode", "899" + randomDigits);
-                  }}
+                   onClick={async () => {
+                     try { onChange("barcode", (await generateProductBarcode()).barcode); }
+                     catch { setUploadError("Gagal membuat barcode unik."); }
+                   }}
                   className="absolute right-2 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                   Generate

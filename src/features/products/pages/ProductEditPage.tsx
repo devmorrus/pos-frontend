@@ -6,12 +6,15 @@ import { getErrorMessage } from "../../../utils/errors";
 import { getCategories } from "../../categories/api/categoriesApi";
 import type { CategoryDto } from "../../categories/types/category";
 import { getProductById, updateProduct } from "../api/productsApi";
+import { getProductBrands, getProductModels, type ProductBrand, type ProductModel } from "../api/productMastersApi";
 import ProductForm from "../components/ProductForm";
 import { validateProductForm } from "../schemas/productSchema";
 import type { ProductDto, ProductFormValues } from "../types/product";
 
 const initialValues: ProductFormValues = {
   categoryId: "",
+  brandId: "",
+  modelId: "",
   sku: "",
   name: "",
   barcode: "",
@@ -34,6 +37,8 @@ export default function ProductEditPage() {
   const { id } = useParams<{ id: string }>();
   const [values, setValues] = useState<ProductFormValues>(initialValues);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [brands, setBrands] = useState<ProductBrand[]>([]);
+  const [models, setModels] = useState<ProductModel[]>([]);
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -51,15 +56,19 @@ export default function ProductEditPage() {
       setIsLoading(true);
 
       try {
-        const [categoriesResult, productResult] = await Promise.all([
+        const [categoriesResult, productResult, brandsResult] = await Promise.all([
           getCategories(),
           getProductById(id),
+          getProductBrands(true),
         ]);
 
         setCategories(categoriesResult);
+        setBrands(brandsResult);
         setProduct(productResult);
         setValues({
           categoryId: productResult.categoryId,
+          brandId: productResult.brandId ?? "",
+          modelId: productResult.modelId ?? "",
           sku: productResult.sku,
           name: productResult.name,
           barcode: productResult.barcode ?? "",
@@ -97,10 +106,13 @@ export default function ProductEditPage() {
     void loadPage();
   }, [id]);
 
+  useEffect(() => { void getProductModels(values.brandId || undefined, true).then(setModels).catch(() => setModels([])); }, [values.brandId]);
+
   function handleChange(key: keyof ProductFormValues, value: any) {
     setValues((current) => ({
       ...current,
       [key]: value,
+      ...(key === "brandId" ? { modelId: "" } : {}),
       ...(key === "trackingMode" && value === "none" ? { isConsignment: false, isRawMaterial: false } : {}),
     }));
   }
@@ -125,9 +137,11 @@ export default function ProductEditPage() {
     try {
       await updateProduct(id, {
         categoryId: values.categoryId,
-        sku: values.sku.trim(),
+         sku: values.sku.trim().toUpperCase(),
         name: values.name.trim(),
-        barcode: values.barcode.trim() || null,
+         barcode: values.barcode.trim() || null,
+         brandId: values.brandId || null,
+         modelId: values.modelId || null,
         basePrice: Number(values.basePrice),
         costPrice: Number(values.costPrice),
         unit: values.unit.trim(),
@@ -167,6 +181,8 @@ export default function ProductEditPage() {
           values={values}
           errors={errors}
           categories={categories}
+          brands={brands}
+          models={models}
           isSubmitting={isSubmitting}
           submitError={submitError}
           onChange={handleChange}

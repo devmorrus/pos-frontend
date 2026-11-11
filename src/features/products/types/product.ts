@@ -3,6 +3,10 @@ export type ProductTrackingMode = "none" | "quantity" | "batch" | "serial";
 export type ProductDto = {
   id: string;
   categoryId: string;
+  brandId?: string | null;
+  brandName?: string | null;
+  modelId?: string | null;
+  modelName?: string | null;
   sku: string;
   name: string;
   barcode: string | null;
@@ -103,6 +107,8 @@ export type ProductRecipeRequest = {
 
 export type CreateProductRequest = {
   categoryId: string;
+  brandId?: string | null;
+  modelId?: string | null;
   sku: string;
   name: string;
   barcode: string | null;
@@ -132,6 +138,8 @@ export type ProductFilters = {
 
 export type ProductFormValues = {
   categoryId: string;
+  brandId: string;
+  modelId: string;
   sku: string;
   name: string;
   barcode: string;

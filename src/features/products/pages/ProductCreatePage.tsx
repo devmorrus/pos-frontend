@@ -6,17 +6,15 @@ import { getErrorMessage } from "../../../utils/errors";
 import { getCategories } from "../../categories/api/categoriesApi";
 import type { CategoryDto } from "../../categories/types/category";
 import { createProduct } from "../api/productsApi";
+import { getProductBrands, getProductModels, type ProductBrand, type ProductModel } from "../api/productMastersApi";
 import ProductForm from "../components/ProductForm";
 import { validateProductForm } from "../schemas/productSchema";
 import type { ProductFormValues } from "../types/product";
 
-function generateBarcode(): string {
-  const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  return "899" + randomDigits;
-}
-
 const initialValues: ProductFormValues = {
   categoryId: "",
+  brandId: "",
+  modelId: "",
   sku: "",
   name: "",
   barcode: "",
@@ -36,11 +34,10 @@ const initialValues: ProductFormValues = {
 
 export default function ProductCreatePage() {
   const navigate = useNavigate();
-  const [values, setValues] = useState<ProductFormValues>(() => ({
-    ...initialValues,
-    barcode: generateBarcode(),
-  }));
+  const [values, setValues] = useState<ProductFormValues>(initialValues);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [brands, setBrands] = useState<ProductBrand[]>([]);
+  const [models, setModels] = useState<ProductModel[]>([]);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,8 +48,8 @@ export default function ProductCreatePage() {
       setIsLoading(true);
 
       try {
-        const result = await getCategories();
-        setCategories(result);
+        const [result, brandResult] = await Promise.all([getCategories(), getProductBrands()]);
+        setCategories(result); setBrands(brandResult);
       } catch (requestError) {
         setSubmitError(getErrorMessage(requestError, "Gagal memuat kategori produk."));
       } finally {
@@ -63,10 +60,13 @@ export default function ProductCreatePage() {
     void loadCategories();
   }, []);
 
+  useEffect(() => { void getProductModels(values.brandId || undefined).then(setModels).catch(() => setModels([])); }, [values.brandId]);
+
   function handleChange(key: keyof ProductFormValues, value: any) {
     setValues((current) => ({
       ...current,
       [key]: value,
+      ...(key === "brandId" ? { modelId: "" } : {}),
       ...(key === "trackingMode" && value === "none" ? { isConsignment: false, isRawMaterial: false } : {}),
     }));
   }
@@ -87,9 +87,11 @@ export default function ProductCreatePage() {
     try {
       await createProduct({
         categoryId: values.categoryId,
-        sku: values.sku.trim(),
+         sku: values.sku.trim().toUpperCase(),
         name: values.name.trim(),
-        barcode: values.barcode.trim() || null,
+         barcode: values.barcode.trim() || null,
+         brandId: values.brandId || null,
+         modelId: values.modelId || null,
         basePrice: Number(values.basePrice),
         costPrice: Number(values.costPrice),
         unit: values.unit.trim(),
@@ -127,7 +129,9 @@ export default function ProductCreatePage() {
           mode="create"
           values={values}
           errors={errors}
-          categories={categories}
+            categories={categories}
+            brands={brands}
+            models={models}
           isSubmitting={isSubmitting}
           submitError={submitError}
           onChange={handleChange}

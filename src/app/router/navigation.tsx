@@ -150,6 +150,13 @@ export const appNavigation: NavItem[] = [
         requiredCapabilities: ["catalog.products"],
       },
       {
+        label: "Brand & Model",
+        path: "/product-masters",
+        requiredPermissions: ["product.manage"],
+        fallbackRoles: productRoles,
+        requiredCapabilities: ["catalog.products"],
+      },
+      {
         label: "Stok",
         path: "/inventory",
         requiredPermissions: ["stock.manage"],
